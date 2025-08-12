@@ -1,0 +1,164 @@
+/* KIBO COMPONENT SYSTEM - Pure Tailwind CSS v4 */
+/* Framework-agnostic components ready for easy migration */
+
+@layer components {
+  /* Button System */
+  .kibo-btn-base {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+
+  .kibo-btn-primary {
+    @apply bg-primary text-white hover:bg-primary/90 focus:ring-primary/50 shadow-sm;
+  }
+
+  .kibo-btn-secondary {
+    @apply bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50 focus:ring-neutral-500/50 dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-700;
+  }
+
+  .kibo-btn-ghost {
+    @apply text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 focus:ring-neutral-500/50 dark:text-neutral-400 dark:hover:text-neutral-100 dark:hover:bg-neutral-800;
+  }
+
+  .kibo-btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500/50 shadow-sm;
+  }
+
+  /* Button Sizes */
+  .kibo-btn-xs {
+    @apply px-2 py-1 text-xs;
+  }
+  .kibo-btn-sm {
+    @apply px-3 py-1.5 text-sm;
+  }
+  .kibo-btn-md {
+    @apply px-4 py-2 text-sm;
+  }
+  .kibo-btn-lg {
+    @apply px-6 py-3 text-base;
+  }
+  .kibo-btn-xl {
+    @apply px-8 py-4 text-lg;
+  }
+
+  /* Card System */
+  .kibo-card {
+    @apply bg-white rounded-2xl shadow-sm border border-neutral-200/50 dark:bg-neutral-900 dark:border-neutral-700/50;
+  }
+
+  .kibo-card-body {
+    @apply p-6;
+  }
+
+  .kibo-card-compact {
+    @apply p-4;
+  }
+
+  .kibo-card-title {
+    @apply text-lg font-semibold text-neutral-900 dark:text-neutral-100 mb-2;
+  }
+
+  .kibo-card-subtitle {
+    @apply text-sm text-neutral-600 dark:text-neutral-400;
+  }
+
+  /* Input System */
+  .kibo-input-base {
+    @apply w-full px-3 py-2 border border-neutral-300 rounded-xl text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-colors dark:bg-neutral-800 dark:border-neutral-600 dark:text-neutral-100 dark:placeholder:text-neutral-400;
+  }
+
+  .kibo-input-error {
+    @apply border-red-500 focus:ring-red-500/50 focus:border-red-500;
+  }
+
+  .kibo-input-sm {
+    @apply px-2.5 py-1.5 text-sm;
+  }
+  .kibo-input-md {
+    @apply px-3 py-2 text-sm;
+  }
+  .kibo-input-lg {
+    @apply px-4 py-3 text-base;
+  }
+
+  /* Modal System */
+  .kibo-modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm;
+  }
+
+  .kibo-modal-content {
+    @apply bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-neutral-900;
+  }
+
+  .kibo-modal-header {
+    @apply flex items-center justify-between p-6 border-b border-neutral-200 dark:border-neutral-700;
+  }
+
+  .kibo-modal-body {
+    @apply p-6;
+  }
+
+  .kibo-modal-footer {
+    @apply flex gap-3 p-6 border-t border-neutral-200 dark:border-neutral-700;
+  }
+
+  /* Status System */
+  .kibo-status-base {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium;
+  }
+
+  .kibo-status-success {
+    @apply bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400;
+  }
+
+  .kibo-status-warning {
+    @apply bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400;
+  }
+
+  .kibo-status-error {
+    @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400;
+  }
+
+  .kibo-status-info {
+    @apply bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400;
+  }
+
+  .kibo-status-gray {
+    @apply bg-neutral-100 text-neutral-800 dark:bg-neutral-800 dark:text-neutral-300;
+  }
+
+  /* Loading Spinner */
+  .kibo-spinner {
+    @apply inline-block w-6 h-6 border-4 border-primary border-t-transparent rounded-full animate-spin;
+  }
+
+  /* Header Scroll Shadow - Show shadow only when scrolled */
+  @keyframes header-shadow {
+    from {
+      --tw-shadow: 0 0 0 0 transparent;
+      box-shadow: var(--tw-shadow);
+    }
+    to {
+      --tw-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+      box-shadow: var(--tw-shadow);
+    }
+  }
+
+  .header-scroll-shadow {
+    animation: header-shadow linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 50px;
+  }
+
+  /* Layout Helpers */
+  .kibo-container {
+    @apply mx-auto max-w-md px-4 md:max-w-lg lg:max-w-xl;
+  }
+
+  .kibo-page-header {
+    @apply flex items-center justify-between py-4 px-4 border-b border-neutral-200/50 dark:border-neutral-700/50;
+  }
+
+  .kibo-section-spacing {
+    @apply space-y-4;
+  }
+}
