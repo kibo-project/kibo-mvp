@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo } from "react";
 // import { usePrivy } from "@privy-io/react-auth";
 import type { NextPage } from "next";
 // import { mantleSepoliaTestnet } from "viem/chains";
@@ -20,18 +19,21 @@ interface TopButton {
 const Home: NextPage = () => {
   // const { address } = useAccount();
   // const { ready, authenticated } = usePrivy();
-  const { hasVisitedRoot, setHasVisitedRoot, isAdmin } = useAuthStore();
-  const router = useRouter();
+  const {
+    // hasVisitedRoot,
+    // setHasVisitedRoot,
+    isAdmin } = useAuthStore();
+  // const router = useRouter();
 
   // const { data: balance } = useBalance({
   //   address,
   //   chainId: mantleSepoliaTestnet.id,
   // });
 
-  const redirectToLogin = useCallback(() => {
-    setHasVisitedRoot(true);
-    router.replace("/login");
-  }, [setHasVisitedRoot, router]);
+  // const redirectToLogin = useCallback(() => {
+  //   setHasVisitedRoot(true);
+  //   router.replace("/login");
+  // }, [setHasVisitedRoot, router]);
 
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";

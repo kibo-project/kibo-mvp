@@ -1,0 +1,214 @@
+// TODO: fix, avoid using 'any' type
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { NextRequest } from 'next/server';
+import { OrdersService } from '../services/orders.service';
+import { 
+  CreateOrderDto,
+  GetOrdersDto,
+  GetAvailableOrdersDto,
+  TakeOrderDto,
+  UploadProofDto
+} from '../dto/orders.dto';
+import { ApiResponse } from '../types/generic.types';
+
+
+export class OrdersController {
+  private ordersService: OrdersService;
+
+  constructor() {
+    this.ordersService = new OrdersService();
+  }
+
+  async createOrder(request: NextRequest): Promise<Response> {
+    try {
+      const body = await request.json();
+      const userId = 'test-user';
+
+      const createOrderDto: CreateOrderDto = {
+        quoteId: body.quoteId,
+        qrData: body.qrData,
+        qrImageUrl: body.qrImageUrl
+      };
+
+      // Validate required fields
+      if (!createOrderDto.quoteId || !createOrderDto.qrData) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'MISSING_FIELDS',
+            message: 'quoteId and qrData are required'
+          }
+        }, { status: 400 });
+      }
+
+      const order = await this.ordersService.createOrder(createOrderDto, userId);
+
+      const response: ApiResponse<typeof order> = {
+        success: true,
+        data: order
+      };
+
+      return Response.json(response, { status: 201 });
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getOrders(request: NextRequest): Promise<Response> {
+    try {
+      const { searchParams } = new URL(request.url);
+      const userId = 'test-user';
+
+      const filters: GetOrdersDto = {
+        status: searchParams.get('status') as any,
+        limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
+        offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
+      };
+
+      const result = await this.ordersService.getOrdersByUser(filters, userId);
+
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        data: result
+      };
+
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getOrderById(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+    try {
+      const userId = 'test-user';
+      const order = await this.ordersService.getOrderById(params.id, userId);
+
+      if (!order) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'ORDER_NOT_FOUND',
+            message: 'Order not found'
+          }
+        }, { status: 404 });
+      }
+
+      const response: ApiResponse<typeof order> = {
+        success: true,
+        data: order
+      };
+
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async getAvailableOrders(request: NextRequest): Promise<Response> {
+    try {
+      const { searchParams } = new URL(request.url);
+
+      const filters: GetAvailableOrdersDto = {
+        country: searchParams.get('country') || undefined,
+        minAmount: searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : undefined,
+        maxAmount: searchParams.get('maxAmount') ? parseFloat(searchParams.get('maxAmount')!) : undefined,
+        sortBy: searchParams.get('sortBy') as any,
+        limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
+      };
+
+      const result = await this.ordersService.getAvailableOrders(filters);
+
+      const response: ApiResponse<typeof result> = {
+        success: true,
+        data: result
+      };
+
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async takeOrder(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+    try {
+      const allyId = 'test-user';
+
+      const takeOrderDto: TakeOrderDto = {
+        orderId: params.id
+      };
+
+      const order = await this.ordersService.takeOrder(takeOrderDto, allyId);
+
+      const response: ApiResponse<typeof order> = {
+        success: true,
+        data: order
+      };
+
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async uploadProof(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+    try {
+      const allyId = 'test-user';
+      const formData = await request.formData();
+
+      const proofFile = formData.get('proof') as File;
+      const bankTransactionId = formData.get('bankTransactionId') as string;
+      const notes = formData.get('notes') as string;
+
+      if (!proofFile) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'MISSING_PROOF',
+            message: 'Proof file is required'
+          }
+        }, { status: 400 });
+      }
+
+      const uploadProofDto: UploadProofDto = {
+        orderId: params.id,
+        proofFile,
+        bankTransactionId: bankTransactionId || undefined,
+        notes: notes || undefined
+      };
+
+      const order = await this.ordersService.uploadProof(uploadProofDto, allyId);
+
+      const response: ApiResponse<typeof order> = {
+        success: true,
+        data: order
+      };
+
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  private handleError(error: any): Response {
+    console.error('Orders Controller Error:', error);
+
+    const statusCode = this.getStatusCodeFromError(error);
+    
+    return Response.json({
+      success: false,
+      error: {
+        code: error.code || 'INTERNAL_ERROR',
+        message: error.message || 'An unexpected error occurred',
+        details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }
+    }, { status: statusCode });
+  }
+
+  private getStatusCodeFromError(error: any): number {
+    if (error.message.includes('not found')) return 404;
+    if (error.message.includes('Authentication required')) return 401;
+    if (error.message.includes('Access denied')) return 403;
+    if (error.message.includes('Invalid') || error.message.includes('required')) return 400;
+    return 500;
+  }
+}

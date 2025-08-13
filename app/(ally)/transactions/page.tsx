@@ -26,7 +26,11 @@ interface LocalTransaction {
 const AdminTransactions: NextPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const { data, isLoading, error } = useAvailableOrders();
+  const {
+    data,
+    // isLoading,
+    // error
+  } = useAvailableOrders();
 
   const { setSelectedTransactionId } = useAdminPaymentStore();
 

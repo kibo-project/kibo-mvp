@@ -171,7 +171,7 @@ const ConfirmationPayment: NextPage = () => {
       console.error("Error creating order:", error);
       alert("Error al crear la orden. Por favor, intenta nuevamente.");
     }
-  }, [router, fiatAmount, cryptoEquivalent, recipient, description, createOrder, userProfile?.privyId]);
+  }, [router, fiatAmount, cryptoEquivalent, createOrder, userProfile.privyId]);
 
   const handleCancelPayment = useCallback(() => {
     setShowConfirmModal(false);

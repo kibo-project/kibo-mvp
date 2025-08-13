@@ -4,7 +4,11 @@ import { useOrder } from '@/hooks/orders/useOrder';
 import { NextPage } from 'next';
 import React, { useEffect, useState } from 'react';
 import Link from "next/link";
-import { ArrowLeftIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import {
+    ArrowLeftIcon,
+    // CheckIcon,
+    // XMarkIcon
+} from "@heroicons/react/24/outline";
 import { Card, CardBody, CardTitle } from "~~/components/kibo";
 
 interface OrderProps {

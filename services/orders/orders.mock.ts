@@ -12,7 +12,7 @@ import {
   OrdersFilters,
   AvailableOrdersFilters,
   OrderStatus
-} from './types';
+} from '../../core/types/orders.types';
 import {
   mockOrders,
   mockDelay,

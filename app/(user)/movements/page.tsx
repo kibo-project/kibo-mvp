@@ -44,7 +44,7 @@ const Movements: NextPage = () => {
 
   const handleMovementAction = useCallback((id: string) => {
     router.push(`/movements/${id}`);
-  }, []);
+  }, [router]);
 
   // ✅ Función para mapear status de Order a OrderStatus
   const mapOrderStatusToMovementStatus = (orderStatus: OrderLocal["status"]): OrderStatus => {

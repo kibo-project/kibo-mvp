@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -8,7 +8,7 @@ import { usePathname } from "next/navigation";
 import { SwitchTheme } from "./SwitchTheme";
 // import { hardhat } from "viem/chains";
 import { ListIcon, ScanIcon, WalletIcon } from "~~/components/icons/index";
-import { Badge } from "~~/components/kibo";
+// import { Badge } from "~~/components/kibo";
 // import { FaucetButton } from "~~/components/scaffold-eth";
 // import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAuthStore } from "~~/services/store/auth-store.";
@@ -86,7 +86,7 @@ export const Header = () => {
   // const { targetNetwork } = useTargetNetwork();
   // const isLocalNetwork = targetNetwork.id === hardhat.id;
 
-  const burgerMenuRef = useRef<HTMLDetailsElement>(null);
+  // const burgerMenuRef = useRef<HTMLDetailsElement>(null);
   // useOutsideClick(burgerMenuRef, () => {
   //   burgerMenuRef?.current?.removeAttribute("open");
   // });
