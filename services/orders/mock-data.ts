@@ -1,6 +1,6 @@
 // src/services/orders/mock-data.ts
 
-import { Order, User, TimelineEvent, OrderStatus, Quote } from './types';
+import { Order, User, TimelineEvent, OrderStatus, Quote } from '../../core/types/orders.types';
 
 // ==========================================
 // USUARIOS MOCK
@@ -391,7 +391,10 @@ export const mockQuotes: Quote[] = [
     expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(), // 3 min desde ahora
     escrowAddress: '0x1234567890abcdef1234567890abcdef12345678',
     rateSource: 'binance_api/coingecko',
-    rateTimestamp: new Date().toISOString()
+    rateTimestamp: new Date().toISOString(),
+    cryptoToken: 'USDT',
+    fiatCurrency: 'BOB',
+    network: 'mantle',
   },
   {
     id: 'quote_661f9511-f3ac-52e5-b827-557766551111',
@@ -404,7 +407,10 @@ export const mockQuotes: Quote[] = [
     expiresAt: new Date(Date.now() + 2 * 60 * 1000).toISOString(), // 2 min desde ahora
     escrowAddress: '0x2345678901bcdef12345678901cdef2345678901',
     rateSource: 'binance_api/coingecko',
-    rateTimestamp: new Date().toISOString()
+    rateTimestamp: new Date().toISOString(),
+    cryptoToken: 'USDT',
+    fiatCurrency: 'BOB',
+    network: 'mantle',
   },
   {
     id: 'quote_772g0622-g4bd-63f6-c938-668877662222',
@@ -417,7 +423,10 @@ export const mockQuotes: Quote[] = [
     expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(), // 3 min desde ahora
     escrowAddress: '0x3456789012cdef123456789012def3456789012',
     rateSource: 'binance_api/coingecko',
-    rateTimestamp: new Date().toISOString()
+    rateTimestamp: new Date().toISOString(),
+    cryptoToken: 'USDT',
+    fiatCurrency: 'BOB',
+    network: 'mantle',
   }
 ];
 

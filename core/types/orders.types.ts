@@ -83,7 +83,10 @@ export interface Quote {
   id: string;
   amountFiat: number;
   amountCrypto: number;
+  fiatCurrency: Currency;
+  cryptoToken: CryptoToken;
   rate: number;
+  network: Network;
   networkFee: number;
   kiboFee: number;
   totalAmount: number;

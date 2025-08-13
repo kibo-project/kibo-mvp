@@ -11,11 +11,11 @@ import {
   UploadProofResponse,
   OrdersFilters,
   AvailableOrdersFilters
-} from './types';
+} from '../../core/types/orders.types';
 import { ENDPOINTS } from '../../config/api';
 
 class OrdersApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
+  private baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '/api';
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;

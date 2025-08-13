@@ -11,4 +11,4 @@ export const ordersService = ordersMockService
 //   : ordersApiService;
 
 // Exportar tipos para uso en componentes
-export * from './types';
+export * from '../../core/types/orders.types';
