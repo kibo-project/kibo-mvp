@@ -10,6 +10,7 @@ import {
   UploadProofDto
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
+import {createInflate} from "node:zlib";
 
 
 export class OrdersController {
@@ -22,27 +23,27 @@ export class OrdersController {
   async createOrder(request: NextRequest): Promise<Response> {
     try {
       const body = await request.json();
-      const userId = 'test-user';
+      const { user_id, fiat_amount, crypto_amount, description, recipient } = body;
 
       const createOrderDto: CreateOrderDto = {
-        quoteId: body.quoteId,
-        qrData: body.qrData,
-        qrImageUrl: body.qrImageUrl
+        userId: user_id,
+        fiatAmount: fiat_amount,
+        cryptoAmount: crypto_amount,
+        recipient: recipient,
+        description: description,
       };
-
-      // Validate required fields
-      if (!createOrderDto.quoteId || !createOrderDto.qrData) {
+      if (!createOrderDto.userId|| !createOrderDto.fiatAmount || !createOrderDto.fiatAmount || !createOrderDto.description
+      || !createOrderDto.recipient) {
         return Response.json({
           success: false,
           error: {
             code: 'MISSING_FIELDS',
-            message: 'quoteId and qrData are required'
+            message: 'all fields are required'
           }
         }, { status: 400 });
       }
 
-      const order = await this.ordersService.createOrder(createOrderDto, userId);
-
+      const order = await this.ordersService.createOrder(createOrderDto);
       const response: ApiResponse<typeof order> = {
         success: true,
         data: order

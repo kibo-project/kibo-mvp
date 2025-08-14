@@ -38,15 +38,15 @@ export interface AllyStats {
 export interface Order {
   id: string;
   status: OrderStatus;
-  amountFiat: number;
-  amountCrypto: number;
+  fiatAmount: number;
+  cryptoAmount: number;
   fiatCurrency: Currency;
-  cryptoToken: CryptoToken;
-  network: Network;
+  cryptoCurrency: CryptoToken;
+  network?: Network;
   escrowAddress?: string;
   qrData?: string;
-  qrImageUrl?: string;
-  proofUrl?: string;
+  qrImage?: string;
+  confirmationProof?: string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
@@ -54,7 +54,7 @@ export interface Order {
   expiresAt: string;
   secondsRemaining?: number;
   escrowTxHash?: string;
-  releaseTxHash?: string;
+  txHash?: string;
   bankTransactionId?: string;
   user?: Partial<User>;
   ally?: Partial<User>;

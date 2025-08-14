@@ -18,24 +18,17 @@ export class OrdersRepository {
         const {data, error} = await this.supabase
             .from('orders')
             .insert({
-                id: orderData.id,
                 status: orderData.status,
-                amount_fiat: orderData.amountFiat,
-                amount_crypto: orderData.amountCrypto,
+                fiat_amount: orderData.fiatAmount,
+                crypto_amount: orderData.cryptoAmount,
                 fiat_currency: orderData.fiatCurrency,
-                crypto_token: orderData.cryptoToken,
-                network: orderData.network,
-                qr_data: orderData.qrData,
-                qr_image_url: orderData.qrImageUrl,
-                expires_at: orderData.expiresAt,
+                crypto_currency: orderData.cryptoCurrency,
                 user_id: orderData.userId,
+                recipient: orderData.recipient,
+                description: orderData.description,
                 created_at: new Date().toISOString(),
             })
-            .select(`
-        *,
-        user:users!orders_user_id_fkey(id, wallet_address, role, country, verified, successful_orders, reputation),
-        ally:users!orders_ally_id_fkey(id, wallet_address, role, country, verified, successful_orders, reputation)
-      `)
+            .select("*")
             .single();
 
         if (error) {
@@ -82,6 +75,18 @@ export class OrdersRepository {
 
         return !!data;
     }
+    async activeOrders(user_id: string) {
+        const { count, error } = await this.supabase
+            .from("orders")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", user_id)
+            .eq("status", "AVAILABLE");
+
+        if (error) throw new Error(error.message);
+
+        return count ?? 0;
+    }
+
 
     async findMany(filters: GetOrdersDto, user_id?: string): Promise<{
         orders: Order[];
@@ -209,21 +214,21 @@ export class OrdersRepository {
         return {
             id: dbOrder.id,
             status: dbOrder.status,
-            amountFiat: dbOrder.amount_fiat,
-            amountCrypto: dbOrder.amount_crypto,
+            fiatAmount: dbOrder.fiat_amount,
+            cryptoAmount: dbOrder.crypto_amount,
             fiatCurrency: dbOrder.fiat_currency,
-            cryptoToken: dbOrder.crypto_token,
+            cryptoCurrency: dbOrder.crypto_currency,
             network: dbOrder.network,
             qrData: dbOrder.qr_data,
-            qrImageUrl: dbOrder.qr_image_url,
-            proofUrl: dbOrder.proof_url,
+            qrImage: dbOrder.qr_image,
+            confirmationProof: dbOrder.confirmation_proof,
             createdAt: dbOrder.created_at,
             takenAt: dbOrder.taken_at,
             completedAt: dbOrder.completed_at,
             cancelledAt: dbOrder.cancelled_at,
             expiresAt: dbOrder.expires_at,
             escrowTxHash: dbOrder.escrow_tx_hash,
-            releaseTxHash: dbOrder.release_tx_hash,
+            txHash: dbOrder.tx_hash,
             bankTransactionId: dbOrder.bank_transaction_id,
             user: dbOrder.user ? {
                 id: dbOrder.user.id,

@@ -1,18 +1,14 @@
-import { OrdersRepository } from '../repositories/orders.repository';
-import { 
+import {OrdersRepository} from '../repositories/orders.repository';
+import {
+  CreateOrderData,
   CreateOrderDto,
-  GetOrdersDto,
   GetAvailableOrdersDto,
+  GetOrdersDto,
   TakeOrderDto,
-  UploadProofDto,
-  CreateOrderData
+  UploadProofDto
 } from '../dto/orders.dto';
 
-import {
-  Order, 
-  OrderStatus, 
-  Quote,
-} from '../types/orders.types'
+import {Order, OrderStatus, Quote} from '../types/orders.types'
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
@@ -21,25 +17,26 @@ export class OrdersService {
     this.ordersRepository = new OrdersRepository();
   }
 
-  async createOrder(orderDto: CreateOrderDto, userId: string): Promise<Order> {
-    // 1. Validate quote (this would call quote service)
-    const quote = await this.validateQuote(orderDto.quoteId);
-    
-    if (!quote) {
-      throw new Error('Invalid or expired quote');
-    }
-
-    // 2. Validate user exists
-    // const user = await this.getUserById(userId);
-    // if (!user) {
-    //   throw new Error('User not found');
-    // }
-
-    // 3. Apply business rules
-    const orderData = this.buildOrderFromQuote(quote, orderDto, userId);
-
-    // 4. Create order
-    const order = await this.ordersRepository.create(orderData);
+  async createOrder(orderDto: CreateOrderDto): Promise<Order> {
+     const isValid = await this.ordersRepository.verifyUser(orderDto.userId,"user");
+     if (!isValid) {
+       throw new Error('User or role are not valid');
+     }
+     const activeOrders = await this.ordersRepository.activeOrders(orderDto.userId);
+     if (activeOrders>3) {
+       throw new Error('You have more than 3 orders available');
+     }
+     const createOrderData: CreateOrderData = {
+       status: OrderStatus.PENDING_PAYMENT,
+       fiatAmount: orderDto.fiatAmount,
+       cryptoAmount: orderDto.cryptoAmount,
+       fiatCurrency: 'BOB',
+       cryptoCurrency: 'USDT',
+       userId: orderDto.userId,
+       recipient: orderDto.recipient,
+       description: orderDto.description,
+     };
+     const order = await this.ordersRepository.create(createOrderData);
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
@@ -200,22 +197,6 @@ export class OrdersService {
       escrowAddress: '0x123...',
       rateSource: 'coingecko',
       rateTimestamp: new Date().toISOString()
-    };
-  }
-
-  private buildOrderFromQuote(quote: Quote, orderDto: CreateOrderDto, userId: string): CreateOrderData {
-    return {
-      id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      status: OrderStatus.PENDING_PAYMENT,
-      amountFiat: quote.amountFiat,
-      amountCrypto: quote.amountCrypto,
-      fiatCurrency: 'BOB', // This should come from quote
-      cryptoToken: 'USDT', // This should come from quote
-      network: 'mantle', // This should come from quote
-      qrData: orderDto.qrData,
-      qrImageUrl: orderDto.qrImageUrl,
-      expiresAt: quote.expiresAt,
-      userId
     };
   }
 
