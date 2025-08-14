@@ -10,6 +10,7 @@ import {
   UploadProofDto
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
+import {createInflate} from "node:zlib";
 
 
 export class OrdersController {
@@ -22,27 +23,27 @@ export class OrdersController {
   async createOrder(request: NextRequest): Promise<Response> {
     try {
       const body = await request.json();
-      const userId = 'test-user';
+      const { user_id, fiat_amount, crypto_amount, description, recipient } = body;
 
       const createOrderDto: CreateOrderDto = {
-        quoteId: body.quoteId,
-        qrData: body.qrData,
-        qrImageUrl: body.qrImageUrl
+        userId: user_id,
+        fiatAmount: fiat_amount,
+        cryptoAmount: crypto_amount,
+        recipient: recipient,
+        description: description,
       };
-
-      // Validate required fields
-      if (!createOrderDto.quoteId || !createOrderDto.qrData) {
+      if (!createOrderDto.userId|| !createOrderDto.fiatAmount || !createOrderDto.fiatAmount || !createOrderDto.description
+      || !createOrderDto.recipient) {
         return Response.json({
           success: false,
           error: {
             code: 'MISSING_FIELDS',
-            message: 'quoteId and qrData are required'
+            message: 'all fields are required'
           }
         }, { status: 400 });
       }
 
-      const order = await this.ordersService.createOrder(createOrderDto, userId);
-
+      const order = await this.ordersService.createOrder(createOrderDto);
       const response: ApiResponse<typeof order> = {
         success: true,
         data: order
@@ -54,34 +55,36 @@ export class OrdersController {
     }
   }
 
-  async getOrders(request: NextRequest): Promise<Response> {
+  async getOrders(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
+      const resolvedParams = await params;
+      const userId = resolvedParams.id;
       const { searchParams } = new URL(request.url);
-      const userId = 'test-user';
 
       const filters: GetOrdersDto = {
         status: searchParams.get('status') as any,
+        role: searchParams.get('role') as any,
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
-
       const result = await this.ordersService.getOrdersByUser(filters, userId);
-
       const response: ApiResponse<typeof result> = {
         success: true,
         data: result
       };
-
       return Response.json(response);
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async getOrderById(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+  async getOrderById(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
-      const userId = 'test-user';
-      const order = await this.ordersService.getOrderById(params.id, userId);
+      const resolvedParams = await params;
+      const orderId = resolvedParams.id;
+      const { searchParams } = new URL(request.url);
+      const userId = searchParams.get('userId') as any;
+      const order = await this.ordersService.getOrderById(orderId, userId);
 
       if (!order) {
         return Response.json({
@@ -107,7 +110,7 @@ export class OrdersController {
   async getAvailableOrders(request: NextRequest): Promise<Response> {
     try {
       const { searchParams } = new URL(request.url);
-
+      const userId = searchParams.get('userId') as any;
       const filters: GetAvailableOrdersDto = {
         country: searchParams.get('country') || undefined,
         minAmount: searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : undefined,
@@ -116,7 +119,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
       };
 
-      const result = await this.ordersService.getAvailableOrders(filters);
+      const result = await this.ordersService.getAvailableOrders(filters,userId);
 
       const response: ApiResponse<typeof result> = {
         success: true,
