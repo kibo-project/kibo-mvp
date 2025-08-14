@@ -103,13 +103,13 @@ class OrdersMockService {
     const newOrder: Order = {
       id: generateMockId('order'),
       status: OrderStatus.PENDING_PAYMENT,
-      amountFiat: quote.amountFiat,
-      amountCrypto: quote.amountCrypto,
+      fiatAmount: quote.amountFiat,
+      cryptoAmount: quote.amountCrypto,
       fiatCurrency: 'BOB',
-      cryptoToken: 'USDT',
+      cryptoCurrency: 'USDT',
       network: 'mantle',
       escrowAddress: quote.escrowAddress,
-      qrImageUrl: data.qrImageUrl || `https://via.placeholder.com/300x300/0066cc/ffffff?text=QR+${Date.now()}`,
+      qrImage: data.qrImageUrl || `https://via.placeholder.com/300x300/0066cc/ffffff?text=QR+${Date.now()}`,
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(), // 3 minutos
       user: mockUsers[0],
@@ -171,8 +171,8 @@ class OrdersMockService {
     let availableOrders = this.orders.filter(order => {
       if (order.status !== 'AVAILABLE') return false;
       if (order.userCountry && order.userCountry !== country) return false;
-      if (minAmount && order.amountFiat < minAmount) return false;
-      if (maxAmount && order.amountFiat > maxAmount) return false;
+      if (minAmount && order.fiatAmount < minAmount) return false;
+      if (maxAmount && order.fiatAmount > maxAmount) return false;
 
       // No mostrar órdenes expiradas
       if (new Date(order.expiresAt) < new Date()) return false;
@@ -190,7 +190,7 @@ class OrdersMockService {
     availableOrders.sort((a, b) => {
       switch (sortBy) {
         case 'amount':
-          return b.amountFiat - a.amountFiat;
+          return b.fiatAmount - a.fiatAmount;
         case 'createdAt':
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         case 'expiresAt':
@@ -238,7 +238,7 @@ class OrdersMockService {
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 min para completar
       ally: mockUsers[1], // Ally que toma la orden
       qrData: 'BANCO_UNION|123456789|REF_KBO025',
-      qrImageUrl: order.qrImageUrl || `https://via.placeholder.com/300x300/cc6600/ffffff?text=Taken+${Date.now()}`,
+      qrImageUrl: order.qrImage || `https://via.placeholder.com/300x300/cc6600/ffffff?text=Taken+${Date.now()}`,
       timeline: [
         ...order.timeline || [],
         { status: 'TAKEN' as OrderStatus, timestamp: new Date().toISOString() }
@@ -248,7 +248,7 @@ class OrdersMockService {
         accountNumber: '123456789',
         beneficiary: 'Juan Pérez',
         reference: `KBO${Math.floor(Math.random() * 1000)}`,
-        exactAmount: `${order.amountFiat.toFixed(2)} BOB`
+        exactAmount: `${order.fiatAmount.toFixed(2)} BOB`
       }
     };
 
@@ -297,11 +297,11 @@ class OrdersMockService {
       success: true,
       order: completedOrder,
       payment: {
-        amountReleased: order.amountCrypto,
+        amountReleased: order.cryptoAmount,
         recipientWallet: order.ally?.walletAddress || '',
         networkFee: 0.008
       },
-      message: `Payment proof uploaded and approved. ${order.amountCrypto} USDT released to your wallet.`
+      message: `Payment proof uploaded and approved. ${order.cryptoAmount} USDT released to your wallet.`
     };
   }
 
