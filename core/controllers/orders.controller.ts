@@ -58,7 +58,7 @@ export class OrdersController {
   async getOrders(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
       const resolvedParams = await params;
-      const user_id = resolvedParams.id;
+      const userId = resolvedParams.id;
       const { searchParams } = new URL(request.url);
 
       const filters: GetOrdersDto = {
@@ -67,7 +67,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
-      const result = await this.ordersService.getOrdersByUser(filters, user_id);
+      const result = await this.ordersService.getOrdersByUser(filters, userId);
       const response: ApiResponse<typeof result> = {
         success: true,
         data: result
@@ -78,10 +78,13 @@ export class OrdersController {
     }
   }
 
-  async getOrderById(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+  async getOrderById(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
-      const userId = 'test-user';
-      const order = await this.ordersService.getOrderById(params.id, userId);
+      const resolvedParams = await params;
+      const orderId = resolvedParams.id;
+      const { searchParams } = new URL(request.url);
+      const userId = searchParams.get('userId') as any;
+      const order = await this.ordersService.getOrderById(orderId, userId);
 
       if (!order) {
         return Response.json({

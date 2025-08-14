@@ -70,19 +70,14 @@ export class OrdersService {
     };
   }
 
-  async getOrderById(orderId: string, userId?: string): Promise<Order | null> {
+  async getOrderById(orderId: string, userId: string): Promise<Order | null> {
     const order = await this.ordersRepository.findById(orderId);
-    
     if (!order) {
       return null;
     }
-
-    // Verify access permissions
-    if (userId && !this.canUserAccessOrder(order, userId)) {
+    if (userId && ! await this.canUserAccessOrder(order, userId)) {
       throw new Error('Access denied to this order');
     }
-
-    // Add dynamic fields
     return this.enrichOrderWithDynamicData(order);
   }
 
@@ -210,8 +205,14 @@ export class OrdersService {
     };
   }
 
-  private canUserAccessOrder(order: Order, userId: string): boolean {
-    return order.user?.id === userId || order.ally?.id === userId;
+  private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
+    const isAdmin = await this.ordersRepository.verifyUser(userId, "admin");
+    console.log('canUserAccessOrder', isAdmin);
+    console.log('user', order.userId === userId);
+    console.log('ally', order.allyId === userId);
+    console.log('alls', order.userId === userId || order.allyId === userId || isAdmin);
+
+    return order.userId === userId || order.allyId === userId || isAdmin;
   }
 
   private calculateAverageWaitTime(): number {

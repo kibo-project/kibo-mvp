@@ -55,6 +55,8 @@ export interface Order {
   secondsRemaining?: number;
   escrowTxHash?: string;
   txHash?: string;
+  userId: string;
+  allyId?: string;
   bankTransactionId?: string;
   user?: Partial<User>;
   ally?: Partial<User>;

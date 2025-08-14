@@ -41,23 +41,19 @@ export class OrdersRepository {
     async findById(id: string): Promise<Order | null> {
         const {data, error} = await this.supabase
             .from('orders')
-            .select(`
-        *,
-        user:users!orders_user_id_fkey(id, wallet_address, role, country, verified, successful_orders, reputation),
-        ally:users!orders_ally_id_fkey(id, wallet_address, role, country, verified, successful_orders, reputation)
-      `)
+            .select("*")
             .eq('id', id)
             .single();
 
         if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
+            if (error.code === 'PGRST116') return null;
             throw new Error(`Failed to find order: ${error.message}`);
         }
 
         return this.mapDbToOrder(data);
     }
 
-    async verifyUser(user_id: string, rolename: string): Promise<boolean> {
+    async verifyUser(user_id: string, rolename: string){
         const {data: role, error} = await this.supabase
             .from('roles')
             .select("*")
@@ -230,25 +226,8 @@ export class OrdersRepository {
             escrowTxHash: dbOrder.escrow_tx_hash,
             txHash: dbOrder.tx_hash,
             bankTransactionId: dbOrder.bank_transaction_id,
-            user: dbOrder.user ? {
-                id: dbOrder.user.id,
-                walletAddress: dbOrder.user.wallet_address,
-                role: dbOrder.user.role,
-                country: dbOrder.user.country,
-                verified: dbOrder.user.verified,
-                successfulOrders: dbOrder.user.successful_orders,
-                reputation: dbOrder.user.reputation
-            } : undefined,
-            ally: dbOrder.ally ? {
-                id: dbOrder.ally.id,
-                walletAddress: dbOrder.ally.wallet_address,
-                role: dbOrder.ally.role,
-                country: dbOrder.ally.country,
-                verified: dbOrder.ally.verified,
-                successfulOrders: dbOrder.ally.successful_orders,
-                reputation: dbOrder.ally.reputation
-            } : undefined,
-            userCountry: dbOrder.user?.country
+            userId: dbOrder.user_id,
+            allyId: dbOrder.ally_id
         };
     }
 }
