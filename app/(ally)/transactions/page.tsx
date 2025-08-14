@@ -67,8 +67,8 @@ const AdminTransactions: NextPage = () => {
             : order.status === OrderStatus.REFUNDED
               ? OrderStatus.REFUNDED
               : OrderStatus.AVAILABLE,
-      mainAmount: `${order.amountCrypto} ${order.cryptoToken}`,
-      secondaryAmount: `${order.amountFiat} ${order.fiatCurrency}`,
+      mainAmount: `${order.cryptoAmount} ${order.cryptoCurrency}`,
+      secondaryAmount: `${order.fiatAmount} ${order.fiatCurrency}`,
       date: new Date(order.createdAt).toLocaleString("es-ES", {
         day: "2-digit",
         month: "2-digit",
@@ -77,7 +77,7 @@ const AdminTransactions: NextPage = () => {
         minute: "2-digit",
       }).replace(",", ""),
       userInfo: `User ${order.user?.id ?? ""}`,
-      qrImage: order.qrImageUrl || "",
+      qrImage: order.qrImage || "",
     }))
     : [];
 
