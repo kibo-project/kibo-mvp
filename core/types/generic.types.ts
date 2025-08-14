@@ -1,4 +1,6 @@
 // Additional shared types for the architecture
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export interface ApiResponse<T> {
   success: boolean;
   data?: T;

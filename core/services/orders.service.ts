@@ -48,7 +48,7 @@ export class OrdersService {
     return order;
   }
 
-  async getOrdersByUser(filters: GetOrdersDto, userId: string): Promise<{
+  async getOrdersByUser(filters: GetOrdersDto, user_id: string): Promise<{
     orders: Order[];
     pagination: {
       total: number;
@@ -57,7 +57,7 @@ export class OrdersService {
       hasMore: boolean;
     };
   }> {
-    const { orders, total } = await this.ordersRepository.findMany(filters, userId);
+    const { orders, total } = await this.ordersRepository.findMany(filters, user_id);
     
     const limit = filters.limit || 10;
     const offset = filters.offset || 0;
