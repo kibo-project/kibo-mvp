@@ -1,0 +1,94 @@
+-- Habilitar extensión para UUID aleatorios
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- Tabla: users
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  privyId text NOT NULL UNIQUE,
+  email text,
+  wallet text NOT NULL UNIQUE,
+  bank_name text,
+  account_number text,
+  account_holder text,
+  available_balance numeric DEFAULT 0,
+  phone text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  last_login_at timestamp without time zone,
+  name text,
+  CONSTRAINT users_pkey PRIMARY KEY (id)
+);
+
+-- Tabla: roles
+CREATE TABLE public.roles (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE CHECK (name = ANY (ARRAY['user'::text, 'ally'::text, 'admin'::text])),
+  created_at date,
+  CONSTRAINT roles_pkey PRIMARY KEY (id)
+);
+
+-- Tabla: users_roles (relación N:M)
+CREATE TABLE public.users_roles (
+  user_id uuid NOT NULL,
+  role_id uuid NOT NULL,
+  CONSTRAINT users_roles_pkey PRIMARY KEY (user_id, role_id),
+  CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id),
+  CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+
+-- Tabla: images
+CREATE TABLE public.images (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text,
+  extension text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT images_pkey PRIMARY KEY (id)
+);
+
+-- Tabla: orders
+CREATE TABLE public.orders (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  fiat_amount numeric NOT NULL,
+  fiat_currency text NOT NULL DEFAULT 'USD'::text,
+  crypto_amount numeric NOT NULL,
+  crypto_currency text NOT NULL DEFAULT 'USDT'::text,
+  escrow_address text,
+  tx_hash text,
+  status text NOT NULL DEFAULT 'PENDING_PAYMENT'::text CHECK (status = ANY (ARRAY['PENDING_PAYMENT'::text, 'AVAILABLE'::text, 'TAKEN'::text, 'COMPLETED'::text, 'CANCELLED'::text, 'REFUNDED'::text])),
+  confirmation_proof text,
+  created_at timestamp without time zone DEFAULT now(),
+  updated_at timestamp without time zone DEFAULT now(),
+  description text,
+  recipient text,
+  ally_id uuid,
+  qr_image uuid,
+  CONSTRAINT orders_pkey PRIMARY KEY (id),
+  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);
+
+-- Tabla: escrow_logs
+CREATE TABLE public.escrow_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  order_id uuid NOT NULL,
+  action text NOT NULL,
+  tx_hash text,
+  message text,
+  created_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT escrow_logs_pkey PRIMARY KEY (id),
+  CONSTRAINT escrow_logs_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+);
+
+-- Tabla: user_sessions
+CREATE TABLE public.user_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  jwt_token_hash text NOT NULL,
+  refresh_token_hash text,
+  ip_address inet,
+  expires_at timestamp without time zone NOT NULL,
+  created_at timestamp without time zone DEFAULT now(),
+  last_used_at timestamp without time zone DEFAULT now(),
+  CONSTRAINT user_sessions_pkey PRIMARY KEY (id),
+  CONSTRAINT user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+);

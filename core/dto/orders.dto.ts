@@ -1,13 +1,17 @@
-import { OrderStatus, Currency, CryptoToken, Network } from '../types/orders.types';
+import { OrderStatus, Currency, CryptoToken, Network, UserRole } from '../types/orders.types';
 
 export interface CreateOrderDto {
-  quoteId: string;
-  qrData: string;
-  qrImageUrl?: string;
+  userId: string;
+  fiatAmount: number;
+  cryptoAmount: number;
+  qrData?: string;
+  recipient: string;
+  description: string;
 }
 
 export interface GetOrdersDto {
   status?: OrderStatus;
+  role: UserRole;
   limit?: number;
   offset?: number;
 }
@@ -37,15 +41,17 @@ export interface UploadProofDto {
 
 // Internal DTOs for repository layer
 export interface CreateOrderData {
-  id: string;
   status: OrderStatus;
-  amountFiat: number;
-  amountCrypto: number;
+  fiatAmount: number;
+  cryptoAmount: number;
   fiatCurrency: Currency;
-  cryptoToken: CryptoToken;
-  network: Network;
-  qrData: string;
-  qrImageUrl?: string;
-  expiresAt: string;
+  cryptoCurrency: CryptoToken;
+  network?: Network;
+  confirmationProof?: string;
+  qrImage?: string;
+  expiresAt?: string;
   userId: string;
+  recipient: string;
+  description: string;
+  escrow_address?: string;
 }
