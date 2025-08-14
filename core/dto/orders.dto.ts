@@ -1,4 +1,4 @@
-import { OrderStatus, Currency, CryptoToken, Network } from '../types/orders.types';
+import { OrderStatus, Currency, CryptoToken, Network, UserRole } from '../types/orders.types';
 
 export interface CreateOrderDto {
   quoteId: string;
@@ -8,6 +8,7 @@ export interface CreateOrderDto {
 
 export interface GetOrdersDto {
   status?: OrderStatus;
+  role: UserRole;
   limit?: number;
   offset?: number;
 }
