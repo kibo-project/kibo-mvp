@@ -81,7 +81,7 @@ export class OrdersService {
     return this.enrichOrderWithDynamicData(order);
   }
 
-  async getAvailableOrders(filters: GetAvailableOrdersDto): Promise<{
+  async getAvailableOrders(filters: GetAvailableOrdersDto, userId:string): Promise<{
     orders: Order[];
     metadata: {
       totalAvailable: number;
@@ -89,15 +89,16 @@ export class OrdersService {
       yourActiveOrders: number;
     };
   }> {
+    const isAlly = await this.ordersRepository.verifyUser(userId, "ally");
+    if (!isAlly) {
+      throw new Error('Access denied for users are not allies');
+    }
     const orders = await this.ordersRepository.findAvailable(filters);
-    
-    // Calculate metadata
     const enrichedOrders = orders.map(order => this.enrichOrderWithDynamicData(order));
-    
     const metadata = {
       totalAvailable: orders.length,
       avgWaitTime: this.calculateAverageWaitTime(),
-      yourActiveOrders: 0 // This would be calculated based on current ally
+      yourActiveOrders: 0
     };
 
     return {
@@ -207,11 +208,6 @@ export class OrdersService {
 
   private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
     const isAdmin = await this.ordersRepository.verifyUser(userId, "admin");
-    console.log('canUserAccessOrder', isAdmin);
-    console.log('user', order.userId === userId);
-    console.log('ally', order.allyId === userId);
-    console.log('alls', order.userId === userId || order.allyId === userId || isAdmin);
-
     return order.userId === userId || order.allyId === userId || isAdmin;
   }
 

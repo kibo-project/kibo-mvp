@@ -133,27 +133,20 @@ export class OrdersRepository {
     async findAvailable(filters: GetAvailableOrdersDto): Promise<Order[]> {
         let query = this.supabase
             .from('orders')
-            .select(`
-        *,
-        user:users!orders_user_id_fkey(id, wallet_address, role, country, verified, successful_orders, reputation)
-      `)
+            .select('*')
             .eq('status', OrderStatus.AVAILABLE)
             .gt('expires_at', new Date().toISOString());
 
-        if (filters.country) {
-            // Filter by user's country through join
-            query = query.eq('user.country', filters.country);
-        }
-
         if (filters.minAmount) {
-            query = query.gte('amount_fiat', filters.minAmount);
+            query = query.gte('fiat_amount', filters.minAmount);
         }
 
         if (filters.maxAmount) {
-            query = query.lte('amount_fiat', filters.maxAmount);
+            query = query.lte('fiat_amount', filters.maxAmount);
         }
 
-        const sortColumn = filters.sortBy === 'amount' ? 'amount_fiat' : filters.sortBy || 'created_at';
+        const sortColumn = filters.sortBy === 'amount' ? 'fiat_amount'
+            : filters.sortBy || 'created_at';
         query = query.order(sortColumn, {ascending: false});
 
         if (filters.limit) {

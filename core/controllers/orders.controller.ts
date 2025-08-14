@@ -110,7 +110,7 @@ export class OrdersController {
   async getAvailableOrders(request: NextRequest): Promise<Response> {
     try {
       const { searchParams } = new URL(request.url);
-
+      const userId = searchParams.get('userId') as any;
       const filters: GetAvailableOrdersDto = {
         country: searchParams.get('country') || undefined,
         minAmount: searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : undefined,
@@ -119,7 +119,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
       };
 
-      const result = await this.ordersService.getAvailableOrders(filters);
+      const result = await this.ordersService.getAvailableOrders(filters,userId);
 
       const response: ApiResponse<typeof result> = {
         success: true,
