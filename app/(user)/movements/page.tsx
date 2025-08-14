@@ -80,10 +80,10 @@ const Movements: NextPage = () => {
     ? data.orders.map((order: Order) => ({
       id: order.id,
       userId: order.ally?.id ?? "",
-      amount: order.amountCrypto,
+      amount: order.cryptoAmount,
       status: order.status,
-      mainAmount: order.amountFiat + " " + order.fiatCurrency,
-      secondaryAmount: order.amountCrypto + " " + order.cryptoToken,
+      mainAmount: order.fiatAmount + " " + order.fiatCurrency,
+      secondaryAmount: order.cryptoAmount + " " + order.cryptoCurrency,
       createdAt: order.createdAt,
     }))
     : [];

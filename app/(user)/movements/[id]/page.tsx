@@ -90,11 +90,11 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Crypto Amount</p>
-                                <p className="text-sm font-medium">{order.amountCrypto} {order.cryptoToken}</p>
+                                <p className="text-sm font-medium">{order.cryptoAmount} {order.cryptoCurrency}</p>
                             </div>
                             <div>
                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Fiat Amount</p>
-                                <p className="text-sm font-medium">{order.amountFiat} {order.fiatCurrency}</p>
+                                <p className="text-sm font-medium">{order.fiatAmount} {order.fiatCurrency}</p>
                             </div>
                         </div>
 
@@ -124,14 +124,14 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
             </Card>
 
             {/* QR Code Section - Optional */}
-            {order.qrImageUrl && (
+            {order.qrImage && (
                 <Card shadow="sm" className="mb-6">
                     <CardBody>
                         <CardTitle className="text-base mb-4">Payment QR Code</CardTitle>
                         <div className="flex justify-center">
                             <div className="w-48 h-48 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center border">
                                 <img
-                                    src={order.qrImageUrl}
+                                    src={order.qrImage}
                                     alt="QR Code"
                                     className="w-full h-full object-cover rounded-lg"
                                     width={192}
