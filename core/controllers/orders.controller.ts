@@ -134,8 +134,8 @@ export class OrdersController {
 
   async takeOrder(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
     try {
-      const allyId = 'test-user';
-
+      const { searchParams } = new URL(request.url);
+      const allyId = searchParams.get('userId') as any;
       const takeOrderDto: TakeOrderDto = {
         orderId: params.id
       };

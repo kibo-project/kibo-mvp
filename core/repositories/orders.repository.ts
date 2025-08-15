@@ -53,7 +53,7 @@ export class OrdersRepository {
         return this.mapDbToOrder(data);
     }
 
-    async verifyUser(user_id: string, rolename: string){
+    async verifyUser(userId: string, rolename: string){
         const {data: role, error} = await this.supabase
             .from('roles')
             .select("*")
@@ -65,17 +65,17 @@ export class OrdersRepository {
         const {data} = await this.supabase
             .from('users_roles')
             .select('*')
-            .eq('user_id', user_id)
+            .eq('user_id', userId)
             .eq('role_id', role.id)
             .single();
 
         return !!data;
     }
-    async activeOrders(user_id: string) {
+    async activeOrders(userId: string) {
         const { count, error } = await this.supabase
             .from("orders")
             .select("*", { count: "exact", head: true })
-            .eq("user_id", user_id)
+            .eq("user_id", userId)
             .eq("status", "AVAILABLE");
 
         if (error) throw new Error(error.message);
@@ -167,9 +167,10 @@ export class OrdersRepository {
         takenAt: string;
         completedAt: string;
         cancelledAt: string;
-        proofUrl: string;
+        confirmationProof: string;
         bankTransactionId: string;
-        releaseTxHash: string;
+        txHash: string;
+        expiresAt: string;
     }>): Promise<Order> {
         const updateData: any = {status};
 
@@ -177,19 +178,16 @@ export class OrdersRepository {
         if (updates?.takenAt) updateData.taken_at = updates.takenAt;
         if (updates?.completedAt) updateData.completed_at = updates.completedAt;
         if (updates?.cancelledAt) updateData.cancelled_at = updates.cancelledAt;
-        if (updates?.proofUrl) updateData.proof_url = updates.proofUrl;
+        if (updates?.confirmationProof) updateData.confirmation_proof = updates.confirmationProof;
         if (updates?.bankTransactionId) updateData.bank_transaction_id = updates.bankTransactionId;
-        if (updates?.releaseTxHash) updateData.release_tx_hash = updates.releaseTxHash;
+        if (updates?.txHash) updateData.tx_hash = updates.txHash;
+        if(updates?.expiresAt) updateData.expires_at = updates.expiresAt;
 
         const {data, error} = await this.supabase
             .from('orders')
             .update(updateData)
             .eq('id', id)
-            .select(`
-        *,
-        user:users!orders_user_id_fkey(id, wallet_address, role, country, verified),
-        ally:users!orders_ally_id_fkey(id, wallet_address, role, country, verified)
-      `)
+            .select("*")
             .single();
 
         if (error) {

@@ -108,8 +108,13 @@ export class OrdersService {
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {
+    console.log('ally Id', allyId);
+    const isAlly = await this.ordersRepository.verifyUser(allyId, "ally");
+    if (!isAlly) {
+      throw new Error('Access denied for users are not allies');
+    }
     const order = await this.ordersRepository.findById(takeOrderDto.orderId);
-    
+
     if (!order) {
       throw new Error('Order not found');
     }
@@ -118,16 +123,15 @@ export class OrdersService {
       throw new Error('Order is not available for taking');
     }
 
-    // Validate ally can take this order
     await this.validateAllyCanTakeOrder(order, allyId);
 
-    // Update order status
     const updatedOrder = await this.ordersRepository.updateStatus(
       takeOrderDto.orderId, 
       OrderStatus.TAKEN,
       {
         allyId,
-        takenAt: new Date().toISOString()
+        takenAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
       }
     );
 
@@ -153,17 +157,17 @@ export class OrdersService {
     }
 
     // Upload proof file to Supabase Storage
-    const proofUrl = await this.uploadProofFile(proofDto.proofFile);
+    const confirmationProof = await this.uploadProofFile(proofDto.proofFile);
 
     // Update order with proof
     const updatedOrder = await this.ordersRepository.updateStatus(
       proofDto.orderId,
       OrderStatus.COMPLETED,
       {
-        proofUrl,
+        confirmationProof,
         bankTransactionId: proofDto.bankTransactionId,
         completedAt: new Date().toISOString(),
-        releaseTxHash: await this.releaseEscrow(order)
+        txHash: await this.releaseEscrow(order)
       }
     );
 
@@ -217,6 +221,13 @@ export class OrdersService {
   }
 
   private async validateAllyCanTakeOrder(order: Order, allyId: string): Promise<void> {
+    const now = new Date();
+    const expiresAt = new Date(order.expiresAt);
+
+    if (expiresAt <= now) {
+      throw new Error('this order has expired');
+    }
+
     // Add business validation logic:
     // - Check ally reputation
     // - Check active penalties
