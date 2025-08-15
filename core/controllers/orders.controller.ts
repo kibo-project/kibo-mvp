@@ -11,7 +11,6 @@ import {
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
 
-
 export class OrdersController {
   private ordersService: OrdersService;
 
@@ -21,28 +20,34 @@ export class OrdersController {
 
   async createOrder(request: NextRequest): Promise<Response> {
     try {
-      const body = await request.json();
-      const userId = 'test-user';
+      const formData = await request.formData();
+
+      const userId = formData.get('userId') as string;
+      const fiatAmount = Number(formData.get('fiatAmount'));
+      const cryptoAmount = Number(formData.get('cryptoAmount'));
+      const recipient = formData.get('recipient') as string;
+      const description = formData.get('description') as string;
+      const qrImage = formData.get('qr') as File;
 
       const createOrderDto: CreateOrderDto = {
-        quoteId: body.quoteId,
-        qrData: body.qrData,
-        qrImageUrl: body.qrImageUrl
+        userId,
+        fiatAmount,
+        cryptoAmount,
+        recipient,
+        description,
       };
 
-      // Validate required fields
-      if (!createOrderDto.quoteId || !createOrderDto.qrData) {
+      if (!userId || !fiatAmount || !cryptoAmount || !description || !recipient || !qrImage) {
         return Response.json({
           success: false,
           error: {
             code: 'MISSING_FIELDS',
-            message: 'quoteId and qrData are required'
+            message: 'all fields are required'
           }
         }, { status: 400 });
       }
 
-      const order = await this.ordersService.createOrder(createOrderDto, userId);
-
+      const order = await this.ordersService.createOrder(createOrderDto, qrImage);
       const response: ApiResponse<typeof order> = {
         success: true,
         data: order
@@ -54,34 +59,36 @@ export class OrdersController {
     }
   }
 
-  async getOrders(request: NextRequest): Promise<Response> {
+  async getOrders(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
+      const resolvedParams = await params;
+      const userId = resolvedParams.id;
       const { searchParams } = new URL(request.url);
-      const userId = 'test-user';
 
       const filters: GetOrdersDto = {
         status: searchParams.get('status') as any,
+        role: searchParams.get('role') as any,
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
-
       const result = await this.ordersService.getOrdersByUser(filters, userId);
-
       const response: ApiResponse<typeof result> = {
         success: true,
         data: result
       };
-
       return Response.json(response);
     } catch (error) {
       return this.handleError(error);
     }
   }
 
-  async getOrderById(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+  async getOrderById(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
-      const userId = 'test-user';
-      const order = await this.ordersService.getOrderById(params.id, userId);
+      const resolvedParams = await params;
+      const orderId = resolvedParams.id;
+      const { searchParams } = new URL(request.url);
+      const userId = searchParams.get('userId') as any;
+      const order = await this.ordersService.getOrderById(orderId, userId);
 
       if (!order) {
         return Response.json({
@@ -107,7 +114,7 @@ export class OrdersController {
   async getAvailableOrders(request: NextRequest): Promise<Response> {
     try {
       const { searchParams } = new URL(request.url);
-
+      const userId = searchParams.get('userId') as any;
       const filters: GetAvailableOrdersDto = {
         country: searchParams.get('country') || undefined,
         minAmount: searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : undefined,
@@ -116,7 +123,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
       };
 
-      const result = await this.ordersService.getAvailableOrders(filters);
+      const result = await this.ordersService.getAvailableOrders(filters,userId);
 
       const response: ApiResponse<typeof result> = {
         success: true,
@@ -131,8 +138,8 @@ export class OrdersController {
 
   async takeOrder(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
     try {
-      const allyId = 'test-user';
-
+      const { searchParams } = new URL(request.url);
+      const allyId = searchParams.get('userId') as any;
       const takeOrderDto: TakeOrderDto = {
         orderId: params.id
       };
@@ -152,7 +159,8 @@ export class OrdersController {
 
   async uploadProof(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
     try {
-      const allyId = 'test-user';
+      const { searchParams } = new URL(request.url);
+      const allyId = searchParams.get('userId') as any;
       const formData = await request.formData();
 
       const proofFile = formData.get('proof') as File;
