@@ -10,8 +10,6 @@ import {
   UploadProofDto
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
-import {createInflate} from "node:zlib";
-
 
 export class OrdersController {
   private ordersService: OrdersService;

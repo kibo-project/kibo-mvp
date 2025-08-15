@@ -15,7 +15,6 @@ export interface GetOrdersDto {
   limit?: number;
   offset?: number;
 }
-
 export interface GetOrderByIdDto {
   orderId: string;
 }
