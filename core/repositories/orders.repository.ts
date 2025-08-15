@@ -1,7 +1,7 @@
 // TODO: fix, avoid using 'any' type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from '@supabase/supabase-js';
-import {Order, OrderStatus,} from '../types/orders.types';
+import {ImageDataFile, Order, OrderStatus,} from '../types/orders.types';
 import {CreateOrderData, GetAvailableOrdersDto, GetOrdersDto} from '../dto/orders.dto';
 
 export class OrdersRepository {
@@ -160,6 +160,30 @@ export class OrdersRepository {
         }
 
         return data.map(this.mapDbToOrder);
+    }
+    async uploadProof( imageDataFile: ImageDataFile): Promise<{ data: any; error?: string }> {
+        const { data, error } = await this.supabase
+            .from("images")
+            .insert({
+                name: imageDataFile.name,
+                extension: imageDataFile.extension,
+                created_at: imageDataFile.createdAt || new Date().toISOString()
+            })
+            .select()
+            .single();
+
+        if (error) {
+            return { data: null, error: error.message };
+        }
+        return { data };
+    }
+
+    async uploadProofToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string | null> {
+        const { error } = await this.supabase.storage
+            .from("kibobucket")
+            .upload(filename, fileBuffer, { contentType, upsert: true });
+
+        return error ? error.message : null;
     }
 
     async updateStatus(id: string, status: OrderStatus, updates?: Partial<{

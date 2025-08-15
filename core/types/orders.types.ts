@@ -28,6 +28,11 @@ export interface User {
   createdAt: string;
   allyStats?: AllyStats;
 }
+export interface ImageDataFile{
+  name: string;
+  extension: string;
+  createdAt?: string;
+}
 
 export interface AllyStats {
   totalEarned: number;

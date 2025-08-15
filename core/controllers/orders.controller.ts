@@ -155,7 +155,8 @@ export class OrdersController {
 
   async uploadProof(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
     try {
-      const allyId = 'test-user';
+      const { searchParams } = new URL(request.url);
+      const allyId = searchParams.get('userId') as any;
       const formData = await request.formData();
 
       const proofFile = formData.get('proof') as File;

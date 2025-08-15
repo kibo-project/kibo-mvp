@@ -8,7 +8,7 @@ import {
   UploadProofDto
 } from '../dto/orders.dto';
 
-import {Order, OrderStatus, Quote} from '../types/orders.types'
+import {Order, OrderStatus, Quote, ImageDataFile} from '../types/orders.types'
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
@@ -108,7 +108,6 @@ export class OrdersService {
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {
-    console.log('ally Id', allyId);
     const isAlly = await this.ordersRepository.verifyUser(allyId, "ally");
     if (!isAlly) {
       throw new Error('Access denied for users are not allies');
@@ -152,14 +151,12 @@ export class OrdersService {
       throw new Error('Order is not in taken status');
     }
 
-    if (order.ally?.id !== allyId) {
+    if (order.allyId !== allyId) {
       throw new Error('Only the assigned ally can upload proof');
     }
 
-    // Upload proof file to Supabase Storage
     const confirmationProof = await this.uploadProofFile(proofDto.proofFile);
 
-    // Update order with proof
     const updatedOrder = await this.ordersRepository.updateStatus(
       proofDto.orderId,
       OrderStatus.COMPLETED,
@@ -245,8 +242,34 @@ export class OrdersService {
   }
 
   private async uploadProofFile(file: File): Promise<string> {
-    // Upload to storage service (Supabase Storage, S3, etc.)
-    return `https://storage.example.com/proofs/${Date.now()}_${file.name}`;
+    const maxSizeInBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      throw new Error('File size exceeds 5MB limit');
+    }
+    const originalName = file.name;
+    const extension = originalName.split(".").pop() || "";
+    const imageDataFile: ImageDataFile = {
+      name: originalName,
+      extension: extension,
+      createdAt: new Date().toISOString()
+    }
+    const { data, error } = await this.ordersRepository.uploadProof(imageDataFile);
+
+    if (error || !data) {
+      throw new Error(error || "Error saving image");
+    }
+
+    const filename = `order-${data.id}.${extension}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = new Uint8Array(arrayBuffer);
+
+    const uploadError = await this.ordersRepository.uploadProofToStorage(filename, fileBuffer, file.type);
+
+    if (uploadError) {
+      throw new Error(uploadError);
+    }
+
+    return data.id;
   }
 
   private async notifyOrderCreated(order: Order): Promise<void> {
