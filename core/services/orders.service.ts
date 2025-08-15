@@ -17,7 +17,7 @@ export class OrdersService {
     this.ordersRepository = new OrdersRepository();
   }
 
-  async createOrder(orderDto: CreateOrderDto): Promise<Order> {
+  async createOrder(orderDto: CreateOrderDto, qrImageOrder: File): Promise<Order> {
      const isValid = await this.ordersRepository.verifyUser(orderDto.userId,"user");
      if (!isValid) {
        throw new Error('User or role are not valid');
@@ -37,12 +37,14 @@ export class OrdersService {
        description: orderDto.description,
      };
      const order = await this.ordersRepository.create(createOrderData);
+     const qrId = await this.uploadFile(qrImageOrder);
+    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
     // await this.notifyOrderCreated(order);
 
-    return order;
+    return updatedOrder;
   }
 
   async getOrdersByUser(filters: GetOrdersDto, user_id: string): Promise<{
@@ -155,7 +157,7 @@ export class OrdersService {
       throw new Error('Only the assigned ally can upload proof');
     }
 
-    const confirmationProof = await this.uploadProofFile(proofDto.proofFile);
+    const confirmationProof = await this.uploadFile(proofDto.proofFile);
 
     const updatedOrder = await this.ordersRepository.updateStatus(
       proofDto.orderId,
@@ -241,7 +243,7 @@ export class OrdersService {
     return `0xtx_hash_${Date.now()}`;
   }
 
-  private async uploadProofFile(file: File): Promise<string> {
+  private async uploadFile(file: File): Promise<string> {
     const maxSizeInBytes = 5 * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
       throw new Error('File size exceeds 5MB limit');
@@ -253,7 +255,7 @@ export class OrdersService {
       extension: extension,
       createdAt: new Date().toISOString()
     }
-    const { data, error } = await this.ordersRepository.uploadProof(imageDataFile);
+    const { data, error } = await this.ordersRepository.uploadDbImage(imageDataFile);
 
     if (error || !data) {
       throw new Error(error || "Error saving image");
@@ -263,7 +265,7 @@ export class OrdersService {
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = new Uint8Array(arrayBuffer);
 
-    const uploadError = await this.ordersRepository.uploadProofToStorage(filename, fileBuffer, file.type);
+    const uploadError = await this.ordersRepository.uploadImageToStorage(filename, fileBuffer, file.type);
 
     if (uploadError) {
       throw new Error(uploadError);

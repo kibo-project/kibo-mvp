@@ -161,7 +161,7 @@ export class OrdersRepository {
 
         return data.map(this.mapDbToOrder);
     }
-    async uploadProof( imageDataFile: ImageDataFile): Promise<{ data: any; error?: string }> {
+    async uploadDbImage( imageDataFile: ImageDataFile): Promise<{ data: any; error?: string }> {
         const { data, error } = await this.supabase
             .from("images")
             .insert({
@@ -178,12 +178,27 @@ export class OrdersRepository {
         return { data };
     }
 
-    async uploadProofToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string | null> {
+    async uploadImageToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string | null> {
         const { error } = await this.supabase.storage
             .from("kibobucket")
             .upload(filename, fileBuffer, { contentType, upsert: true });
 
         return error ? error.message : null;
+    }
+    async uploadQrImage(id: string, idQr: string) {
+        const {data, error} = await this.supabase
+            .from('orders')
+            .update({
+                qr_image: idQr,
+            })
+            .eq('id', id)
+            .select("*")
+            .single();
+        if (error) {
+            throw new Error(`Failed to save qrId in orders: ${error.message}`);
+        }
+        return this.mapDbToOrder(data);
+
     }
 
     async updateStatus(id: string, status: OrderStatus, updates?: Partial<{
@@ -192,6 +207,7 @@ export class OrdersRepository {
         completedAt: string;
         cancelledAt: string;
         confirmationProof: string;
+        qrImage: string;
         bankTransactionId: string;
         txHash: string;
         expiresAt: string;
@@ -203,6 +219,7 @@ export class OrdersRepository {
         if (updates?.completedAt) updateData.completed_at = updates.completedAt;
         if (updates?.cancelledAt) updateData.cancelled_at = updates.cancelledAt;
         if (updates?.confirmationProof) updateData.confirmation_proof = updates.confirmationProof;
+        if (updates?.qrImage) updateData.qr_image = updates.qrImage;
         if (updates?.bankTransactionId) updateData.bank_transaction_id = updates.bankTransactionId;
         if (updates?.txHash) updateData.tx_hash = updates.txHash;
         if(updates?.expiresAt) updateData.expires_at = updates.expiresAt;

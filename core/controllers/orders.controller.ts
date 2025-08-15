@@ -22,18 +22,24 @@ export class OrdersController {
 
   async createOrder(request: NextRequest): Promise<Response> {
     try {
-      const body = await request.json();
-      const { user_id, fiat_amount, crypto_amount, description, recipient } = body;
+      const formData = await request.formData();
+
+      const userId = formData.get('userId') as string;
+      const fiatAmount = Number(formData.get('fiatAmount'));
+      const cryptoAmount = Number(formData.get('cryptoAmount'));
+      const recipient = formData.get('recipient') as string;
+      const description = formData.get('description') as string;
+      const qrImage = formData.get('qr') as File;
 
       const createOrderDto: CreateOrderDto = {
-        userId: user_id,
-        fiatAmount: fiat_amount,
-        cryptoAmount: crypto_amount,
-        recipient: recipient,
-        description: description,
+        userId,
+        fiatAmount,
+        cryptoAmount,
+        recipient,
+        description,
       };
-      if (!createOrderDto.userId|| !createOrderDto.fiatAmount || !createOrderDto.fiatAmount || !createOrderDto.description
-      || !createOrderDto.recipient) {
+
+      if (!userId || !fiatAmount || !cryptoAmount || !description || !recipient || !qrImage) {
         return Response.json({
           success: false,
           error: {
@@ -43,7 +49,7 @@ export class OrdersController {
         }, { status: 400 });
       }
 
-      const order = await this.ordersService.createOrder(createOrderDto);
+      const order = await this.ordersService.createOrder(createOrderDto, qrImage);
       const response: ApiResponse<typeof order> = {
         success: true,
         data: order
