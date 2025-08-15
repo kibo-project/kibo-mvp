@@ -1,18 +1,14 @@
-import { OrdersRepository } from '../repositories/orders.repository';
-import { 
+import {OrdersRepository} from '../repositories/orders.repository';
+import {
+  CreateOrderData,
   CreateOrderDto,
-  GetOrdersDto,
   GetAvailableOrdersDto,
+  GetOrdersDto,
   TakeOrderDto,
-  UploadProofDto,
-  CreateOrderData
+  UploadProofDto
 } from '../dto/orders.dto';
 
-import {
-  Order, 
-  OrderStatus, 
-  Quote,
-} from '../types/orders.types'
+import {Order, OrderStatus, Quote} from '../types/orders.types'
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
@@ -21,25 +17,26 @@ export class OrdersService {
     this.ordersRepository = new OrdersRepository();
   }
 
-  async createOrder(orderDto: CreateOrderDto, userId: string): Promise<Order> {
-    // 1. Validate quote (this would call quote service)
-    const quote = await this.validateQuote(orderDto.quoteId);
-    
-    if (!quote) {
-      throw new Error('Invalid or expired quote');
-    }
-
-    // 2. Validate user exists
-    // const user = await this.getUserById(userId);
-    // if (!user) {
-    //   throw new Error('User not found');
-    // }
-
-    // 3. Apply business rules
-    const orderData = this.buildOrderFromQuote(quote, orderDto, userId);
-
-    // 4. Create order
-    const order = await this.ordersRepository.create(orderData);
+  async createOrder(orderDto: CreateOrderDto): Promise<Order> {
+     const isValid = await this.ordersRepository.verifyUser(orderDto.userId,"user");
+     if (!isValid) {
+       throw new Error('User or role are not valid');
+     }
+     const activeOrders = await this.ordersRepository.activeOrders(orderDto.userId);
+     if (activeOrders>3) {
+       throw new Error('You have more than 3 orders available');
+     }
+     const createOrderData: CreateOrderData = {
+       status: OrderStatus.PENDING_PAYMENT,
+       fiatAmount: orderDto.fiatAmount,
+       cryptoAmount: orderDto.cryptoAmount,
+       fiatCurrency: 'BOB',
+       cryptoCurrency: 'USDT',
+       userId: orderDto.userId,
+       recipient: orderDto.recipient,
+       description: orderDto.description,
+     };
+     const order = await this.ordersRepository.create(createOrderData);
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
@@ -48,7 +45,7 @@ export class OrdersService {
     return order;
   }
 
-  async getOrdersByUser(filters: GetOrdersDto, userId: string): Promise<{
+  async getOrdersByUser(filters: GetOrdersDto, user_id: string): Promise<{
     orders: Order[];
     pagination: {
       total: number;
@@ -57,7 +54,7 @@ export class OrdersService {
       hasMore: boolean;
     };
   }> {
-    const { orders, total } = await this.ordersRepository.findMany(filters, userId);
+    const { orders, total } = await this.ordersRepository.findMany(filters, user_id);
     
     const limit = filters.limit || 10;
     const offset = filters.offset || 0;
@@ -73,23 +70,18 @@ export class OrdersService {
     };
   }
 
-  async getOrderById(orderId: string, userId?: string): Promise<Order | null> {
+  async getOrderById(orderId: string, userId: string): Promise<Order | null> {
     const order = await this.ordersRepository.findById(orderId);
-    
     if (!order) {
       return null;
     }
-
-    // Verify access permissions
-    if (userId && !this.canUserAccessOrder(order, userId)) {
+    if (userId && ! await this.canUserAccessOrder(order, userId)) {
       throw new Error('Access denied to this order');
     }
-
-    // Add dynamic fields
     return this.enrichOrderWithDynamicData(order);
   }
 
-  async getAvailableOrders(filters: GetAvailableOrdersDto): Promise<{
+  async getAvailableOrders(filters: GetAvailableOrdersDto, userId:string): Promise<{
     orders: Order[];
     metadata: {
       totalAvailable: number;
@@ -97,15 +89,16 @@ export class OrdersService {
       yourActiveOrders: number;
     };
   }> {
+    const isAlly = await this.ordersRepository.verifyUser(userId, "ally");
+    if (!isAlly) {
+      throw new Error('Access denied for users are not allies');
+    }
     const orders = await this.ordersRepository.findAvailable(filters);
-    
-    // Calculate metadata
     const enrichedOrders = orders.map(order => this.enrichOrderWithDynamicData(order));
-    
     const metadata = {
       totalAvailable: orders.length,
       avgWaitTime: this.calculateAverageWaitTime(),
-      yourActiveOrders: 0 // This would be calculated based on current ally
+      yourActiveOrders: 0
     };
 
     return {
@@ -115,8 +108,13 @@ export class OrdersService {
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {
+    console.log('ally Id', allyId);
+    const isAlly = await this.ordersRepository.verifyUser(allyId, "ally");
+    if (!isAlly) {
+      throw new Error('Access denied for users are not allies');
+    }
     const order = await this.ordersRepository.findById(takeOrderDto.orderId);
-    
+
     if (!order) {
       throw new Error('Order not found');
     }
@@ -125,16 +123,15 @@ export class OrdersService {
       throw new Error('Order is not available for taking');
     }
 
-    // Validate ally can take this order
     await this.validateAllyCanTakeOrder(order, allyId);
 
-    // Update order status
     const updatedOrder = await this.ordersRepository.updateStatus(
       takeOrderDto.orderId, 
       OrderStatus.TAKEN,
       {
         allyId,
-        takenAt: new Date().toISOString()
+        takenAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
       }
     );
 
@@ -160,17 +157,17 @@ export class OrdersService {
     }
 
     // Upload proof file to Supabase Storage
-    const proofUrl = await this.uploadProofFile(proofDto.proofFile);
+    const confirmationProof = await this.uploadProofFile(proofDto.proofFile);
 
     // Update order with proof
     const updatedOrder = await this.ordersRepository.updateStatus(
       proofDto.orderId,
       OrderStatus.COMPLETED,
       {
-        proofUrl,
+        confirmationProof,
         bankTransactionId: proofDto.bankTransactionId,
         completedAt: new Date().toISOString(),
-        releaseTxHash: await this.releaseEscrow(order)
+        txHash: await this.releaseEscrow(order)
       }
     );
 
@@ -203,22 +200,6 @@ export class OrdersService {
     };
   }
 
-  private buildOrderFromQuote(quote: Quote, orderDto: CreateOrderDto, userId: string): CreateOrderData {
-    return {
-      id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      status: OrderStatus.PENDING_PAYMENT,
-      amountFiat: quote.amountFiat,
-      amountCrypto: quote.amountCrypto,
-      fiatCurrency: 'BOB', // This should come from quote
-      cryptoToken: 'USDT', // This should come from quote
-      network: 'mantle', // This should come from quote
-      qrData: orderDto.qrData,
-      qrImageUrl: orderDto.qrImageUrl,
-      expiresAt: quote.expiresAt,
-      userId
-    };
-  }
-
   private enrichOrderWithDynamicData(order: Order): Order {
     const now = new Date();
     const expiresAt = new Date(order.expiresAt);
@@ -229,8 +210,9 @@ export class OrdersService {
     };
   }
 
-  private canUserAccessOrder(order: Order, userId: string): boolean {
-    return order.user?.id === userId || order.ally?.id === userId;
+  private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
+    const isAdmin = await this.ordersRepository.verifyUser(userId, "admin");
+    return order.userId === userId || order.allyId === userId || isAdmin;
   }
 
   private calculateAverageWaitTime(): number {
@@ -239,6 +221,13 @@ export class OrdersService {
   }
 
   private async validateAllyCanTakeOrder(order: Order, allyId: string): Promise<void> {
+    const now = new Date();
+    const expiresAt = new Date(order.expiresAt);
+
+    if (expiresAt <= now) {
+      throw new Error('this order has expired');
+    }
+
     // Add business validation logic:
     // - Check ally reputation
     // - Check active penalties
