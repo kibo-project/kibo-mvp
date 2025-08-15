@@ -51,7 +51,9 @@ export interface Order {
   escrowAddress?: string;
   qrData?: string;
   qrImage?: string;
+  qrImageUrl?: string;
   confirmationProof?: string;
+  confirmationProofUrl?:string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;

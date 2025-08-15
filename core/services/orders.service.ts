@@ -158,12 +158,13 @@ export class OrdersService {
     }
 
     const confirmationProof = await this.uploadFile(proofDto.proofFile);
-
+    const confirmationProofUrl = await this.ordersRepository.getImageUrl(confirmationProof);
     const updatedOrder = await this.ordersRepository.updateStatus(
       proofDto.orderId,
       OrderStatus.COMPLETED,
       {
         confirmationProof,
+        confirmationProofUrl,
         bankTransactionId: proofDto.bankTransactionId,
         completedAt: new Date().toISOString(),
         txHash: await this.releaseEscrow(order)

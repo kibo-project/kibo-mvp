@@ -185,11 +185,13 @@ export class OrdersRepository {
 
         return error ? error.message : null;
     }
-    async uploadQrImage(id: string, idQr: string) {
+    async uploadQrImage(id: string, idQr: string, ) {
+        const qrUrl = await this.getImageUrl(idQr);
         const {data, error} = await this.supabase
             .from('orders')
             .update({
                 qr_image: idQr,
+                qr_image_url: qrUrl
             })
             .eq('id', id)
             .select("*")
@@ -200,6 +202,24 @@ export class OrdersRepository {
         return this.mapDbToOrder(data);
 
     }
+    async getExtensionImage(imageId: string): Promise<string> {
+        const { data, error } = await this.supabase
+            .from("images")
+            .select("extension")
+            .eq("id", imageId)
+            .single();
+
+        if (error || !data) {
+            throw new Error(`Failed to get extension image: ${error.message}`);
+        }
+        return data.extension;
+    }
+
+    async getImageUrl(imageId: string): Promise<string> {
+        const ext = await this.getExtensionImage(imageId);
+        const { data } = await this.supabase.storage.from("kibobucket").getPublicUrl(`order-${imageId}.${ext}`);
+        return data.publicUrl;
+    }
 
     async updateStatus(id: string, status: OrderStatus, updates?: Partial<{
         allyId: string;
@@ -207,6 +227,7 @@ export class OrdersRepository {
         completedAt: string;
         cancelledAt: string;
         confirmationProof: string;
+        confirmationProofUrl: string;
         qrImage: string;
         bankTransactionId: string;
         txHash: string;
@@ -219,6 +240,7 @@ export class OrdersRepository {
         if (updates?.completedAt) updateData.completed_at = updates.completedAt;
         if (updates?.cancelledAt) updateData.cancelled_at = updates.cancelledAt;
         if (updates?.confirmationProof) updateData.confirmation_proof = updates.confirmationProof;
+        if (updates?.confirmationProofUrl) updateData.confirmation_proof_url = updates.confirmationProofUrl;
         if (updates?.qrImage) updateData.qr_image = updates.qrImage;
         if (updates?.bankTransactionId) updateData.bank_transaction_id = updates.bankTransactionId;
         if (updates?.txHash) updateData.tx_hash = updates.txHash;
@@ -249,7 +271,9 @@ export class OrdersRepository {
             network: dbOrder.network,
             qrData: dbOrder.qr_data,
             qrImage: dbOrder.qr_image,
+            qrImageUrl: dbOrder.qr_image_url,
             confirmationProof: dbOrder.confirmation_proof,
+            confirmationProofUrl: dbOrder.confirmation_proof_url,
             createdAt: dbOrder.created_at,
             takenAt: dbOrder.taken_at,
             completedAt: dbOrder.completed_at,
