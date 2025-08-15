@@ -1,4 +1,6 @@
 // Tipos base
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export enum OrderStatus {
   PENDING_PAYMENT = 'PENDING_PAYMENT',
   AVAILABLE = 'AVAILABLE',
@@ -26,6 +28,11 @@ export interface User {
   createdAt: string;
   allyStats?: AllyStats;
 }
+export interface ImageDataFile{
+  name: string;
+  extension: string;
+  createdAt?: string;
+}
 
 export interface AllyStats {
   totalEarned: number;
@@ -36,15 +43,15 @@ export interface AllyStats {
 export interface Order {
   id: string;
   status: OrderStatus;
-  amountFiat: number;
-  amountCrypto: number;
+  fiatAmount: number;
+  cryptoAmount: number;
   fiatCurrency: Currency;
-  cryptoToken: CryptoToken;
-  network: Network;
+  cryptoCurrency: CryptoToken;
+  network?: Network;
   escrowAddress?: string;
   qrData?: string;
-  qrImageUrl?: string;
-  proofUrl?: string;
+  qrImage?: string;
+  confirmationProof?: string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
@@ -52,7 +59,9 @@ export interface Order {
   expiresAt: string;
   secondsRemaining?: number;
   escrowTxHash?: string;
-  releaseTxHash?: string;
+  txHash?: string;
+  userId?: string;
+  allyId?: string;
   bankTransactionId?: string;
   user?: Partial<User>;
   ally?: Partial<User>;
