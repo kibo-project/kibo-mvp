@@ -1,19 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SignJWT, jwtVerify, decodeJwt } from 'jose';
+import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 
-
-export interface CustomJWTPayload {
-    privyId: string;
-    email: string;
-    wallet: string;
-    iat?: number;
-    exp?: number;
-    iss?: string;
-    aud?: string;
-}
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "1h" ;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN! ;
+const ISSUER = process.env.ISSUER!;
+const AUDIENCE = process.env.AUDIENCE!;
 
 export const generateToken = async (userId: string, wallet: string): Promise<string> => {
     const payload = {
@@ -25,19 +17,18 @@ export const generateToken = async (userId: string, wallet: string): Promise<str
         .setProtectedHeader({ alg: "HS256" })
         .setIssuedAt()
         .setExpirationTime(JWT_EXPIRES_IN)
-        .setIssuer("tu-app-nextjs")
-        .setAudience("tu-app-users")
+        .setIssuer(ISSUER)
+        .setAudience(AUDIENCE)
         .sign(JWT_SECRET);
 };
 
-export const verifyToken = async (token: string): Promise<CustomJWTPayload> => {
+export const verifyToken = async (token: string): Promise<JWTPayload> =>{
     try {
-        decodeJwt(token);
         const { payload } = await jwtVerify(token, JWT_SECRET, {
             issuer: "tu-app-nextjs",
             audience: "tu-app-users",
         });
-        return payload as unknown as CustomJWTPayload;
+        return payload ;
     } catch (error) {
         const err = error as Error;
         if (err.message.includes("expired") || err.message.includes("exp")) {

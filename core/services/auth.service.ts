@@ -1,7 +1,7 @@
 import {AuthRepository} from '../repositories/auth.repository';
 import {UsersRepository} from '../repositories/users.repository';
-import { generateToken } from "../../utils/auth/jwt";
 import {AuthUserDto} from '../dto/auth.dto';
+import { generateToken } from "../../utils/auth/jwt";
 
 
 export class AuthService {
