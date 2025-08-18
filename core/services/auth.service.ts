@@ -24,15 +24,10 @@ export class AuthService {
         } else {
             user = await this.usersRepository.createUser(authUserDto, "user");
         }
-        const jwtToken = await generateToken(authUserDto.privyId, authUserDto.email, authUserDto.wallet, authUserDto.name);
+        const jwtToken = await generateToken(authUserDto.privyId, authUserDto.email);
 
         return {
-            user: {
-                id: user.id,
-                privyId,
-                email,
-                wallet,
-            },
+            user: user,
             token: jwtToken,
         };
     }

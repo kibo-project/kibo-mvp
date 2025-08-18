@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import {NextRequest} from 'next/server';
+import {NextRequest, NextResponse} from 'next/server';
 import {AuthService} from '../services/auth.service';
 import {AuthUserDto} from '../dto/auth.dto';
 import {ApiResponse} from '../types/generic.types';
+import { setAuthCookie } from "../../utils/auth/jwt";
+import {User} from '../types/orders.types';
 
 
 export class AuthController {
@@ -13,11 +15,11 @@ export class AuthController {
         this.authService = new AuthService();
     }
 
-    async login(request: NextRequest): Promise<Response> {
+    async login(request: NextRequest): Promise<NextResponse> {
         try {
             const authHeader = request.headers.get("authorization");
             if (!authHeader || !authHeader.startsWith("Bearer ")) {
-                return Response.json({
+                return NextResponse.json({
                     success: false,
                     error: { code: "UNAUTHORIZED", message: "Authorization token is required" },
                 }, { status: 401 });
@@ -26,7 +28,7 @@ export class AuthController {
             const token = authHeader.replace("Bearer ", "");
             const body = await request.json();
             if(!body.privyId || !body.email || !body.password || !body.wallet || !body.name || !token) {
-                return Response.json({
+                return NextResponse.json({
                     success: false,
                     error: {
                         code: 'MISSING_FIELDS',
@@ -43,22 +45,24 @@ export class AuthController {
             };
 
             const result = await this.authService.login(authUserDto);
-            const response: ApiResponse<typeof result> = {
+            const responseData: ApiResponse<User> = {
                 success: true,
-                data: result
+                data: result.user
             };
-            return Response.json(response);
+
+            const response = NextResponse.json(responseData);
+            return setAuthCookie(response, result.token);
         } catch (error) {
             return this.handleError(error);
         }
     }
 
-    private handleError(error: any): Response {
+    private handleError(error: any): NextResponse {
         console.error('Auth Controller Error:', error);
 
         const statusCode = this.getStatusCodeFromError(error);
 
-        return Response.json({
+        return NextResponse.json({
             success: false,
             error: {
                 code: error.code || 'INTERNAL_ERROR',

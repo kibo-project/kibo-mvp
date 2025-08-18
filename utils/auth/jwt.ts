@@ -1,4 +1,4 @@
-import { NextRequest } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify, decodeJwt } from 'jose';
 
 
@@ -53,4 +53,15 @@ export const extractTokenFromCookie = (req: NextRequest): string | null => {
         throw new Error("token not found");
     }
     return cookieToken;
+};
+
+export const setAuthCookie = (response: NextResponse, token: string): NextResponse => {
+    response.cookies.set("authToken", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",// cambiara a true cuando estemos en produccion
+        sameSite: "strict",
+        maxAge: Number(process.env.AUTH_COOKIE_MAX_AGE),
+        path: "/",
+    });
+    return response;
 };

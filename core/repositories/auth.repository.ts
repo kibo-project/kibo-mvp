@@ -1,6 +1,4 @@
 import {createClient} from "@supabase/supabase-js";
-import {AuthUserDto} from '../dto/auth.dto';
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class AuthRepository {
     private supabase;
