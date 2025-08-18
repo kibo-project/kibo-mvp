@@ -18,15 +18,20 @@ export type UserRole = 'user' | 'ally' | 'admin';
 // Interfaces principales
 export interface User {
   id: string;
+  name: string;
   walletAddress: string;
-  role: UserRole;
-  country: string;
-  verified: boolean;
-  successfulOrders: number;
+  role?: UserRole;
+  email: string;
+  country?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  phone?: string;
+  availableBalance?: string;
+  lastLoginAt?: Date;
   reputation?: number;
-  lastActive?: string;
   createdAt: string;
-  allyStats?: AllyStats;
+  updatedAt: string;
 }
 export interface ImageDataFile{
   name: string;
