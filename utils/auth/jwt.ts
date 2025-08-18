@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SignJWT, jwtVerify, JWTPayload } from 'jose';
 
-
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET);
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN! ;
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN!;
 const ISSUER = process.env.ISSUER!;
 const AUDIENCE = process.env.AUDIENCE!;
 
-export const generateToken = async (userId: string, wallet: string): Promise<string> => {
+export interface CustomJWTPayload extends JWTPayload {
+    userId: string;
+    email: string;
+}
+
+export const generateToken = async (userId: string, email: string): Promise<string> => {
     const payload = {
         userId,
-        wallet,
+        email,
     };
 
     return await new SignJWT(payload)
@@ -22,13 +26,14 @@ export const generateToken = async (userId: string, wallet: string): Promise<str
         .sign(JWT_SECRET);
 };
 
-export const verifyToken = async (token: string): Promise<JWTPayload> =>{
+export const verifyToken = async (token: string): Promise<CustomJWTPayload> => {
     try {
         const { payload } = await jwtVerify(token, JWT_SECRET, {
-            issuer: "tu-app-nextjs",
-            audience: "tu-app-users",
+            issuer: ISSUER,
+            audience: AUDIENCE,
         });
-        return payload ;
+
+        return payload as CustomJWTPayload;
     } catch (error) {
         const err = error as Error;
         if (err.message.includes("expired") || err.message.includes("exp")) {
@@ -49,7 +54,7 @@ export const extractTokenFromCookie = (req: NextRequest): string | null => {
 export const setAuthCookie = (response: NextResponse, token: string): NextResponse => {
     response.cookies.set("authToken", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",// cambiara a true cuando estemos en produccion
+        secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
         maxAge: Number(process.env.AUTH_COOKIE_MAX_AGE),
         path: "/",
