@@ -13,8 +13,9 @@ export class UsersRepository {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
     }
+
     async findUserByPrivyId(privyId: string): Promise<User> {
-        const { data } = await this.supabase
+        const {data} = await this.supabase
             .from('users')
             .select('*')
             .eq('privy_id', privyId)
@@ -23,8 +24,8 @@ export class UsersRepository {
         return this.mapDbToUser(data);
     }
 
-    async createUser(authUserDto: AuthUserDto): Promise<User> {
-        const { data, error } = await this.supabase
+    async createUser(authUserDto: AuthUserDto, roleName: UserRole): Promise<User> {
+        const {data, error} = await this.supabase
             .from('users')
             .insert({
                 privy_id: authUserDto.privyId,
@@ -40,14 +41,39 @@ export class UsersRepository {
             throw new Error(`Error creating user: ${error.message}`);
         }
 
+        const roleId = await this.findRoleByName(roleName);
+
+        await this.createUserRole(data.id, roleId);
+
         return this.mapDbToUser(data);
     }
-    async createUserRole(): Promise<User> {
 
+    async createUserRole(userId: string, roleId: string) {
+        const { error} = await this.supabase
+            .from('users_roles')
+            .insert({
+                user_id: userId,
+                role_id: roleId,
+            })
+        if (error) {
+            throw new Error(`Error creating this user with this role: ${error.message}`);
+        }
+    }
+
+    async findRoleByName(name: string): Promise<string> {
+        const {data, error} = await this.supabase
+            .from('roles')
+            .select('id')
+            .eq('name', name)
+            .single();
+        if (error) {
+            throw new Error(`Error finding this role: ${error.message}`);
+        }
+        return data.id;
     }
 
     async updateUser(userId: string): Promise<User> {
-        const { data, error } = await this.supabase
+        const {data, error} = await this.supabase
             .from('users')
             .update({
                 last_login_at: new Date().toISOString()

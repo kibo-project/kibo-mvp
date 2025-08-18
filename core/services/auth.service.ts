@@ -1,6 +1,6 @@
 import {AuthRepository} from '../repositories/auth.repository';
 import {UsersRepository} from '../repositories/users.repository';
-
+import { generateToken } from "../../utils/auth/jwt";
 import {AuthUserDto} from '../dto/auth.dto';
 
 
@@ -22,9 +22,9 @@ export class AuthService {
         if (user) {
             user = await this.usersRepository.updateUser(user.id);
         } else {
-            user = await this.usersRepository.createUser(authUserDto);
+            user = await this.usersRepository.createUser(authUserDto, "user");
         }
-        const jwtToken = await this.authRepository.generateToken(privyId, email, wallet);
+        const jwtToken = await generateToken(authUserDto.privyId, authUserDto.email, authUserDto.wallet, authUserDto.name);
 
         return {
             user: {
