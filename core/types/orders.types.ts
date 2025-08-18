@@ -17,7 +17,7 @@ export type UserRole = 'user' | 'ally' | 'admin';
 
 // Interfaces principales
 export interface User {
-  id?: string;
+  id: string;
   name?: string;
   walletAddress?: string;
   role?: UserRole;
