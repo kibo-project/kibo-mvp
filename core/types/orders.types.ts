@@ -17,11 +17,11 @@ export type UserRole = 'user' | 'ally' | 'admin';
 
 // Interfaces principales
 export interface User {
-  id: string;
-  name: string;
-  walletAddress: string;
+  id?: string;
+  name?: string;
+  walletAddress?: string;
   role?: UserRole;
-  email: string;
+  email?: string;
   country?: string;
   bankName?: string;
   accountNumber?: string;
@@ -30,8 +30,14 @@ export interface User {
   availableBalance?: string;
   lastLoginAt?: Date;
   reputation?: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  ////Delete stating here
+  verified?: boolean;
+  successfulOrders?: number;
+  lastActive?: string | Date;
+
+
 }
 export interface ImageDataFile{
   name: string;

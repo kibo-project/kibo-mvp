@@ -37,13 +37,7 @@ export const mockUsers: User[] = [
     verified: true,
     successfulOrders: 45,
     reputation: 96,
-    lastActive: '2025-08-08T15:45:00Z',
     createdAt: '2025-06-10T10:30:00Z',
-    allyStats: {
-      totalEarned: 1250.75,
-      avgCompletionTime: 7.2,
-      activePenalties: 0,
-    }
   },
   {
     id: 'ally_880h1733-h5ce-74g7-d049-779988773333',
@@ -53,13 +47,7 @@ export const mockUsers: User[] = [
     verified: true,
     successfulOrders: 23,
     reputation: 94,
-    lastActive: '2025-08-08T11:20:00Z',
     createdAt: '2025-07-01T09:15:00Z',
-    allyStats: {
-      totalEarned: 680.50,
-      avgCompletionTime: 8.8,
-      activePenalties: 0,
-    }
   },
   {
     id: 'admin_990i2844-i6df-85h8-e150-880099884444',
@@ -69,7 +57,6 @@ export const mockUsers: User[] = [
     verified: true,
     successfulOrders: 0,
     reputation: 100,
-    lastActive: '2025-08-08T16:00:00Z',
     createdAt: '2025-05-15T08:00:00Z',
   }
 ];
