@@ -56,6 +56,42 @@ export class AuthController {
         }
     }
 
+    async profile(request: NextRequest): Promise<Response> {
+        try {
+            const userId = request.headers.get("x-user-id");
+            if (!userId) {
+                return Response.json({
+                    success: false,
+                    error: {
+                        code: 'UNAUTHORIZED',
+                        message: 'User authentication required'
+                    }
+                }, { status: 401 });
+            }
+
+            const userProfile = await this.authService.getProfile(userId);
+
+            if (!userProfile) {
+                return Response.json({
+                    success: false,
+                    error: {
+                        code: 'USER_NOT_FOUND',
+                        message: 'Order not found'
+                    }
+                }, { status: 404 });
+            }
+
+            const response: ApiResponse<typeof userProfile> = {
+                success: true,
+                data: userProfile
+            };
+
+            return Response.json(response);
+        } catch (error) {
+            return this.handleError(error);
+        }
+    }
+
     private handleError(error: any): NextResponse {
         console.error('Auth Controller Error:', error);
 

@@ -1,6 +1,7 @@
 import {AuthRepository} from '../repositories/auth.repository';
 import {UsersRepository} from '../repositories/users.repository';
 import {AuthUserDto} from '../dto/auth.dto';
+import {User} from '../types/orders.types'
 import { generateToken } from "../../utils/auth/jwt";
 
 
@@ -30,5 +31,10 @@ export class AuthService {
             user: user,
             token: jwtToken,
         };
+    }
+
+    async getProfile(userId: string): Promise<User> {
+        const user = await this.usersRepository.findUserById(userId);
+        return user;
     }
 }

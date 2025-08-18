@@ -24,6 +24,17 @@ export class UsersRepository {
         return this.mapDbToUser(data);
     }
 
+    async findUserById(userId: string): Promise<User> {
+        const {data} = await this.supabase
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        return this.mapDbToUser(data);
+    }
+
+
     async createUser(authUserDto: AuthUserDto, roleName: UserRole): Promise<User> {
         const {data, error} = await this.supabase
             .from('users')
