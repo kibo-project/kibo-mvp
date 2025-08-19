@@ -18,7 +18,8 @@ import {
   ModalHeader,
 } from "~~/components/kibo";
 import { usePaymentStore } from "~~/services/store/payment-store";
-// import { useOrders } from "~~/hooks/api/useOrders"; // Importar el hook
+import { useQuote } from "~~/hooks/quote/useQuote"; // CAMBIO: Importar el hook de quote
+//import { useOrders } from "~~/hooks/api/useOrders"; // Importar el hook
 // import { useAuth } from "~~/hooks/api/useAuth";
 // import {CreateOrderData} from "~~/app/api/supabase/request/createOrderData";
 
