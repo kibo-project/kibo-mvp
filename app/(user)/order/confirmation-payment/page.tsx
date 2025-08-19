@@ -220,10 +220,7 @@ const ConfirmationPayment: NextPage = () => {
 
     const handleManualRefetch = useCallback(async () => {
         if (fiatAmount >=10) {
-            try {
-                await refetchQuote();
-            } catch (error) {
-            }
+            await refetchQuote();
         }
     }, [fiatAmount, refetchQuote]);
 
