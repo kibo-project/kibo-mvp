@@ -1,8 +1,9 @@
-// Servicio real para obtener cotizaciones
-import { QuoteParams, QuoteResponse } from '../../core/types/quote.types';
+import { QuoteRequest, QuoteResponse } from '../../core/types/quote.types';
+import {ApiResponse} from '../../core/types/generic.types';
+import { ENDPOINTS } from '../../config/api';
 
 class QuoteApiService {
-    private baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '/api';
+    private baseUrl = process.env.NEXT_PUBLIC_API_URL!;
 
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
         const url = `${this.baseUrl}${endpoint}`;
@@ -22,18 +23,18 @@ class QuoteApiService {
         return response.json();
     }
 
-    async getQuote(params: QuoteParams): Promise<QuoteResponse> {
+    async getQuote(params: QuoteRequest): Promise<ApiResponse<QuoteResponse>> {
         // Construir query string con los parámetros
         const queryParams = new URLSearchParams({
-            amountFiat: params.amountFiat.toString(),
+            fiatAmount: params.fiatAmount.toString(),
             fiatCurrency: params.fiatCurrency,
-            cryptoToken: params.cryptoToken,
+            cryptoCurrency: params.cryptoCurrency,
             network: params.network,
         });
 
-        const endpoint = `/quote?${queryParams.toString()}`;
+        const endpoint = `${ENDPOINTS.QUOTE}${queryParams.toString()}`;
 
-        return this.request<QuoteResponse>(endpoint, {
+        return this.request<ApiResponse<QuoteResponse>>(endpoint, {
             method: 'GET',
         });
     }

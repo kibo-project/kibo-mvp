@@ -2,8 +2,8 @@
 
 import {NextRequest} from 'next/server';
 import {QuoteService} from '../services/qoute.service';
-import {GetQuoteDto} from '../dto/quote.dto';
-import {ApiResponse} from '../types/generic.types';
+import {QuoteRequest} from '../types/quote.types';
+import {ApiResponse, ApiErrorResponse} from '../types/generic.types';
 import {CryptoToken, Currency, Network} from "@/core/types/orders.types";
 
 
@@ -32,14 +32,14 @@ export class QuoteController {
                 }, { status: 400 });
             }
 
-            const getQuoteDto: GetQuoteDto = {
+            const quoteRequest: QuoteRequest = {
                 fiatAmount: parseFloat(fiatAmountParam),
                 fiatCurrency: fiatCurrencyParam as Currency,
                 cryptoCurrency: cryptoCurrencyParam as CryptoToken,
                 network: networkParam as Network
             };
 
-            const result = await this.quoteService.getQuote(getQuoteDto);
+            const result = await this.quoteService.getQuote(quoteRequest);
             const response: ApiResponse<typeof result> = {
                 success: true,
                 data: result
@@ -50,26 +50,40 @@ export class QuoteController {
         }
     }
 
-    private handleError(error: any): Response {
+    private handleError(error: unknown): Response {
         console.error('Quote Controller Error:', error);
+
+        let code = 'INTERNAL_ERROR';
+        let message = 'An unexpected error occurred';
+        let details: unknown;
+
+        if (error instanceof Error) {
+            message = error.message;
+            details = process.env.NODE_ENV === 'development' ? error.stack : undefined;
+            code = (error as any).code || 'INTERNAL_ERROR';
+        }
 
         const statusCode = this.getStatusCodeFromError(error);
 
-        return Response.json({
+        const errorResponse: ApiErrorResponse = {
             success: false,
             error: {
-                code: error.code || 'INTERNAL_ERROR',
-                message: error.message || 'An unexpected error occurred',
-                details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+                code,
+                message,
+                details
             }
-        }, { status: statusCode });
+        };
+
+        return Response.json(errorResponse, { status: statusCode });
     }
 
-    private getStatusCodeFromError(error: any): number {
-        if (error.message.includes('not found')) return 404;
-        if (error.message.includes('Authentication required')) return 401;
-        if (error.message.includes('Access denied')) return 403;
-        if (error.message.includes('Invalid') || error.message.includes('required')) return 400;
+    private getStatusCodeFromError(error: unknown): number {
+        if (error instanceof Error) {
+            if (error.message.includes('not found')) return 404;
+            if (error.message.includes('Authentication required')) return 401;
+            if (error.message.includes('Access denied')) return 403;
+            if (error.message.includes('Invalid') || error.message.includes('required')) return 400;
+        }
         return 500;
     }
 

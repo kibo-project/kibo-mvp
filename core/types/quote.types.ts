@@ -1,6 +1,6 @@
 import { Currency, CryptoToken, Network } from '../types/orders.types';
 
-export interface quoteRequest {
+export interface QuoteRequest {
     fiatAmount: number;
     fiatCurrency: Currency;
     cryptoCurrency: CryptoToken;
@@ -8,10 +8,9 @@ export interface quoteRequest {
 }
 
 
-export interface quoteResponse {
+export interface QuoteResponse {
     fiatAmount: number;
     fiatCurrency: Currency;
-    cryptoCurrency: CryptoToken;
-    network: Network;
-
+    cryptoAmount: number;
+    rate: number;
 }

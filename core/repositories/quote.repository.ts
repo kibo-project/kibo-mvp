@@ -1,5 +1,5 @@
 import {createClient} from "@supabase/supabase-js";
-import {GetQuoteDto} from '../dto/quote.dto';
+import {QuoteRequest} from "@/core/types/quote.types";
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export class QuoteRepository {
@@ -12,15 +12,15 @@ export class QuoteRepository {
         );
     }
 
-    async getQuote(getQuoteDto: GetQuoteDto): Promise<number> {
+    async getQuote(quoteRequest: QuoteRequest): Promise<number> {
         const payload = {
             page: 1,
             rows: 20,
             payTypes: [],
-            asset: getQuoteDto.cryptoCurrency,
-            fiat: getQuoteDto.fiatCurrency,
+            asset: quoteRequest.cryptoCurrency,
+            fiat: quoteRequest.fiatCurrency,
             tradeType: "SELL",
-            network: getQuoteDto.network
+            network: quoteRequest.network
         };
 
         const response = await fetch("https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search", {
