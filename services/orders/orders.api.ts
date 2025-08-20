@@ -67,7 +67,7 @@ class OrdersApiService {
     formData.append('cryptoAmount', data.cryptoAmount.toString());
     formData.append('recipient', data.recipient);
     formData.append('description', data.description);
-    formData.append('qr', data.qrImage);
+    formData.append('qr', data.qrImage!);
 
     return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDERS, {
       method: 'POST',

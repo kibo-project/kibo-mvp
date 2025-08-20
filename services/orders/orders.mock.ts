@@ -3,7 +3,7 @@ import {
   OrdersListResponse,
   OrderDetailsResponse,
   CreateOrderRequest,
-  CreateOrderResponse,
+  OrderResponse,
   AvailableOrdersResponse,
   TakeOrderResponse,
   CancelOrderResponse,
@@ -83,44 +83,6 @@ class OrdersMockService {
     return {
       success: true,
       order: updatedOrder
-    };
-  }
-
-  // Simula POST /api/orders
-  async createOrder(data: CreateOrderRequest): Promise<CreateOrderResponse> {
-    await mockDelay();
-
-    // Validar que el quote existe y no ha expirado
-    const quote = mockQuotes.find(q => q.id === data.quoteId);
-    if (!quote) {
-      throw new Error('Quote not found');
-    }
-
-    if (new Date(quote.expiresAt) < new Date()) {
-      throw new Error('Quote has expired');
-    }
-
-    const newOrder: Order = {
-      id: generateMockId('order'),
-      status: OrderStatus.PENDING_PAYMENT,
-      fiatAmount: quote.amountFiat,
-      cryptoAmount: quote.amountCrypto,
-      fiatCurrency: 'BOB',
-      cryptoCurrency: 'USDT',
-      network: 'mantle',
-      escrowAddress: quote.escrowAddress,
-      qrImage: data.qrImageUrl || `https://via.placeholder.com/300x300/0066cc/ffffff?text=QR+${Date.now()}`,
-      createdAt: new Date().toISOString(),
-      expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(), // 3 minutos
-      user: mockUsers[0],
-      timeline: generateTimeline(OrderStatus.PENDING_PAYMENT, new Date().toISOString())
-    };
-
-    this.orders.unshift(newOrder);
-
-    return {
-      success: true,
-      order: newOrder
     };
   }
 
