@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query';
 import { quoteService } from '../../services/quote';
 import {QuoteRequest} from '../../core/types/quote.types';
 
-// Hook para obtener cotización en tiempo real
 export const useQuote = (params: QuoteRequest, options: { enabled?: boolean } = {}) => {
     return useQuery({
         queryKey: ['quote', params.fiatAmount, params.fiatCurrency, params.cryptoCurrency, params.network],

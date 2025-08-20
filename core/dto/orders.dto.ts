@@ -39,7 +39,7 @@ export interface UploadProofDto {
 }
 
 // Internal DTOs for repository layer
-export interface CreateOrderData {
+export interface CreateOrderDto {
   status: OrderStatus;
   fiatAmount: number;
   cryptoAmount: number;

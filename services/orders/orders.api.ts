@@ -3,7 +3,7 @@ import {
   OrdersListResponse,
   OrderDetailsResponse,
   CreateOrderRequest,
-  CreateOrderResponse,
+  OrderResponse,
   AvailableOrdersResponse,
   TakeOrderResponse,
   CancelOrderResponse,
@@ -13,6 +13,8 @@ import {
   AvailableOrdersFilters
 } from '../../core/types/orders.types';
 import { ENDPOINTS } from '../../config/api';
+import {ApiResponse} from '../../core/types/generic.types';
+
 
 class OrdersApiService {
   private baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '/api';
@@ -52,8 +54,8 @@ class OrdersApiService {
     return this.request<OrderDetailsResponse>(ENDPOINTS.ORDER_BY_ID(id));
   }
 
-  async createOrder(data: CreateOrderRequest): Promise<CreateOrderResponse> {
-    return this.request<CreateOrderResponse>(ENDPOINTS.ORDERS, {
+  async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDERS, {
       method: 'POST',
       body: JSON.stringify(data),
     });

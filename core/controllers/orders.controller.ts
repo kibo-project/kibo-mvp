@@ -2,14 +2,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from 'next/server';
 import { OrdersService } from '../services/orders.service';
+import { OrderMapper } from "../mappers/order.mapper";
+
 import { 
-  CreateOrderDto,
   GetOrdersDto,
   GetAvailableOrdersDto,
   TakeOrderDto,
   UploadProofDto
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
+import { CreateOrderRequest} from "../types/orders.types";
 
 export class OrdersController {
   private ordersService: OrdersService;
@@ -20,21 +22,32 @@ export class OrdersController {
 
   async createOrder(request: NextRequest): Promise<Response> {
     try {
+      const userIdParam = request.headers.get("x-user-id");
+      if (!userIdParam) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User authentication required'
+          }
+        }, { status: 401 });
+      }
       const formData = await request.formData();
 
-      const userId = formData.get('userId') as string;
+      const userId = userIdParam;
       const fiatAmount = Number(formData.get('fiatAmount'));
       const cryptoAmount = Number(formData.get('cryptoAmount'));
       const recipient = formData.get('recipient') as string;
       const description = formData.get('description') as string;
       const qrImage = formData.get('qr') as File;
 
-      const createOrderDto: CreateOrderDto = {
+      const createOrderRequest: CreateOrderRequest = {
         userId,
         fiatAmount,
         cryptoAmount,
         recipient,
         description,
+        qrImage,
       };
 
       if (!userId || !fiatAmount || !cryptoAmount || !description || !recipient || !qrImage) {
@@ -47,10 +60,11 @@ export class OrdersController {
         }, { status: 400 });
       }
 
-      const order = await this.ordersService.createOrder(createOrderDto, qrImage);
-      const response: ApiResponse<typeof order> = {
+      const order = await this.ordersService.createOrder(createOrderRequest);
+      const orderResponse = OrderMapper.orderToOrderResponse(order);
+      const response: ApiResponse<typeof orderResponse> = {
         success: true,
-        data: order
+        data: orderResponse
       };
 
       return Response.json(response, { status: 201 });
@@ -67,7 +81,7 @@ export class OrdersController {
 
       const filters: GetOrdersDto = {
         status: searchParams.get('status') as any,
-        role: searchParams.get('role') as any,
+        role: searchParams.get('role') as any,// Eber comment Si es posible evitar usar "role " como filtro, si no hay de otra evitar uso de any y cambiarlo a su respectivo enum
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };

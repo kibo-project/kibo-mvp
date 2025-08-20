@@ -120,13 +120,32 @@ export interface Quote {
 
 // Request/Response types
 export interface CreateOrderRequest {
-  quoteId: string;
-  qrImageUrl?: string;
+  userId?: string;
+  fiatAmount: number;
+  cryptoAmount: number;
+  recipient: string;
+  description: string;
+  qrImage: File;
 }
 
-export interface CreateOrderResponse {
-  success: boolean;
-  order: Order;
+export interface OrderResponse {
+  id: string;
+  status: OrderStatus;
+  fiatAmount: number;
+  cryptoAmount: number;
+  fiatCurrency: Currency;
+  cryptoCurrency: CryptoToken;
+  network?: Network;
+  escrowAddress?: string;
+  qrImageUrl?: string;
+  confirmationProofUrl?:string;
+  createdAt: string;
+  takenAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  expiresAt: string;
+  txHash?: string;
+
 }
 
 export interface OrdersListResponse {
@@ -207,3 +226,4 @@ export interface ApiError {
     details?: any;
   };
 }
+

@@ -11,7 +11,9 @@ export const useCreateOrder = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
 
       // Opcional: agregar la nueva orden al cache optimísticamente
-      queryClient.setQueryData(['order', data.order.id], data);
+      if (data.success && data.data) {
+        queryClient.setQueryData(['order', data.data.id], data.data);
+      }
     },
     onError: (error) => {
       console.error('Error creating order:', error);

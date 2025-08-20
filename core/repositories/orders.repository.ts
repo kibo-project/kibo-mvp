@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from '@supabase/supabase-js';
 import {ImageDataFile, Order, OrderStatus,} from '../types/orders.types';
-import {CreateOrderData, GetAvailableOrdersDto, GetOrdersDto} from '../dto/orders.dto';
+import {CreateOrderDto, GetAvailableOrdersDto, GetOrdersDto} from '../dto/orders.dto';
 
 export class OrdersRepository {
     private supabase;
@@ -14,18 +14,18 @@ export class OrdersRepository {
         );
     }
 
-    async create(orderData: CreateOrderData): Promise<Order> {
+    async create(createOrderDto: CreateOrderDto): Promise<Order> {
         const {data, error} = await this.supabase
             .from('orders')
             .insert({
-                status: orderData.status,
-                fiat_amount: orderData.fiatAmount,
-                crypto_amount: orderData.cryptoAmount,
-                fiat_currency: orderData.fiatCurrency,
-                crypto_currency: orderData.cryptoCurrency,
-                user_id: orderData.userId,
-                recipient: orderData.recipient,
-                description: orderData.description,
+                status: createOrderDto.status,
+                fiat_amount: createOrderDto.fiatAmount,
+                crypto_amount: createOrderDto.cryptoAmount,
+                fiat_currency: createOrderDto.fiatCurrency,
+                crypto_currency: createOrderDto.cryptoCurrency,
+                user_id: createOrderDto.userId,
+                recipient: createOrderDto.recipient,
+                description: createOrderDto.description,
                 created_at: new Date().toISOString(),
             })
             .select("*")

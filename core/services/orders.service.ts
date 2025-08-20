@@ -1,6 +1,5 @@
 import {OrdersRepository} from '../repositories/orders.repository';
 import {
-  CreateOrderData,
   CreateOrderDto,
   GetAvailableOrdersDto,
   GetOrdersDto,
@@ -9,6 +8,8 @@ import {
 } from '../dto/orders.dto';
 
 import {Order, OrderStatus, Quote, ImageDataFile} from '../types/orders.types'
+import { CreateOrderRequest} from "../types/orders.types";
+
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
@@ -17,28 +18,28 @@ export class OrdersService {
     this.ordersRepository = new OrdersRepository();
   }
 
-  async createOrder(orderDto: CreateOrderDto, qrImageOrder: File): Promise<Order> {
-     const isValid = await this.ordersRepository.verifyUser(orderDto.userId,"user");
+  async createOrder(createOrderRequest: CreateOrderRequest): Promise<Order> {
+     const isValid = await this.ordersRepository.verifyUser(createOrderRequest.userId!,"user");
      if (!isValid) {
        throw new Error('User or role are not valid');
      }
-     const activeOrders = await this.ordersRepository.activeOrders(orderDto.userId);
+     const activeOrders = await this.ordersRepository.activeOrders(createOrderRequest.userId!);
      if (activeOrders>3) {
        throw new Error('You have more than 3 orders available');
      }
-     const createOrderData: CreateOrderData = {
+     const createOrderDto: CreateOrderDto = {
        status: OrderStatus.PENDING_PAYMENT,
-       fiatAmount: orderDto.fiatAmount,
-       cryptoAmount: orderDto.cryptoAmount,
+       fiatAmount: createOrderRequest.fiatAmount,
+       cryptoAmount: createOrderRequest.cryptoAmount,
        fiatCurrency: 'BOB',
        cryptoCurrency: 'USDT',
-       userId: orderDto.userId,
-       recipient: orderDto.recipient,
-       description: orderDto.description,
+       userId: createOrderRequest.userId!,
+       recipient: createOrderRequest.recipient,
+       description: createOrderRequest.description,
      };
-     const order = await this.ordersRepository.create(createOrderData);
-     const qrId = await this.uploadFile(qrImageOrder);
-    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);
+     const order = await this.ordersRepository.create(createOrderDto);
+     const qrId = await this.uploadFile(createOrderRequest.qrImage);
+    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);// tipo Order
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
