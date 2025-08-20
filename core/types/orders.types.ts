@@ -125,7 +125,7 @@ export interface CreateOrderRequest {
   cryptoAmount: number;
   recipient: string;
   description: string;
-  qrImage: File;
+  qrImage?: File;
 }
 
 export interface OrderResponse {

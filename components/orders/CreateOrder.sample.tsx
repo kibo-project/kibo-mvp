@@ -12,7 +12,12 @@ const CreateOrder = () => {
     setIsSubmitting(true);
 
     try {
-      await createOrder.mutateAsync({ quoteId, qrImageUrl });
+      await createOrder.mutateAsync({
+        fiatAmount: 100,
+        cryptoAmount: 6.06,
+        recipient: "Recipient name",
+        description: "Payment description",
+      });
       alert('Order created successfully!');
       setQuoteId('');
       setQrImageUrl('');
