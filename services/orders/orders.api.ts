@@ -81,7 +81,7 @@ class OrdersApiService {
     });
   }
 
-  async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<AvailableOrdersResponse> {
+  async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<ApiResponse<AvailableOrdersResponse>> {
     const params = new URLSearchParams();
 
     if (filters.country) params.append('country', filters.country);
@@ -93,7 +93,7 @@ class OrdersApiService {
     const queryString = params.toString();
     const endpoint = `${ENDPOINTS.AVAILABLE_ORDERS}${queryString ? `?${queryString}` : ''}`;
 
-    return this.request<AvailableOrdersResponse>(endpoint);
+    return this.request<ApiResponse<AvailableOrdersResponse>>(endpoint);
   }
 
   async takeOrder(id: string): Promise<TakeOrderResponse> {

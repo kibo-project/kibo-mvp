@@ -1,14 +1,12 @@
 import {OrdersRepository} from '../repositories/orders.repository';
 import {
   CreateOrderDto,
-  GetAvailableOrdersDto,
   GetOrdersDto,
   TakeOrderDto,
   UploadProofDto
 } from '../dto/orders.dto';
 
-import {Order, OrderStatus, Quote, ImageDataFile} from '../types/orders.types'
-import { CreateOrderRequest} from "../types/orders.types";
+import {Order, OrderStatus, Quote, ImageDataFile, AvailableOrdersFilters, AvailableOrdersResponse, CreateOrderRequest} from '../types/orders.types'
 
 
 export class OrdersService {
@@ -84,30 +82,23 @@ export class OrdersService {
     return this.enrichOrderWithDynamicData(order);
   }
 
-  async getAvailableOrders(filters: GetAvailableOrdersDto, userId:string): Promise<{
-    orders: Order[];
-    metadata: {
-      totalAvailable: number;
-      avgWaitTime: number;
-      yourActiveOrders: number;
-    };
-  }> {
+  async getAvailableOrders(filters: AvailableOrdersFilters, userId:string): Promise<AvailableOrdersResponse> {
     const isAlly = await this.ordersRepository.verifyUser(userId, "ally");
     if (!isAlly) {
       throw new Error('Access denied for users are not allies');
     }
     const orders = await this.ordersRepository.findAvailable(filters);
     const enrichedOrders = orders.map(order => this.enrichOrderWithDynamicData(order));
-    const metadata = {
-      totalAvailable: orders.length,
-      avgWaitTime: this.calculateAverageWaitTime(),
-      yourActiveOrders: 0
-    };
-
-    return {
+    const availableOrdersResponse: AvailableOrdersResponse = {
       orders: enrichedOrders,
-      metadata
-    };
+      metadata: {
+        totalAvailable: enrichedOrders.length,
+        avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
+        yourActiveOrders: 0,// verificar este atributo sirve?
+      }
+    }
+
+    return availableOrdersResponse;
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {

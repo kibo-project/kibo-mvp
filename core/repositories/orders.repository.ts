@@ -1,8 +1,8 @@
 // TODO: fix, avoid using 'any' type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from '@supabase/supabase-js';
-import {ImageDataFile, Order, OrderStatus,} from '../types/orders.types';
-import {CreateOrderDto, GetAvailableOrdersDto, GetOrdersDto} from '../dto/orders.dto';
+import {AvailableOrdersFilters, ImageDataFile, Order, OrderStatus,} from '../types/orders.types';
+import {CreateOrderDto, GetOrdersDto} from '../dto/orders.dto';
 
 export class OrdersRepository {
     private supabase;
@@ -130,7 +130,7 @@ export class OrdersRepository {
         };
     }
 
-    async findAvailable(filters: GetAvailableOrdersDto): Promise<Order[]> {
+    async findAvailable(filters: AvailableOrdersFilters): Promise<Order[]> {
         let query = this.supabase
             .from('orders')
             .select('*')

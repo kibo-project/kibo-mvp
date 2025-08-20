@@ -165,7 +165,6 @@ export interface OrderDetailsResponse {
 }
 
 export interface AvailableOrdersResponse {
-  success: boolean;
   orders: Order[];
   metadata: {
     totalAvailable: number;
