@@ -17,14 +17,20 @@ import {ApiResponse} from '../../core/types/generic.types';
 
 
 class OrdersApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '/api';
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
+    const defaultHeaders: Record<string, string> = {};
+    if (!(options.body instanceof FormData)) {
+      defaultHeaders['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
+      credentials: 'include', // Esto envía las cookies automáticamente
       headers: {
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
         ...options.headers,
       },
       ...options,
@@ -55,9 +61,17 @@ class OrdersApiService {
   }
 
   async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {
+    const formData = new FormData();
+
+    formData.append('fiatAmount', data.fiatAmount.toString());
+    formData.append('cryptoAmount', data.cryptoAmount.toString());
+    formData.append('recipient', data.recipient);
+    formData.append('description', data.description);
+    formData.append('qr', data.qrImage);
+
     return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDERS, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: formData,
     });
   }
 

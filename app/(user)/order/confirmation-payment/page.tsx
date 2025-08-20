@@ -7,20 +7,21 @@ import {useRouter} from "next/navigation";
 import {NextPage} from "next";
 import {ArrowLeftIcon, ExclamationTriangleIcon} from "@heroicons/react/24/outline";
 import {
-  Button,
-  Card,
-  CardBody,
-  CardTitle,
-  Input,
-  Modal,
-  ModalBody,
-  ModalFooter,
-  ModalHeader,
+    Button,
+    Card,
+    CardBody,
+    CardTitle,
+    Input,
+    Modal,
+    ModalBody,
+    ModalFooter,
+    ModalHeader,
 } from "~~/components/kibo";
 import {usePaymentStore} from "~~/services/store/payment-store";
 import {useQuote} from "~~/hooks/quote/useQuote";
 import {QuoteRequest} from "@/core/types/quote.types";
-//import { useOrders } from "~~/hooks/api/useOrders"; // Importar el hook
+import { useCreateOrder } from "~~/hooks/orders/useCreateOrder";
+import {CreateOrderRequest} from "@/core/types/orders.types";
 // import { useAuth } from "~~/hooks/api/useAuth";
 // import {CreateOrderData} from "~~/app/api/supabase/request/createOrderData";
 
@@ -30,29 +31,7 @@ const useAuth = () => ({
     userProfile: {privyId: "mock-user-id"},
 });
 
-// Mock de useOrders
-const useOrders = () => ({
-    createOrder: async (orderData: CreateOrderData) => {
-        // Simula la creación exitosa de una orden
-        return {...orderData, id: "mock-order-id"};
-    },
-    isLoading: false,
-    error: null,
-});
-
 // TODO: Review and adjust based on actual backend API
-export interface CreateOrderData {
-    userId: string;
-    fiat_amount: number;
-    fiat_currency: string;
-    crypto_amount: number;
-    crypto_currency: string;
-    escrow_address: string;
-    tx_hash: string;
-    status: string;
-    confirmation_proof: string;
-}
-
 // Constants
 const COUNTDOWN_DURATION = 61;
 
@@ -115,8 +94,8 @@ const ConfirmationPayment: NextPage = () => {
     const router = useRouter();
     // Obtener el ID del usuario autenticado
     const {userProfile} = useAuth();
-    // Usar el hook useOrders
-    const {createOrder, isLoading: isCreatingOrder, error: orderError} = useOrders();
+
+    const createOrderMutation = useCreateOrder();
 
     const [showQrModal, setShowQrModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
@@ -163,47 +142,49 @@ const ConfirmationPayment: NextPage = () => {
         return 0;
     }, [quoteData]);
 
+    const base64ToFile = useCallback((base64String: string, filename: string): File => {
+        const arr = base64String.split(',');
+        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
+        const bstr = atob(arr[1]);
+        let n = bstr.length;
+        const u8arr = new Uint8Array(n);
+        while (n--) {
+            u8arr[n] = bstr.charCodeAt(n);
+        }
+        return new File([u8arr], filename, { type: mime });
+    }, []);
 
     const handleConfirmPayment = useCallback(async () => {
         setShowConfirmModal(false);
 
         try {
-
-            // Verificar que el usuario esté autenticado y tenga un ID
-            if (!userProfile?.privyId) {
-                alert("Error: Usuario no autenticado");
+            if (!qrImageBase64) {
+                alert("Error: not found qr image");
                 return;
             }
-            console.log("userProfileUserId= ", userProfile.privyId);
-            // Preparar los datos de la orden
-            const orderData: CreateOrderData = {
-                userId: userProfile.privyId,
-                fiat_amount: fiatAmount,
-                fiat_currency: "BOB", // Bolivianos
-                crypto_amount: cryptoEquivalent,
-                crypto_currency: "USDT",
-                escrow_address: "0xescrow006",
-                tx_hash: "0xtxhash006",
-                status: "PENDING_PAYMENT",
-                confirmation_proof: "IdDeTablaImgages",
+            const qrImageFile = base64ToFile(qrImageBase64, 'qr-code.jpg');
+
+            const createOrderRequest: CreateOrderRequest = {
+                fiatAmount: fiatAmount,
+                cryptoAmount: cryptoEquivalent,
+                recipient: recipient,
+                description: description,
+                qrImage: qrImageFile
             };
+            const result = await createOrderMutation.mutateAsync(createOrderRequest);
 
-            // Crear la orden usando el hook
-            const createdOrder = await createOrder(orderData);
-
-            if (createdOrder) {
-                console.log("Order created successfully:", createdOrder);
+            if (result.success) {
+                console.log("Order created successfully:", result.data);
                 router.push("/order/payment-information");
             } else {
-                console.error("Failed to create order");
-                // Mostrar error al usuario
-                alert("Error al crear la orden. Por favor, intenta nuevamente.");
+                console.error("Failed to create order:", result.error);
+                alert(`Error al crear la orden: ${result.error?.message || 'Error desconocido'}`);
             }
         } catch (error) {
             console.error("Error creating order:", error);
             alert("Error al crear la orden. Por favor, intenta nuevamente.");
         }
-    }, [router, fiatAmount, cryptoEquivalent, createOrder, userProfile.privyId]);
+    }, [router, fiatAmount, cryptoEquivalent, recipient, description, qrImageBase64, base64ToFile, createOrderMutation, userProfile.privyId]);
 
     const handleCancelPayment = useCallback(() => {
         setShowConfirmModal(false);
@@ -247,13 +228,11 @@ const ConfirmationPayment: NextPage = () => {
         }
     }, [fiatAmount]);
 
-
-    // Mostrar error si existe
     useEffect(() => {
-        if (orderError) {
-            alert(`Error: ${orderError}`);
+        if (createOrderMutation.error) {
+            alert(`Error: ${createOrderMutation.error.message}`);
         }
-    }, [orderError]);
+    }, [createOrderMutation.error]);
 
     useEffect(() => {
         if (quoteError) {
@@ -395,14 +374,15 @@ const ConfirmationPayment: NextPage = () => {
                         !fiatAmount ||
                         fiatAmount <= 0 ||
                         !recipient.trim() ||
-                        isCreatingOrder ||
+                        createOrderMutation.isPending ||
                         isLoadingQuote ||
-                        !quoteData
+                        !quoteData ||
+                        !qrImageBase64
                     }
                     fullWidth
                     size="lg"
                     leftIcon={
-                        isCreatingOrder ? (
+                        createOrderMutation.isPending ? (
                             <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
                         ) : (
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -416,7 +396,7 @@ const ConfirmationPayment: NextPage = () => {
                         )
                     }
                 >
-                    {isCreatingOrder ? "Creating Order..." : "Confirm Payment"}
+                    {createOrderMutation.isPending ? "Creating Order..." : "Confirm Payment"}
                 </Button>
 
                 {quoteError && fiatAmount > 0 && (
@@ -480,11 +460,11 @@ const ConfirmationPayment: NextPage = () => {
                         </div>
                     </ModalBody>
                     <ModalFooter>
-                        <Button variant="secondary" onClick={handleCancelPayment} disabled={isCreatingOrder}>
+                        <Button variant="secondary" onClick={handleCancelPayment} disabled={createOrderMutation.isPending}>
                             Cancel
                         </Button>
-                        <Button variant="primary" onClick={handleConfirmPayment} disabled={isCreatingOrder}>
-                            {isCreatingOrder ? "Creating..." : "Confirm Payment"}
+                        <Button variant="primary" onClick={handleConfirmPayment} disabled={createOrderMutation.isPending}>
+                            {createOrderMutation.isPending ? "Creating..." : "Confirm Payment"}
                         </Button>
                     </ModalFooter>
                 </Modal>
