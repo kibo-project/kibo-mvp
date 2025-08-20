@@ -88,11 +88,10 @@ export class OrdersService {
       throw new Error('Access denied for users are not allies');
     }
     const orders = await this.ordersRepository.findAvailable(filters);
-    const enrichedOrders = orders.map(order => this.enrichOrderWithDynamicData(order));
     const availableOrdersResponse: AvailableOrdersResponse = {
-      orders: enrichedOrders,
+      orders: orders ,
       metadata: {
-        totalAvailable: enrichedOrders.length,
+        totalAvailable: orders.length,
         avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
         yourActiveOrders: 0,// verificar este atributo sirve?
       }

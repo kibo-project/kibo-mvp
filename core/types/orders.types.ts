@@ -70,6 +70,8 @@ export interface Order {
   completedAt?: string;
   cancelledAt?: string;
   expiresAt: string;
+  description?: string;
+  recipient?: string;
   secondsRemaining?: number;
   escrowTxHash?: string;
   txHash?: string;
@@ -174,7 +176,6 @@ export interface AvailableOrdersResponse {
 }
 
 export interface TakeOrderResponse {
-  success: boolean;
   order: Order;
 }
 

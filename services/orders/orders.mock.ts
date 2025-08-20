@@ -164,7 +164,6 @@ class OrdersMockService {
     const paginatedOrders = availableOrders.slice(0, limit);
 
     return {
-      success: true,
       orders: paginatedOrders,
       metadata: {
         totalAvailable: availableOrders.length,
@@ -217,7 +216,6 @@ class OrdersMockService {
     this.orders[orderIndex] = takenOrder;
 
     return {
-      success: true,
       order: takenOrder
     };
   }

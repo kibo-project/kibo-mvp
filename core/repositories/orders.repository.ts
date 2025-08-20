@@ -279,6 +279,8 @@ export class OrdersRepository {
             completedAt: dbOrder.completed_at,
             cancelledAt: dbOrder.cancelled_at,
             expiresAt: dbOrder.expires_at,
+            recipient:dbOrder.recipient,
+            description: dbOrder.description,
             escrowTxHash: dbOrder.escrow_tx_hash,
             txHash: dbOrder.tx_hash,
             bankTransactionId: dbOrder.bank_transaction_id,

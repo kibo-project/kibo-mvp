@@ -10,7 +10,7 @@ import {
   UploadProofDto
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
-import { CreateOrderRequest, AvailableOrdersFilters} from "../types/orders.types";
+import { CreateOrderRequest, AvailableOrdersFilters, TakeOrderResponse} from "../types/orders.types";
 
 export class OrdersController {
   private ordersService: OrdersService;
@@ -161,17 +161,30 @@ export class OrdersController {
 
   async takeOrder(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
     try {
-      const { searchParams } = new URL(request.url);
-      const allyId = searchParams.get('userId') as any;
+      /* const userId = request.headers.get("x-user-id");
+      if (!userId) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User authentication required'
+          }
+        }, { status: 401 });
+      }*/
+      const allyId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
+
       const takeOrderDto: TakeOrderDto = {
         orderId: params.id
       };
 
       const order = await this.ordersService.takeOrder(takeOrderDto, allyId);
+      const takeOrderResponse: TakeOrderResponse = {
+        order
+      }
 
-      const response: ApiResponse<typeof order> = {
+      const response: ApiResponse<typeof takeOrderResponse> = {
         success: true,
-        data: order
+        data: takeOrderResponse
       };
 
       return Response.json(response);

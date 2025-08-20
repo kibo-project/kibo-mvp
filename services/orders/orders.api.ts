@@ -96,9 +96,9 @@ class OrdersApiService {
     return this.request<ApiResponse<AvailableOrdersResponse>>(endpoint);
   }
 
-  async takeOrder(id: string): Promise<TakeOrderResponse> {
-    return this.request<TakeOrderResponse>(ENDPOINTS.TAKE_ORDER(id), {
-      method: 'POST',
+  async takeOrder(id: string): Promise<ApiResponse<TakeOrderResponse>> {
+    return this.request<ApiResponse<TakeOrderResponse>>(ENDPOINTS.TAKE_ORDER(id), {
+      method: 'PATCH',
     });
   }
 
