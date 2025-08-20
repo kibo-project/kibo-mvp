@@ -38,7 +38,7 @@ export class OrdersService {
        description: createOrderRequest.description,
      };
      const order = await this.ordersRepository.create(createOrderDto);
-     const qrId = await this.uploadFile(createOrderRequest.qrImage);
+     const qrId = await this.uploadFile(createOrderRequest.qrImage!);
     const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);// tipo Order
 
     // 5. Post-creation tasks (logs, notifications)
