@@ -8,7 +8,7 @@ import {ArrowLeftIcon, MagnifyingGlassIcon, XMarkIcon} from "@heroicons/react/24
 import {Badge, Button, Card, CardBody, CardTitle, Input} from "~~/components/kibo";
 import {useAvailableOrders} from "@/hooks/orders/useAvailableOrders";
 import {useTakeOrder} from "@/hooks/orders/useTakeOrder";
-import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
+import {useAdminPaymentStore} from "~~/services/store/admin-payment-store";
 
 interface LocalOrder {
     id: string;
@@ -20,6 +20,7 @@ interface LocalOrder {
     fiatAmount: number;
     cryptoCurrency: string;
     fiatCurrency: string;
+    qrImageUrl?: string;
     description?: string;
     recipient?: string;
 }
@@ -39,7 +40,8 @@ const AllyAvailableOrders: NextPage = () => {
 
     const {mutate: takeOrder, isPending: isTakingOrder, error: takeOrderError} = useTakeOrder();
 
-    const { setSelectedTransactionId } = useAdminPaymentStore();
+    // PARA EL STORE: Destructurar ambas funciones del store
+    const {setSelectedTransactionId, setSelectedTransaction} = useAdminPaymentStore();
 
     const handleViewOrderDetails = useCallback(
         (order: LocalOrder) => {
@@ -64,6 +66,8 @@ const AllyAvailableOrders: NextPage = () => {
     const handleConfirmTakeOrder = useCallback(() => {
         if (selectedOrder) {
             setSelectedTransactionId(selectedOrder.id);
+            // PARA EL STORE: Guardar también la transacción completa en el store
+            setSelectedTransaction(selectedOrder);
 
             takeOrder(selectedOrder.id, {
                 onSuccess: (response) => {
@@ -88,7 +92,7 @@ const AllyAvailableOrders: NextPage = () => {
                 }
             });
         }
-    }, [selectedOrder, takeOrder, router, setSelectedTransactionId]);
+    }, [selectedOrder, takeOrder, router, setSelectedTransactionId, setSelectedTransaction]); // PARA EL STORE: Agregar setSelectedTransaction a las dependencias
 
     const handleCancelTakeOrder = useCallback(() => {
         setShowTakeOrderModal(false);
@@ -114,6 +118,7 @@ const AllyAvailableOrders: NextPage = () => {
             fiatAmount: order.fiatAmount,
             cryptoCurrency: order.cryptoCurrency,
             fiatCurrency: order.fiatCurrency,
+            qrImageUrl: order.qrImageUrl,
             description: order.description,
             recipient: order.recipient,
         }))

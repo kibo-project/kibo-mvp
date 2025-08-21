@@ -133,8 +133,8 @@ export class OrdersService {
     return updatedOrder;
   }
 
-  async uploadProof(proofDto: UploadProofDto, allyId: string): Promise<Order> {
-    const order = await this.ordersRepository.findById(proofDto.orderId);
+  async uploadProof(uploadProofDto: UploadProofDto, allyId: string): Promise<Order> {
+    const order = await this.ordersRepository.findById(uploadProofDto.orderId);
     
     if (!order) {
       throw new Error('Order not found');
@@ -148,15 +148,15 @@ export class OrdersService {
       throw new Error('Only the assigned ally can upload proof');
     }
 
-    const confirmationProof = await this.uploadFile(proofDto.proofFile);
+    const confirmationProof = await this.uploadFile(uploadProofDto.proofFile);
     const confirmationProofUrl = await this.ordersRepository.getImageUrl(confirmationProof);
     const updatedOrder = await this.ordersRepository.updateStatus(
-      proofDto.orderId,
+      uploadProofDto.orderId,
       OrderStatus.COMPLETED,
       {
         confirmationProof,
         confirmationProofUrl,
-        bankTransactionId: proofDto.bankTransactionId,
+        bankTransactionId: uploadProofDto.bankTransactionId,
         completedAt: new Date().toISOString(),
         txHash: await this.releaseEscrow(order)
       }

@@ -217,7 +217,7 @@ export class OrdersRepository {
 
     async getImageUrl(imageId: string): Promise<string> {
         const ext = await this.getExtensionImage(imageId);
-        const { data } = await this.supabase.storage.from("kibobucket").getPublicUrl(`order-${imageId}.${ext}`);
+        const { data } = this.supabase.storage.from("kibobucket").getPublicUrl(`order-${imageId}.${ext}`);
         return data.publicUrl;
     }
 

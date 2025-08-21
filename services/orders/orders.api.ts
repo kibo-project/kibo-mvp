@@ -1,4 +1,3 @@
-// Servicios reales (para cuando tu compañero termine la API)
 import {
   OrdersListResponse,
   OrderDetailsResponse,
@@ -8,7 +7,6 @@ import {
   TakeOrderResponse,
   CancelOrderResponse,
   UploadProofRequest,
-  UploadProofResponse,
   OrdersFilters,
   AvailableOrdersFilters
 } from '../../core/types/orders.types';
@@ -102,7 +100,7 @@ class OrdersApiService {
     });
   }
 
-  async uploadProof(id: string, data: UploadProofRequest): Promise<UploadProofResponse> {
+  async uploadProof(id: string, data: UploadProofRequest): Promise<ApiResponse<OrderResponse>> {
     const formData = new FormData();
     formData.append('proof', data.proof);
 
