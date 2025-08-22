@@ -11,7 +11,12 @@ export const NavigationApp = () => {
       label: "Home",
       href: "/",
       icon: (
-        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="size-7 md:size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -25,14 +30,24 @@ export const NavigationApp = () => {
       label: "Camera",
       href: "/order/camera",
       icon: (
-        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="size-7 md:size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
             d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"
           />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"
+          />
         </svg>
       ),
     },
@@ -40,7 +55,12 @@ export const NavigationApp = () => {
       label: "Transactions",
       href: "/movements",
       icon: (
-        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="size-7 md:size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -57,7 +77,12 @@ export const NavigationApp = () => {
       label: "Home",
       href: "/",
       icon: (
-        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="size-7 md:size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -71,7 +96,12 @@ export const NavigationApp = () => {
       label: "Transactions",
       href: "/transactions",
       icon: (
-        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg
+          className="size-7 md:size-4"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -100,7 +130,11 @@ export const NavigationApp = () => {
                   : "text-base-content/70 hover:text-base-content hover:bg-base-200 dark:hover:bg-base-200"
               }`}
             >
-              <div className={`transition-transform duration-200 mb-0.5 ${isActive ? "scale-110" : "scale-100"}`}>
+              <div
+                className={`transition-transform duration-200 mb-0.5 ${
+                  isActive ? "scale-110" : "scale-100"
+                }`}
+              >
                 {icon}
               </div>
               <span className="text-xs font-medium">{label}</span>

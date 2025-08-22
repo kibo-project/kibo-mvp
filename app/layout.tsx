@@ -2,6 +2,7 @@ import "@rainbow-me/rainbowkit/styles.css";
 import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
 import { ThemeProvider } from "~~/components/ThemeProvider";
 import "./globals.css";
+import PrivyProvider from "~~/providers/PrivyProvider";
 // import { getMetadata } from "~~/utils/scaffold-eth/getMetadata";
 
 // export const metadata = getMetadata({
@@ -14,7 +15,11 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
     <html suppressHydrationWarning>
       <body>
         <ThemeProvider enableSystem>
-          <ScaffoldEthAppWithProviders>{children}</ScaffoldEthAppWithProviders>
+          <PrivyProvider>
+            <ScaffoldEthAppWithProviders>
+              {children}
+            </ScaffoldEthAppWithProviders>
+          </PrivyProvider>
         </ThemeProvider>
       </body>
     </html>

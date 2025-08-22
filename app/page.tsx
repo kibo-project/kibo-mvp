@@ -1,11 +1,15 @@
 "use client";
 
 import { useMemo } from "react";
-// import { usePrivy } from "@privy-io/react-auth";
 import type { NextPage } from "next";
 // import { mantleSepoliaTestnet } from "viem/chains";
 // import { useAccount, useBalance } from "wagmi";
-import { type ActivityItem, PromoCarousel, QuickActions, RecentActivity } from "~~/components/dashboard";
+import {
+  type ActivityItem,
+  PromoCarousel,
+  QuickActions,
+  RecentActivity,
+} from "~~/components/dashboard";
 import { ListIcon, PlaneIcon, QrCodeIcon } from "~~/components/icons/index";
 import { Badge } from "~~/components/kibo";
 import { useAuthStore } from "~~/services/store/auth-store.";
@@ -18,11 +22,11 @@ interface TopButton {
 
 const Home: NextPage = () => {
   // const { address } = useAccount();
-  // const { ready, authenticated } = usePrivy();
   const {
     // hasVisitedRoot,
     // setHasVisitedRoot,
-    isAdmin } = useAuthStore();
+    isAdmin,
+  } = useAuthStore();
   // const router = useRouter();
 
   // const { data: balance } = useBalance({
@@ -57,7 +61,7 @@ const Home: NextPage = () => {
         href: "/movements",
       },
     ],
-    [],
+    []
   );
 
   const userTransactions: ActivityItem[] = useMemo(
@@ -99,7 +103,7 @@ const Home: NextPage = () => {
         href: "/movements",
       },
     ],
-    [],
+    []
   );
 
   const adminTransactions: ActivityItem[] = useMemo(
@@ -141,7 +145,7 @@ const Home: NextPage = () => {
         href: "/transactions/admin/review/TXN004",
       },
     ],
-    [],
+    []
   );
 
   // useEffect(() => {
@@ -170,7 +174,8 @@ const Home: NextPage = () => {
 
     return (
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
-        <div className="flex items-center justify-end gap-2 mb-4">
+        <div className="flex items-center justify-between gap-2 mb-4">
+          <div className="flex-1" />
           <Badge
             variant="info"
             size="sm"
