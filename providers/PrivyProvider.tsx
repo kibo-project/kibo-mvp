@@ -3,18 +3,15 @@
 import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { createConfig, WagmiProvider } from "@privy-io/wagmi";
+import { createConfig, WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
 import { http } from "wagmi";
-import { base, arbitrum, mainnet, sepolia } from "viem/chains";
+import { mantle } from "viem/chains";
 
 const wagmiConfig = createConfig({
-  chains: [base, arbitrum, mainnet, sepolia],
+  chains: [mantle],
   transports: {
-    [base.id]: http(),
-    [arbitrum.id]: http(),
-    [mainnet.id]: http(),
-    [sepolia.id]: http(),
+    [mantle.id]: http(),
   },
   ssr: true,
 });
