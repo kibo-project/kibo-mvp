@@ -40,7 +40,6 @@ const AllyAvailableOrders: NextPage = () => {
 
     const {mutate: takeOrder, isPending: isTakingOrder, error: takeOrderError} = useTakeOrder();
 
-    // PARA EL STORE: Destructurar ambas funciones del store
     const {setSelectedTransactionId, setSelectedTransaction} = useAdminPaymentStore();
 
     const handleViewOrderDetails = useCallback(
@@ -66,9 +65,7 @@ const AllyAvailableOrders: NextPage = () => {
     const handleConfirmTakeOrder = useCallback(() => {
         if (selectedOrder) {
             setSelectedTransactionId(selectedOrder.id);
-            // PARA EL STORE: Guardar también la transacción completa en el store
             setSelectedTransaction(selectedOrder);
-
             takeOrder(selectedOrder.id, {
                 onSuccess: (response) => {
                     setShowTakeOrderModal(false);

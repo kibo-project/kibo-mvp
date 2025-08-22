@@ -1,5 +1,6 @@
 import {QuoteRepository} from '../repositories/quote.repository';
 import {QuoteRequest, QuoteResponse} from "@/core/types/quote.types";
+import { QUOTE_LIMITS } from '../../config/constants';
 
 
 export class QuoteService {
@@ -10,14 +11,11 @@ export class QuoteService {
     }
 
     async getQuote(quoteRequest: QuoteRequest) {
-        if (quoteRequest.fiatAmount <= 0) {
-            throw new Error('Fiat amount must be greater than 0');
+        if (quoteRequest.fiatAmount < QUOTE_LIMITS.MIN_FIAT_AMOUNT) {
+            throw new Error(`Minimum fiat amount is ${QUOTE_LIMITS.MIN_FIAT_AMOUNT}`);
         }
-        if (quoteRequest.fiatAmount < 10) {
-            throw new Error('Minimum fiat amount is 10');
-        }
-        if (quoteRequest.fiatAmount >10000) {
-            throw new Error('Maximum fiat amount is 10000');
+        if (quoteRequest.fiatAmount > QUOTE_LIMITS.MAX_FIAT_AMOUNT) {
+            throw new Error(`Maximum fiat amount is ${QUOTE_LIMITS.MAX_FIAT_AMOUNT}`);
         }
 
         const bestRate = await this.quoteRepository.getQuote(quoteRequest);

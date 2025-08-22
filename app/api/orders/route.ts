@@ -3,8 +3,8 @@ import { OrdersController } from '@/core/controllers/orders.controller';
 
 const controller = new OrdersController();
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  return controller.getOrders(request, params);
+export async function GET(request: NextRequest) {
+  return controller.getOrders(request);
 }
 
 export async function POST(request: NextRequest) {

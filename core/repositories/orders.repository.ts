@@ -3,6 +3,8 @@
 import {createClient} from '@supabase/supabase-js';
 import {AvailableOrdersFilters, ImageDataFile, Order, OrderStatus,} from '../types/orders.types';
 import {CreateOrderDto, GetOrdersDto} from '../dto/orders.dto';
+import { OrderMapper } from "../mappers/order.mapper";
+
 
 export class OrdersRepository {
     private supabase;
@@ -34,8 +36,7 @@ export class OrdersRepository {
         if (error) {
             throw new Error(`Failed to create order: ${error.message}`);
         }
-
-        return this.mapDbToOrder(data);
+        return OrderMapper.dbToOrder(data);
     }
 
     async findById(id: string): Promise<Order | null> {
@@ -50,7 +51,7 @@ export class OrdersRepository {
             throw new Error(`Failed to find order: ${error.message}`);
         }
 
-        return this.mapDbToOrder(data);
+        return OrderMapper.dbToOrder(data);
     }
 
     async verifyUser(userId: string, rolename: string){
@@ -84,51 +85,43 @@ export class OrdersRepository {
     }
 
 
-    async findMany(filters: GetOrdersDto, user_id?: string): Promise<{
-        orders: Order[];
-        total: number;
-    }> {
-
+    async findMany(filters: GetOrdersDto): Promise<{ orders: Order[]; total: number }> {
         let query = this.supabase
             .from('orders')
-            .select("*", {count: 'exact'});
+            .select("*", { count: 'exact' });
 
-        if (user_id) {
-            const exists = await this.verifyUser(user_id, filters.role);
-            if (!exists) {
-                throw new Error('User not found or role mismatch');
-            }
-            if (filters.role === "user") {
-                query = query.eq('user_id', user_id);
-            } else if (filters.role === "ally") {
-                query = query.eq('ally_id', user_id);
-            }
+        if (filters.userId) {
+            query = query.eq('user_id', filters.userId);
         }
+
+        if (filters.allyId) {
+            query = query.eq('ally_id', filters.allyId);
+        }
+
         if (filters.status) {
             query = query.eq('status', filters.status);
         }
 
-        if (filters.limit) {
+        if (filters.offset !== undefined && filters.limit !== undefined) {
+            query = query.range(filters.offset, filters.offset + filters.limit - 1);
+        } else if (filters.limit !== undefined) {
             query = query.limit(filters.limit);
         }
 
-        if (filters.offset) {
-            query = query.range(filters.offset, filters.offset + (filters.limit || 10) - 1);
-        }
+        query = query.order('created_at', { ascending: false });
 
-        query = query.order('created_at', {ascending: false});
-
-        const {data, error, count} = await query;
+        const { data, error, count } = await query;
 
         if (error) {
             throw new Error(`Failed to fetch orders: ${error.message}`);
         }
 
         return {
-            orders: data.map(this.mapDbToOrder),
-            total: count || 0
+            orders: data.map(OrderMapper.dbToOrder),
+            total: count || 0,
         };
     }
+
 
     async findAvailable(filters: AvailableOrdersFilters): Promise<Order[]> {
         let query = this.supabase
@@ -159,7 +152,7 @@ export class OrdersRepository {
             throw new Error(`Failed to fetch available orders: ${error.message}`);
         }
 
-        return data.map(this.mapDbToOrder);
+        return data.map(OrderMapper.dbToOrder);
     }
     async uploadDbImage( imageDataFile: ImageDataFile): Promise<{ data: any; error?: string }> {
         const { data, error } = await this.supabase
@@ -199,7 +192,7 @@ export class OrdersRepository {
         if (error) {
             throw new Error(`Failed to save qrId in orders: ${error.message}`);
         }
-        return this.mapDbToOrder(data);
+        return OrderMapper.dbToOrder(data);
 
     }
     async getExtensionImage(imageId: string): Promise<string> {
@@ -257,35 +250,6 @@ export class OrdersRepository {
             throw new Error(`Failed to update order status: ${error.message}`);
         }
 
-        return this.mapDbToOrder(data);
-    }
-
-    private mapDbToOrder(dbOrder: any): Order {
-        return {
-            id: dbOrder.id,
-            status: dbOrder.status,
-            fiatAmount: dbOrder.fiat_amount,
-            cryptoAmount: dbOrder.crypto_amount,
-            fiatCurrency: dbOrder.fiat_currency,
-            cryptoCurrency: dbOrder.crypto_currency,
-            network: dbOrder.network,
-            qrData: dbOrder.qr_data,
-            qrImage: dbOrder.qr_image,
-            qrImageUrl: dbOrder.qr_image_url,
-            confirmationProof: dbOrder.confirmation_proof,
-            confirmationProofUrl: dbOrder.confirmation_proof_url,
-            createdAt: dbOrder.created_at,
-            takenAt: dbOrder.taken_at,
-            completedAt: dbOrder.completed_at,
-            cancelledAt: dbOrder.cancelled_at,
-            expiresAt: dbOrder.expires_at,
-            recipient:dbOrder.recipient,
-            description: dbOrder.description,
-            escrowTxHash: dbOrder.escrow_tx_hash,
-            txHash: dbOrder.tx_hash,
-            bankTransactionId: dbOrder.bank_transaction_id,
-            userId: dbOrder.user_id,
-            allyId: dbOrder.ally_id
-        };
+        return OrderMapper.dbToOrder(data);
     }
 }

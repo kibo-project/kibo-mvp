@@ -23,7 +23,6 @@ import {QuoteRequest} from "@/core/types/quote.types";
 import { useCreateOrder } from "~~/hooks/orders/useCreateOrder";
 import {CreateOrderRequest} from "@/core/types/orders.types";
 // import { useAuth } from "~~/hooks/api/useAuth";
-// import {CreateOrderData} from "~~/app/api/supabase/request/createOrderData";
 
 // TODO: Replace mocks with real implementations
 // Mock de useAuth
@@ -31,11 +30,7 @@ const useAuth = () => ({
     userProfile: {privyId: "mock-user-id"},
 });
 
-// TODO: Review and adjust based on actual backend API
-// Constants
 const COUNTDOWN_DURATION = 61;
-
-//const USDT_EXCHANGE_RATE = 16.5; // TODO: Replace with real-time API data
 
 
 /**
@@ -101,7 +96,6 @@ const ConfirmationPayment: NextPage = () => {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [seconds, setSeconds] = useState(COUNTDOWN_DURATION);
 
-    // Editable payment fields - inicializar con valores por defecto vacíos
     const [recipient, setRecipient] = useState("");
     const [description, setDescription] = useState("");
     const [fiatAmount, setFiatAmount] = useState<number>(0);

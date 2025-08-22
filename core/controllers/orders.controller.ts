@@ -1,16 +1,19 @@
-// TODO: fix, avoid using 'any' type
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from 'next/server';
 import { OrdersService } from '../services/orders.service';
 import { OrderMapper } from "../mappers/order.mapper";
 
 import { 
-  GetOrdersDto,
   TakeOrderDto,
   UploadProofDto
 } from '../dto/orders.dto';
 import { ApiResponse } from '../types/generic.types';
-import { CreateOrderRequest, AvailableOrdersFilters, TakeOrderResponse} from "../types/orders.types";
+import {
+  CreateOrderRequest,
+  AvailableOrdersFilters,
+  TakeOrderResponse,
+  GetOrdersResponse, OrderStatus,
+} from "../types/orders.types";
 
 export class OrdersController {
   private ordersService: OrdersService;
@@ -21,8 +24,8 @@ export class OrdersController {
 
   async createOrder(request: NextRequest): Promise<Response> {
     try {
-      const userIdParam = request.headers.get("x-user-id");
-      if (!userIdParam) {
+      /* const userId = request.headers.get("x-user-id");
+      if (!userId) {
         return Response.json({
           success: false,
           error: {
@@ -30,15 +33,34 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }
+      }*/
       const formData = await request.formData();
 
-      const userId = userIdParam;
+      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617"
       const fiatAmount = Number(formData.get('fiatAmount'));
       const cryptoAmount = Number(formData.get('cryptoAmount'));
       const recipient = formData.get('recipient') as string;
       const description = formData.get('description') as string;
       const qrImage = formData.get('qr') as File;
+
+      const missingFields: string[] = [];
+
+      if (!userId) missingFields.push('userId');
+      if (!fiatAmount || isNaN(fiatAmount)) missingFields.push('fiatAmount');
+      if (!cryptoAmount || isNaN(cryptoAmount)) missingFields.push('cryptoAmount');
+      if (!recipient) missingFields.push('recipient');
+      if (!description) missingFields.push('description');
+      if (!qrImage) missingFields.push('qr');
+
+      if (missingFields.length > 0) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'MISSING_FIELDS',
+            message: `Missing required fields: ${missingFields.join(', ')}`,
+          }
+        }, { status: 400 });
+      }
 
       const createOrderRequest: CreateOrderRequest = {
         userId,
@@ -48,16 +70,6 @@ export class OrdersController {
         description,
         qrImage,
       };
-
-      if (!userId || !fiatAmount || !cryptoAmount || !description || !recipient || !qrImage) {
-        return Response.json({
-          success: false,
-          error: {
-            code: 'MISSING_FIELDS',
-            message: 'all fields are required'
-          }
-        }, { status: 400 });
-      }
 
       const order = await this.ordersService.createOrder(createOrderRequest);
       const orderResponse = OrderMapper.orderToOrderResponse(order);
@@ -72,15 +84,23 @@ export class OrdersController {
     }
   }
 
-  async getOrders(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
+  async getOrders(request: NextRequest): Promise<Response> {
     try {
-      const resolvedParams = await params;
-      const userId = resolvedParams.id;
+      const userId = request.headers.get("x-user-id");
+      if (!userId) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User authentication required'
+          }
+        }, { status: 401 });
+      }
       const { searchParams } = new URL(request.url);
+      const statusParam = searchParams.get('status');
 
-      const filters: GetOrdersDto = {
-        status: searchParams.get('status') as any,
-        role: searchParams.get('role') as any,// Eber comment Si es posible evitar usar "role " como filtro, si no hay de otra evitar uso de any y cambiarlo a su respectivo enum
+      const filters: GetOrdersResponse = {
+        status: this.isValidOrderStatus(statusParam) ? statusParam : undefined,
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
@@ -99,8 +119,16 @@ export class OrdersController {
     try {
       const resolvedParams = await params;
       const orderId = resolvedParams.id;
-      const { searchParams } = new URL(request.url);
-      const userId = searchParams.get('userId') as any;
+      const userId = request.headers.get("x-user-id");
+      if (!userId) {
+        return Response.json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User authentication required'
+          }
+        }, { status: 401 });
+      }
       const order = await this.ordersService.getOrderById(orderId, userId);
 
       if (!order) {
@@ -138,11 +166,13 @@ export class OrdersController {
       }*/
       const userId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
       const { searchParams } = new URL(request.url);
+      const sortByParam = searchParams.get('sortBy');
+
       const filters: AvailableOrdersFilters = {
         country: searchParams.get('country') || undefined,
         minAmount: searchParams.get('minAmount') ? parseFloat(searchParams.get('minAmount')!) : undefined,
         maxAmount: searchParams.get('maxAmount') ? parseFloat(searchParams.get('maxAmount')!) : undefined,
-        sortBy: searchParams.get('sortBy') as any,
+        sortBy: this.isValidSortBy(sortByParam) ? sortByParam : undefined,
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined
       };
 
@@ -159,7 +189,7 @@ export class OrdersController {
     }
   }
 
-  async takeOrder(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+  async takeOrder(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
       /* const userId = request.headers.get("x-user-id");
       if (!userId) {
@@ -171,10 +201,13 @@ export class OrdersController {
           }
         }, { status: 401 });
       }*/
+
+      const resolvedParams = await params;
+      const orderId = resolvedParams.id;
       const allyId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
 
       const takeOrderDto: TakeOrderDto = {
-        orderId: params.id
+        orderId: orderId,
       };
 
       const order = await this.ordersService.takeOrder(takeOrderDto, allyId);
@@ -193,7 +226,7 @@ export class OrdersController {
     }
   }
 
-  async uploadProof(request: NextRequest, { params }: { params: { id: string } }): Promise<Response> {
+  async uploadProof(request: NextRequest,  params: Promise<{ id: string }>): Promise<Response> {
     try {
       /* const userId = request.headers.get("x-user-id");
     if (!userId) {
@@ -205,6 +238,8 @@ export class OrdersController {
         }
       }, { status: 401 });
     }*/
+      const resolvedParams = await params;
+      const orderId = resolvedParams.id;
       const allyId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
       const formData = await request.formData();
 
@@ -223,7 +258,7 @@ export class OrdersController {
       }
 
       const uploadProofDto: UploadProofDto = {
-        orderId: params.id,
+        orderId: orderId,
         proofFile,
         bankTransactionId: bankTransactionId || undefined,
         notes: notes || undefined
@@ -243,6 +278,16 @@ export class OrdersController {
       return this.handleError(error);
     }
   }
+
+  private isValidOrderStatus(status: string | null): status is OrderStatus {
+    if (!status) return false;
+    return Object.values(OrderStatus).includes(status as OrderStatus);
+  }
+  private isValidSortBy(sortBy: string | null): sortBy is 'createdAt' | 'expiresAt' | 'amount' {
+    if (!sortBy) return false;
+    return ['createdAt', 'expiresAt', 'amount'].includes(sortBy);
+  }
+
 
   private handleError(error: any): Response {
     console.error('Orders Controller Error:', error);

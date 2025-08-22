@@ -1,4 +1,6 @@
 import {OrdersRepository} from '../repositories/orders.repository';
+import {UsersRepository} from '../repositories/users.repository';
+
 import {
   CreateOrderDto,
   GetOrdersDto,
@@ -6,14 +8,26 @@ import {
   UploadProofDto
 } from '../dto/orders.dto';
 
-import {Order, OrderStatus, Quote, ImageDataFile, AvailableOrdersFilters, AvailableOrdersResponse, CreateOrderRequest} from '../types/orders.types'
+import {
+  Order,
+  OrderStatus,
+  Quote,
+  ImageDataFile,
+  AvailableOrdersFilters,
+  AvailableOrdersResponse,
+  CreateOrderRequest,
+  GetOrdersResponse, UserRole,
+    OrdersListResponse
+} from '../types/orders.types'
 
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
+  private userRepository: UsersRepository;
 
   constructor() {
     this.ordersRepository = new OrdersRepository();
+    this.userRepository = new UsersRepository();
   }
 
   async createOrder(createOrderRequest: CreateOrderRequest): Promise<Order> {
@@ -37,7 +51,7 @@ export class OrdersService {
      };
      const order = await this.ordersRepository.create(createOrderDto);
      const qrId = await this.uploadFile(createOrderRequest.qrImage!);
-    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);// tipo Order
+    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
@@ -46,30 +60,37 @@ export class OrdersService {
     return updatedOrder;
   }
 
-  async getOrdersByUser(filters: GetOrdersDto, user_id: string): Promise<{
-    orders: Order[];
-    pagination: {
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
+  async getOrdersByUser(getOrdersResponse: GetOrdersResponse, userId: string): Promise<OrdersListResponse> {
+    const roleId = await this.userRepository.getRoleIdByUserId(userId);
+    const roleName = await this.userRepository.getRoleNameByRoleId(roleId) as UserRole;
+    const limit = getOrdersResponse.limit ?? 10;
+    const offset = getOrdersResponse.offset ?? 0;
+
+    const getOrdersDto: GetOrdersDto = {
+      status: getOrdersResponse.status,
+      limit,
+      offset,
     };
-  }> {
-    const { orders, total } = await this.ordersRepository.findMany(filters, user_id);
-    
-    const limit = filters.limit || 10;
-    const offset = filters.offset || 0;
-    
+
+    if (roleName === "user") {
+      getOrdersDto.userId = userId;
+    } else if (roleName === "ally") {
+      getOrdersDto.allyId = userId;
+    }
+
+    const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
+
     return {
       orders,
       pagination: {
         total,
         limit,
         offset,
-        hasMore: offset + limit < total
-      }
+        hasMore: offset + limit < total,
+      },
     };
   }
+
 
   async getOrderById(orderId: string, userId: string): Promise<Order | null> {
     const order = await this.ordersRepository.findById(orderId);
@@ -79,7 +100,7 @@ export class OrdersService {
     if (userId && ! await this.canUserAccessOrder(order, userId)) {
       throw new Error('Access denied to this order');
     }
-    return this.enrichOrderWithDynamicData(order);
+    return order;
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId:string): Promise<AvailableOrdersResponse> {
@@ -93,7 +114,9 @@ export class OrdersService {
       metadata: {
         totalAvailable: orders.length,
         avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
-        yourActiveOrders: 0,// verificar este atributo sirve?
+        yourActiveOrders: 0,
+        // verificar este atributo sirve? En este nivel deberiamos verificar
+        // que si el Ally tiene ya otra orden en curso entonces no puede tomar la orden aniadir mas adelante
       }
     }
 

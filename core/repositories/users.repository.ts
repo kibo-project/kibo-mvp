@@ -99,6 +99,29 @@ export class UsersRepository {
 
         return this.mapDbToUser(data)
     }
+    async getRoleIdByUserId(userId: string): Promise<string> {
+        const {data, error} = await this.supabase
+        .from('users_roles')
+        .select('role_id')
+        .eq('user_id', userId)
+        .single();
+        if (error) {
+            throw new Error(`Error getting role Id: ${error.message}`);
+        }
+        return data.role_id;
+    }
+
+    async getRoleNameByRoleId(roleId: string): Promise<string> {
+        const {data, error} = await this.supabase
+        .from('roles')
+        .select('name')
+        .eq('id', roleId)
+        .single();
+        if (error) {
+            throw new Error(`Error getting role name: ${error.message}`);
+        }
+        return data.name;
+    }
 
     private mapDbToUser(dbUser: any): User {
         return {

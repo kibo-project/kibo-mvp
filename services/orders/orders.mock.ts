@@ -51,7 +51,6 @@ class OrdersMockService {
     const paginatedOrders = filteredOrders.slice(offset, offset + limit);
 
     return {
-      success: true,
       orders: paginatedOrders,
       pagination: {
         total: filteredOrders.length,

@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from "@supabase/supabase-js";
 import {QuoteRequest} from "@/core/types/quote.types";
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { API_ENDPOINTS, QUOTE_CONFIG } from '../../config/constants';
 
 export class QuoteRepository {
     private supabase;
@@ -14,16 +15,16 @@ export class QuoteRepository {
 
     async getQuote(quoteRequest: QuoteRequest): Promise<number> {
         const payload = {
-            page: 1,
-            rows: 20,
+            page: QUOTE_CONFIG.DEFAULT_PAGE,
+            rows: QUOTE_CONFIG.DEFAULT_ROWS,
             payTypes: [],
             asset: quoteRequest.cryptoCurrency,
             fiat: quoteRequest.fiatCurrency,
-            tradeType: "SELL",
+            tradeType: QUOTE_CONFIG.DEFAULT_TRADE_TYPE,
             network: quoteRequest.network
         };
 
-        const response = await fetch("https://p2p.binance.com/bapi/c2c/v2/friendly/c2c/adv/search", {
+        const response = await fetch(API_ENDPOINTS.BINANCE_P2P_SEARCH, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),

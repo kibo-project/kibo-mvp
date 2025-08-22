@@ -151,7 +151,6 @@ export interface OrderResponse {
 }
 
 export interface OrdersListResponse {
-  success: boolean;
   orders: Order[];
   pagination: {
     total: number;
@@ -173,6 +172,11 @@ export interface AvailableOrdersResponse {
     avgWaitTime: number;
     yourActiveOrders: number;
   };
+}
+export interface GetOrdersResponse {
+  status?: OrderStatus;
+  limit?: number;
+  offset?: number;
 }
 
 export interface TakeOrderResponse {

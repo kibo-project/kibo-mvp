@@ -84,9 +84,6 @@ const AdminTransactions: NextPage = () => {
         }))
         : [];
 
-    console.log('data -->', data);
-
-    // Filter transactions based on search term
     const filteredTransactions = adminTransactions.filter(transaction => {
         const searchLower = searchTerm.toLowerCase();
         return (

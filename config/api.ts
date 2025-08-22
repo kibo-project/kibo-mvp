@@ -19,6 +19,6 @@ export const ENDPOINTS = {
   UPLOAD_PROOF: (id: string) => `/orders/${id}/proof`,
 
   // Quotes
-  QUOTE: '/quote?',
+  QUOTE: '/quote',
 
 } as const;

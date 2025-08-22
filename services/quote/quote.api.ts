@@ -24,7 +24,6 @@ class QuoteApiService {
     }
 
     async getQuote(params: QuoteRequest): Promise<ApiResponse<QuoteResponse>> {
-        // Construir query string con los parámetros
         const queryParams = new URLSearchParams({
             fiatAmount: params.fiatAmount.toString(),
             fiatCurrency: params.fiatCurrency,
@@ -32,7 +31,7 @@ class QuoteApiService {
             network: params.network,
         });
 
-        const endpoint = `${ENDPOINTS.QUOTE}${queryParams.toString()}`;
+        const endpoint = `${ENDPOINTS.QUOTE}?${queryParams.toString()}`;
 
         return this.request<ApiResponse<QuoteResponse>>(endpoint, {
             method: 'GET',

@@ -10,10 +10,11 @@ export interface CreateOrderDto {
 }
 
 export interface GetOrdersDto {
+  userId?: string;
+  allyId?: string;
   status?: OrderStatus;
-  role: UserRole;
-  limit?: number;
-  offset?: number;
+  limit: number;
+  offset: number;
 }
 export interface GetOrderByIdDto {
   orderId: string;
