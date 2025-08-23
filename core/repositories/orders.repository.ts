@@ -173,7 +173,7 @@ export class OrdersRepository {
 
     async uploadImageToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string | null> {
         const { error } = await this.supabase.storage
-            .from("kibobucket")
+            .from(process.env.SUPABASE_BUCKET_NAME as string)
             .upload(filename, fileBuffer, { contentType, upsert: true });
 
         return error ? error.message : null;
@@ -210,7 +210,7 @@ export class OrdersRepository {
 
     async getImageUrl(imageId: string): Promise<string> {
         const ext = await this.getExtensionImage(imageId);
-        const { data } = this.supabase.storage.from("kibobucket").getPublicUrl(`order-${imageId}.${ext}`);
+        const { data } = this.supabase.storage.from(process.env.SUPABASE_BUCKET_NAME as string).getPublicUrl(`order-${imageId}.${ext}`);
         return data.publicUrl;
     }
 
