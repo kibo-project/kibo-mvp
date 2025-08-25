@@ -4,32 +4,33 @@ import { useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useLogin, usePrivy } from "@privy-io/react-auth";
+import { useLogin } from "@privy-io/react-auth";
 import { NextPage } from "next";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "~~/services/store/auth-store.";
+import { useAuth } from "@/hooks/useAuth";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { authenticated, ready } = usePrivy();
   const { setHasVisitedRoot } = useAuthStore();
   const router = useRouter();
+  const { isAuthenticated, isLoading, isReady, isBackendSynced, token, userProfile } = useAuth();
 
   const handlePrivyLogin = useCallback(() => {
     login();
   }, [login]);
 
   useEffect(() => {
-    if (authenticated && ready) {
+    if (isAuthenticated && isBackendSynced) {
       router.replace("/");
     }
-  }, [authenticated, ready, router]);
+  }, [isAuthenticated, isBackendSynced, router]);
 
   useEffect(() => {
     setHasVisitedRoot(true);
   }, [setHasVisitedRoot]);
 
-  if (!ready) {
+  if (!isReady || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-dvh bg-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
@@ -58,7 +59,7 @@ const Login: NextPage = () => {
         <div className="space-y-4">
           <button
             onClick={handlePrivyLogin}
-            disabled={!ready}
+            disabled={!isReady}
             className="w-full border border-primary text-primary py-3 rounded-lg hover:bg-primary/10 transition-colors duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Login with Privy

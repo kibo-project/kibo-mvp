@@ -2,13 +2,17 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { extractTokenFromCookie, verifyToken } from "./utils/auth/jwt";
 
-export const runtime = "nodejs";
-
 export async function middleware(request: NextRequest) {
   try {
     const token = extractTokenFromCookie(request);
     if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url));
+      return Response.json({
+        success: false,
+        error: {
+          code: 'UNAUTHORIZED',
+          message: 'Authentication token is required'
+        }
+      }, { status: 401 });
     }
 
     const payload = await verifyToken(token);
@@ -19,19 +23,19 @@ export async function middleware(request: NextRequest) {
     return response;
 
   } catch (error) {
-    console.error("Invalid token", error);
-    const response = NextResponse.redirect(new URL("/login", request.url));
-    response.cookies.set("authToken", "", {
-      httpOnly: true,
-      maxAge: 0,
-      path: "/",
-    });
-    return response;
+    return Response.json({
+      success: false,
+      error: {
+        code: 'UNAUTHORIZED',
+        message: 'Invalid or expired token'
+      }
+    }, { status: 401 });
   }
 }
 
 export const config = {
   matcher: [
-    "/api/supabase/controller/order/:path*"
+    "/api/auth/profile",
+    "/api/orders/:path*",
   ],
 };

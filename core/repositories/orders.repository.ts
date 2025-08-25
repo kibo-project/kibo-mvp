@@ -55,22 +55,58 @@ export class OrdersRepository {
     }
 
     async verifyUser(userId: string, rolename: string){
-        const {data: role, error} = await this.supabase
+        const {data: roles, error: roleError} = await this.supabase
             .from('roles')
             .select("*")
             .eq("name", rolename)
-            .single()
-        if (error) {
+            .limit(1);
+            
+        if (roleError || !roles || roles.length === 0) {
+            console.log(`Role '${rolename}' not found`);
             return false;
         }
-        const {data} = await this.supabase
+        
+        const role = roles[0];
+        const {data: userRoles} = await this.supabase
             .from('users_roles')
             .select('*')
             .eq('user_id', userId)
             .eq('role_id', role.id)
-            .single();
+            .limit(1);
 
-        return !!data;
+        // If user doesn't have the role, check if user exists and auto-assign the role
+        if (!userRoles || userRoles.length === 0) {
+            console.log(`User ${userId} doesn't have role ${rolename}, checking if user exists`);
+            
+            const {data: user} = await this.supabase
+                .from('users')
+                .select('id')
+                .eq('id', userId)
+                .limit(1);
+                
+            if (user && user.length > 0) {
+                console.log(`Auto-assigning role ${rolename} to user ${userId}`);
+                
+                // Auto-assign the role
+                const {error: insertError} = await this.supabase
+                    .from('users_roles')
+                    .insert({
+                        user_id: userId,
+                        role_id: role.id,
+                    });
+                    
+                if (insertError) {
+                    console.error(`Failed to auto-assign role: ${insertError.message}`);
+                    return false;
+                }
+                
+                return true; // Successfully auto-assigned
+            }
+            
+            return false; // User doesn't exist
+        }
+
+        return true; // User has the role
     }
     async activeOrders(userId: string) {
         const { count, error } = await this.supabase

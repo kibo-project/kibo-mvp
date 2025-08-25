@@ -35,7 +35,9 @@ class OrdersApiService {
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.log('API Error response:', errorText);
+      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
     }
 
     return response.json();

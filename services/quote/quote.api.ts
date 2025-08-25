@@ -6,7 +6,9 @@ class QuoteApiService {
     private baseUrl = process.env.NEXT_PUBLIC_API_URL!;
 
     private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-        const url = `${this.baseUrl}${endpoint}`;
+
+        // TODO: Update this request with standar urlization
+        const url = `/api${endpoint}`;
 
         const response = await fetch(url, {
             headers: {

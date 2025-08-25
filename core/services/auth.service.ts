@@ -33,7 +33,7 @@ export class AuthService {
         };
     }
 
-    async getProfile(userId: string): Promise<User> {
+    async getProfile(userId: string): Promise<User | null> {
         const user = await this.usersRepository.findUserById(userId);
         return user;
     }

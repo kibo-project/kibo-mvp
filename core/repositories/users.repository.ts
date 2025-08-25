@@ -14,24 +14,24 @@ export class UsersRepository {
         );
     }
 
-    async findUserByPrivyId(privyId: string): Promise<User> {
+    async findUserByPrivyId(privyId: string): Promise<User | null> {
         const {data} = await this.supabase
             .from('users')
             .select('*')
             .eq('privy_id', privyId)
             .single();
 
-        return this.mapDbToUser(data);
+        return data ? this.mapDbToUser(data) : null;
     }
 
-    async findUserById(userId: string): Promise<User> {
+    async findUserById(userId: string): Promise<User | null> {
         const {data} = await this.supabase
             .from('users')
             .select('*')
             .eq('id', userId)
             .single();
 
-        return this.mapDbToUser(data);
+        return data ? this.mapDbToUser(data) : null;
     }
 
 
@@ -76,11 +76,17 @@ export class UsersRepository {
             .from('roles')
             .select('id')
             .eq('name', name)
-            .single();
+            .limit(1);
+            
         if (error) {
             throw new Error(`Error finding this role: ${error.message}`);
         }
-        return data.id;
+        
+        if (!data || data.length === 0) {
+            throw new Error(`Role '${name}' not found in database. Please ensure roles are properly seeded.`);
+        }
+        
+        return data[0].id;
     }
 
     async updateUser(userId: string): Promise<User> {
@@ -104,11 +110,21 @@ export class UsersRepository {
         .from('users_roles')
         .select('role_id')
         .eq('user_id', userId)
-        .single();
+        .limit(1);
+        
         if (error) {
             throw new Error(`Error getting role Id: ${error.message}`);
         }
-        return data.role_id;
+        
+        // If no role found, assign default "user" role
+        if (!data || data.length === 0) {
+            console.log(`No role found for user ${userId}, assigning default 'user' role`);
+            const defaultRoleId = await this.findRoleByName('user');
+            await this.createUserRole(userId, defaultRoleId);
+            return defaultRoleId;
+        }
+        
+        return data[0].role_id;
     }
 
     async getRoleNameByRoleId(roleId: string): Promise<string> {

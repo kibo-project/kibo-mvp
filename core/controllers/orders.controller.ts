@@ -24,7 +24,7 @@ export class OrdersController {
 
   async createOrder(request: NextRequest): Promise<Response> {
     try {
-      /* const userId = request.headers.get("x-user-id");
+      const userId = request.headers.get("x-user-id");
       if (!userId) {
         return Response.json({
           success: false,
@@ -33,10 +33,9 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }*/
+      }
       const formData = await request.formData();
 
-      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617"
       const fiatAmount = Number(formData.get('fiatAmount'));
       const cryptoAmount = Number(formData.get('cryptoAmount'));
       const recipient = formData.get('recipient') as string;
@@ -87,6 +86,7 @@ export class OrdersController {
   async getOrders(request: NextRequest): Promise<Response> {
     try {
       const userId = request.headers.get("x-user-id");
+      
       if (!userId) {
         return Response.json({
           success: false,
