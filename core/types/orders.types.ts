@@ -132,6 +132,7 @@ export interface CreateOrderRequest {
 
 export interface OrderResponse {
   id: string;
+  userId?: string;
   status: OrderStatus;
   fiatAmount: number;
   cryptoAmount: number;
@@ -139,8 +140,12 @@ export interface OrderResponse {
   cryptoCurrency: CryptoToken;
   network?: Network;
   escrowAddress?: string;
+  qrImage?: string;
   qrImageUrl?: string;
+  confirmationProof?: string;
   confirmationProofUrl?:string;
+  description?: string;
+  recipient?: string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
@@ -166,7 +171,7 @@ export interface OrderDetailsResponse {
 }
 
 export interface AvailableOrdersResponse {
-  orders: Order[];
+  orders: OrderResponse[];
   metadata: {
     totalAvailable: number;
     avgWaitTime: number;

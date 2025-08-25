@@ -24,7 +24,9 @@ const Camera: NextPage = () => {
   const [streaming, setStreaming] = useState(false);
 
   const router = useRouter();
-  const setImageBase64 = usePaymentStore(state => state.setImageBase64);
+  const setQrImage = usePaymentStore(state => state.setQrImage);
+  const setQrImageBase64 = usePaymentStore(state => state.setQrImageBase64);
+
 
   const getErrorMessage = useCallback((error: Error): string => {
     const errorMessages: Record<string, string> = {
@@ -130,29 +132,29 @@ const Camera: NextPage = () => {
     canvas.height = height;
     context.drawImage(video, 0, 0, PHOTO_WIDTH, height);
 
-    // Convert to data URL and navigate
-    const dataURL = canvas.toDataURL("image/png");
-    setImageBase64(dataURL);
-    router.push("/order/confirmation-payment");
-  }, [setImageBase64, router]);
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const file = new File([blob], `photo-${Date.now()}.png`, { type: "image/png" });
+        setQrImage(file);
+        const objectUrl = URL.createObjectURL(file);
+        setQrImageBase64(objectUrl);
+        router.push("/order/confirmation-payment");
+      }
+    }, "image/png");
+
+  }, [setQrImage, router]);
 
   const handleFileUpload = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const reader = new FileReader();
-      reader.onload = event => {
-        const result = event.target?.result as string;
-        if (result) {
-          setImageBase64(result);
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file && file.type.startsWith("image/")) {
+          setQrImage(file);
+          const objectUrl = URL.createObjectURL(file);
+          setQrImageBase64(objectUrl);
           router.push("/order/confirmation-payment");
         }
-      };
-      reader.onerror = () => setError("Error reading file");
-      reader.readAsDataURL(file);
-    },
-    [setImageBase64, router],
+      },
+      [setQrImage, setQrImageBase64, router],
   );
 
   const handleRetry = useCallback(() => {

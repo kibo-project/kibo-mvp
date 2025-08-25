@@ -79,7 +79,7 @@ const AdminTransactions: NextPage = () => {
                     minute: "2-digit",
                 })
                 .replace(",", ""),
-            userInfo: `User ${order.user?.id ?? ""}`,
+            userInfo: `User ${order.userId ?? ""}`,
             qrImage: order.qrImage || "",
         }))
         : [];
