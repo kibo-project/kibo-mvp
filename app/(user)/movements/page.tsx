@@ -7,34 +7,10 @@ import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
 import { useOrders } from "@/hooks/orders/useOrders";
-import { Order, OrderStatus } from "@/services/orders";
+import { OrderStatus } from "@/services/orders";
 import { useRouter } from "next/navigation";
-// import { useOrders } from "~~/hooks/api/useOrders"; // ✅ Importar el hook
-
-// TODO: Delete OrderLocal
-export interface OrderLocal {
-  id: string;
-  userId: string;
-  amount: number;
-  status: OrderStatus;
-  mainAmount: string;
-  secondaryAmount: string;
-  createdAt: string;
-  updatedAt?: string;
-  receivedAt?: string;
-  completedAt?: string;
-}
-
-// Nuevo tipo Movement para mayor type safety
-export interface Movement {
-  id: string;
-  userId: string;
-  amount: number;
-  status: OrderStatus;
-  mainAmount: string;
-  secondaryAmount: string;
-  date: string;
-}
+import { formatDateToSpanish } from "~~/utils/front.functions";
+import {OrderResponse} from "@/core/types/orders.types";
 
 const Movements: NextPage = () => {
   const { data, isLoading, error, refetch } = useOrders();
@@ -46,73 +22,15 @@ const Movements: NextPage = () => {
     router.push(`/movements/${id}`);
   }, [router]);
 
-  // ✅ Función para mapear status de Order a OrderStatus
-  const mapOrderStatusToMovementStatus = (orderStatus: OrderLocal["status"]): OrderStatus => {
-    switch (orderStatus) {
-      case "PENDING_PAYMENT":
-      case "AVAILABLE":
-      case "TAKEN":
-        return OrderStatus.AVAILABLE;
-      case "COMPLETED":
-        return OrderStatus.COMPLETED;
-      case "CANCELLED":
-      case "REFUNDED":
-        return OrderStatus.REFUNDED;
-      default:
-        return OrderStatus.AVAILABLE;
-    }
-  };
 
-  // ✅ Función para formatear fecha
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleString("es-ES", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).replace(",", "");
-  };
-
-  // TODO: Mapeo de orders a OrderLocal
-  const orders: OrderLocal[] = data?.orders
-    ? data.orders.map((order: Order) => ({
-      id: order.id,
-      userId: order.ally?.id ?? "",
-      amount: order.cryptoAmount,
-      status: order.status,
-      mainAmount: order.fiatAmount + " " + order.fiatCurrency,
-      secondaryAmount: order.cryptoAmount + " " + order.cryptoCurrency,
-      createdAt: order.createdAt,
-    }))
-    : [];
-
-  // Mapeo seguro de orders a movements
-  const movements: Movement[] = orders.map((order) => ({
-    id: order.id,
-    userId: order.userId,
-    amount: order.amount,
-    status: mapOrderStatusToMovementStatus(order.status),
-    mainAmount: order.mainAmount,
-    secondaryAmount: order.secondaryAmount,
-    date: formatDate(
-      order.completedAt ||
-      order.receivedAt ||
-      order.updatedAt ||
-      order.createdAt
-    ),
-  }));
-
-  // Filter movements based on search term
-  const filteredMovements = movements.filter((movement) => {
+  const filteredMovements = data?.data?.orders?.filter((order: OrderResponse) => {
     const searchLower = searchTerm.toLowerCase();
     return (
-      movement.mainAmount.toLowerCase().includes(searchLower) ||
-      movement.secondaryAmount.toLowerCase().includes(searchLower) ||
-      movement.date.toLowerCase().includes(searchLower)
+        `${order.cryptoAmount} ${order.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
+        `${order.fiatAmount} ${order.fiatCurrency}`.toLowerCase().includes(searchLower) ||
+        formatDateToSpanish(order.createdAt).toLowerCase().includes(searchLower)
     );
-  });
+  }) ?? [];
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -198,7 +116,7 @@ const Movements: NextPage = () => {
                         }
                         size="sm"
                       >
-                        {movement.status === OrderStatus.AVAILABLE && "Pending"}
+                        {movement.status === OrderStatus.PENDING_PAYMENT && "Pending"}
                         {movement.status === OrderStatus.COMPLETED &&
                           "Completed"}
                         {movement.status === OrderStatus.REFUNDED && "Failed"}
@@ -207,13 +125,13 @@ const Movements: NextPage = () => {
                     <div className="space-y-1">
                       <p className="text-sm text-neutral-600 dark:text-neutral-400">
                         <span className="font-medium">
-                          {movement.mainAmount}
+                          {`${movement.cryptoAmount} ${movement.cryptoCurrency}`}
                         </span>
                         <span className="mx-2">•</span>
-                        <span>{movement.secondaryAmount}</span>
+                        <span>{`${movement.fiatAmount} ${movement.fiatCurrency}`}</span>
                       </p>
                       <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                        {movement.date}
+                        {formatDateToSpanish(movement.createdAt)}
                       </p>
                     </div>
                   </div>
@@ -225,13 +143,13 @@ const Movements: NextPage = () => {
                           ? "secondary"
                           : "ghost"
                     }
-                    size="sm"
+                    size="xs"
                     className="self-center min-w-20"
                     onClick={() =>
                       handleMovementAction(movement.id)
                     }
                   >
-                    {movement.status === OrderStatus.AVAILABLE && "View"}
+                    {movement.status === OrderStatus.PENDING_PAYMENT && "View"}
                     {movement.status === OrderStatus.COMPLETED && "Receipt"}
                     {movement.status === OrderStatus.REFUNDED && "Details"}
                   </Button>

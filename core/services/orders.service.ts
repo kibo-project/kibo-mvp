@@ -19,6 +19,7 @@ import {
   GetOrdersResponse, UserRole,
     OrdersListResponse
 } from '../types/orders.types'
+import {OrderMapper} from "@/core/mappers/order.mapper";
 
 
 export class OrdersService {
@@ -79,9 +80,10 @@ export class OrdersService {
     }
 
     const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
+    const ordersResponse = orders.map(OrderMapper.orderToOrderResponse)
 
     return {
-      orders,
+      orders: ordersResponse,
       pagination: {
         total,
         limit,
@@ -109,18 +111,18 @@ export class OrdersService {
       throw new Error('Access denied for users are not allies');
     }
     const orders = await this.ordersRepository.findAvailable(filters);
-    const availableOrdersResponse: AvailableOrdersResponse = {
-      orders: orders ,
-      metadata: {
-        totalAvailable: orders.length,
-        avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
-        yourActiveOrders: 0,
+    const ordersResponse = orders.map(OrderMapper.orderToOrderResponse)
+
+    return {
+      orders: ordersResponse,
+      metadata:{
+        totalAvailable: ordersResponse.length,
+        avgWaitTime: this.calculateAverageWaitTime(),// este sirve?
+        yourActiveOrders: ordersResponse.length,
         // verificar este atributo sirve? En este nivel deberiamos verificar
         // que si el Ally tiene ya otra orden en curso entonces no puede tomar la orden aniadir mas adelante
       }
     }
-
-    return availableOrdersResponse;
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {

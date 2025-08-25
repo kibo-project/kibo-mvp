@@ -85,7 +85,9 @@ const CircularCountdown: React.FC<CircularCountdownProps> = ({seconds, maxSecond
 
 // Obtener el ID del usuario autenticado
 const ConfirmationPayment: NextPage = () => {
-    const {imageBase64: qrImageBase64} = usePaymentStore();
+    const {qrImage: qrImageStore} = usePaymentStore();
+    const {qrImageBase64: qrImageStoreBase64} = usePaymentStore();
+
     const router = useRouter();
     // Obtener el ID del usuario autenticado
     const {userProfile} = useAuth();
@@ -95,6 +97,7 @@ const ConfirmationPayment: NextPage = () => {
     const [showQrModal, setShowQrModal] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [seconds, setSeconds] = useState(COUNTDOWN_DURATION);
+
 
     const [recipient, setRecipient] = useState("");
     const [description, setDescription] = useState("");
@@ -136,49 +139,33 @@ const ConfirmationPayment: NextPage = () => {
         return 0;
     }, [quoteData]);
 
-    const base64ToFile = useCallback((base64String: string, filename: string): File => {
-        const arr = base64String.split(',');
-        const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg';
-        const bstr = atob(arr[1]);
-        let n = bstr.length;
-        const u8arr = new Uint8Array(n);
-        while (n--) {
-            u8arr[n] = bstr.charCodeAt(n);
-        }
-        return new File([u8arr], filename, { type: mime });
-    }, []);
-
     const handleConfirmPayment = useCallback(async () => {
         setShowConfirmModal(false);
 
         try {
-            if (!qrImageBase64) {
+            if (!qrImageStore) {
                 alert("Error: not found qr image");
                 return;
             }
-            const qrImageFile = base64ToFile(qrImageBase64, 'qr-code.jpg');
 
             const createOrderRequest: CreateOrderRequest = {
                 fiatAmount: fiatAmount,
                 cryptoAmount: cryptoEquivalent,
                 recipient: recipient,
                 description: description,
-                qrImage: qrImageFile
+                qrImage: qrImageStore
             };
             const result = await createOrderMutation.mutateAsync(createOrderRequest);
 
             if (result.success) {
-                console.log("Order created successfully:", result.data);
                 router.push("/order/payment-information");
             } else {
-                console.error("Failed to create order:", result.error);
-                alert(`Error al crear la orden: ${result.error?.message || 'Error desconocido'}`);
+                alert(`Error creating order: ${result.error?.message || 'Unknown error'}`);
             }
         } catch (error) {
             console.error("Error creating order:", error);
-            alert("Error al crear la orden. Por favor, intenta nuevamente.");
         }
-    }, [router, fiatAmount, cryptoEquivalent, recipient, description, qrImageBase64, base64ToFile, createOrderMutation, userProfile.privyId]);
+    }, [router, fiatAmount, cryptoEquivalent, recipient, description, qrImageStore, createOrderMutation, userProfile.privyId]);
 
     const handleCancelPayment = useCallback(() => {
         setShowConfirmModal(false);
@@ -255,9 +242,9 @@ const ConfirmationPayment: NextPage = () => {
                             <span>Transaction Details</span>
                             <button
                                 onClick={toggleQrModal}
-                                disabled={!qrImageBase64}
+                                disabled={!qrImageStore}
                                 className="text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                title={qrImageBase64 ? "View QR Code" : "No QR code available"}
+                                title={qrImageStore ? "View QR Code" : "No QR code available"}
                             >
                                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <rect x="3" y="3" width="6" height="6" rx="1" stroke="currentColor"
@@ -371,7 +358,7 @@ const ConfirmationPayment: NextPage = () => {
                         createOrderMutation.isPending ||
                         isLoadingQuote ||
                         !quoteData ||
-                        !qrImageBase64
+                        !qrImageStore
                     }
                     fullWidth
                     size="lg"
@@ -464,15 +451,15 @@ const ConfirmationPayment: NextPage = () => {
                 </Modal>
             </div>
             {/* QR Code Preview Modal */}
-            <Modal open={showQrModal && !!qrImageBase64} onClose={toggleQrModal}>
+            <Modal open={showQrModal && !!qrImageStore} onClose={toggleQrModal}>
                 <ModalHeader onClose={toggleQrModal}>
                     <h3 className="text-lg font-semibold">QR Code Preview</h3>
                 </ModalHeader>
                 <ModalBody>
                     <div className="text-center">
-                        {qrImageBase64 && (
+                        {qrImageStoreBase64 && (
                             <Image
-                                src={qrImageBase64}
+                                src={qrImageStoreBase64}
                                 alt="Captured QR Code"
                                 width={400}
                                 height={400}

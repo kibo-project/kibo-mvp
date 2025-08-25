@@ -12,7 +12,7 @@ import {
   CreateOrderRequest,
   AvailableOrdersFilters,
   TakeOrderResponse,
-  GetOrdersResponse, OrderStatus,
+  GetOrdersResponse, OrderStatus, OrdersListResponse,
 } from "../types/orders.types";
 
 export class OrdersController {
@@ -24,7 +24,8 @@ export class OrdersController {
 
   async createOrder(request: NextRequest): Promise<Response> {
     try {
-      const userId = request.headers.get("x-user-id");
+
+     /* const userId = request.headers.get("x-user-id");
       if (!userId) {
         return Response.json({
           success: false,
@@ -33,7 +34,9 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }
+      }*/
+      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617";
+
       const formData = await request.formData();
 
       const fiatAmount = Number(formData.get('fiatAmount'));
@@ -85,7 +88,7 @@ export class OrdersController {
 
   async getOrders(request: NextRequest): Promise<Response> {
     try {
-      const userId = request.headers.get("x-user-id");
+      /*const userId = request.headers.get("x-user-id");
       
       if (!userId) {
         return Response.json({
@@ -95,7 +98,9 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }
+      }*/
+      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617";
+
       const { searchParams } = new URL(request.url);
       const statusParam = searchParams.get('status');
 
@@ -104,7 +109,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
-      const result = await this.ordersService.getOrdersByUser(filters, userId);
+      const result: OrdersListResponse = await this.ordersService.getOrdersByUser(filters, userId);
       const response: ApiResponse<typeof result> = {
         success: true,
         data: result
