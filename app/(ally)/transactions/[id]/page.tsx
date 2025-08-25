@@ -11,6 +11,8 @@ import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
 import { useAuthStore } from "~~/services/store/auth-store.";
 import { useUploadProof } from "@/hooks/orders/useUploadProof";
 import { UploadProofRequest } from '../../../../core/types/orders.types';
+import { formatDateToSpanish } from "~~/utils/front.functions";
+
 
 
 interface AdminPaymentProofProps {
@@ -51,8 +53,6 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
             router.push("/");
             return;
         }
-        console.log("transactionId", transactionId)
-        console.log("selected", selectedTransactionId)
         if (transactionId && selectedTransactionId !== transactionId) {
             router.push("/transactions");
             return;
@@ -179,12 +179,10 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
                 data: uploadProofRequest
             }, {
                 onSuccess: () => {
-                    console.log("esta entrnado aca??")
                     alert("Payment proof submitted successfully!");
                     router.push("/availables");
                 },
                 onError: (error) => {
-                    console.error('Error uploading proof:', error);
                     alert(`Error uploading proof: ${error.message}`);
                 }
             });
@@ -199,17 +197,6 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
     if (!isAdmin() || !transactionId || selectedTransactionId !== transactionId || !selectedTransaction) {
         return null;
     }
-
-    const transactionData = {
-        id: selectedTransaction.id,
-        mainAmount: selectedTransaction.mainAmount,
-        secondaryAmount: selectedTransaction.secondaryAmount,
-        userInfo: selectedTransaction.userInfo,
-        date: selectedTransaction.date,
-        description: selectedTransaction.description,
-        recipient: selectedTransaction.recipient,
-        qrImageUrl: selectedTransaction.qrImageUrl,
-    };
 
     return (
         <div className="md:mx-auto md:min-w-md px-4">
@@ -229,34 +216,34 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
                     <CardTitle className="text-base mb-2">Transaction Details</CardTitle>
                     <div className="space-y-1">
                         <p className="text-sm">
-                            <span className="font-medium">ID:</span> {transactionData.id}
+                            <span className="font-medium">ID:</span> {selectedTransaction.id}
                         </p>
                         <p className="text-sm">
-                            <span className="font-medium">Amount:</span> {transactionData.mainAmount} (
-                            {transactionData.secondaryAmount})
+                            <span className="font-medium">Amount:</span> {`${selectedTransaction.cryptoAmount} ${selectedTransaction.cryptoCurrency}`} (
+                            {`${selectedTransaction.fiatAmount} ${selectedTransaction.fiatCurrency}`})
                         </p>
                         <p className="text-sm">
-                            <span className="font-medium">User:</span> {transactionData.userInfo}
+                            <span className="font-medium">User:</span> {selectedTransaction.id}
                         </p>
                         <p className="text-sm">
-                            <span className="font-medium">Date:</span> {transactionData.date}
+                            <span className="font-medium">Date:</span> {formatDateToSpanish(selectedTransaction.createdAt)}
                         </p>
-                        {transactionData.description && (
+                        {selectedTransaction.description && (
                             <p className="text-sm">
-                                <span className="font-medium">Description:</span> {transactionData.description}
+                                <span className="font-medium">Description:</span> {selectedTransaction.description}
                             </p>
                         )}
-                        {transactionData.recipient && (
+                        {selectedTransaction.recipient && (
                             <p className="text-sm">
-                                <span className="font-medium">Recipient:</span> {transactionData.recipient}
+                                <span className="font-medium">Recipient:</span> {selectedTransaction.recipient}
                             </p>
                         )}
-                        {transactionData?.qrImageUrl && (
+                        {selectedTransaction?.qrImageUrl && (
                             <div className="flex justify-center mt-4">
                                 <div className="bg-white dark:bg-neutral-800 rounded-lg border p-4 flex flex-col items-center shadow-sm">
                                     <span className="font-medium mb-2">Payment QR Code</span>
                                     <img
-                                        src={transactionData.qrImageUrl}
+                                        src={selectedTransaction.qrImageUrl}
                                         alt="Transaction QR"
                                         className="w-60 h-60 object-contain rounded-lg border"
                                     />

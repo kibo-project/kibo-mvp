@@ -9,27 +9,14 @@ import {Badge, Button, Card, CardBody, CardTitle, Input} from "~~/components/kib
 import {useAvailableOrders} from "@/hooks/orders/useAvailableOrders";
 import {useTakeOrder} from "@/hooks/orders/useTakeOrder";
 import {useAdminPaymentStore} from "~~/services/store/admin-payment-store";
-
-interface LocalOrder {
-    id: string;
-    mainAmount: string;
-    secondaryAmount: string;
-    date: string;
-    userInfo: string;
-    cryptoAmount: number;
-    fiatAmount: number;
-    cryptoCurrency: string;
-    fiatCurrency: string;
-    qrImageUrl?: string;
-    description?: string;
-    recipient?: string;
-}
+import { formatDateToSpanish } from "~~/utils/front.functions";
+import {OrderResponse} from "@/core/types/orders.types";
 
 const AllyAvailableOrders: NextPage = () => {
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState("");
     const [showModal, setShowModal] = useState(false);
-    const [selectedOrder, setSelectedOrder] = useState<LocalOrder | null>(null);
+    const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
     const [showTakeOrderModal, setShowTakeOrderModal] = useState(false);
 
     const {
@@ -43,7 +30,7 @@ const AllyAvailableOrders: NextPage = () => {
     const {setSelectedTransactionId, setSelectedTransaction} = useAdminPaymentStore();
 
     const handleViewOrderDetails = useCallback(
-        (order: LocalOrder) => {
+        (order: OrderResponse) => {
             setSelectedOrder(order);
             setShowModal(true);
         },
@@ -89,48 +76,23 @@ const AllyAvailableOrders: NextPage = () => {
                 }
             });
         }
-    }, [selectedOrder, takeOrder, router, setSelectedTransactionId, setSelectedTransaction]); // PARA EL STORE: Agregar setSelectedTransaction a las dependencias
+    }, [selectedOrder, takeOrder, router, setSelectedTransactionId, setSelectedTransaction]);
 
     const handleCancelTakeOrder = useCallback(() => {
         setShowTakeOrderModal(false);
         setSelectedOrder(null);
     }, []);
 
-    const availableOrders: LocalOrder[] = data?.data?.orders
-        ? data.data.orders.map((order) => ({
-            id: order.id,
-            mainAmount: `${order.cryptoAmount} ${order.cryptoCurrency}`,
-            secondaryAmount: `${order.fiatAmount} ${order.fiatCurrency}`,
-            date: new Date(order.createdAt)
-                .toLocaleString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })
-                .replace(",", ""),
-            userInfo: `User ${order.user?.id ?? ""}`,
-            cryptoAmount: order.cryptoAmount,
-            fiatAmount: order.fiatAmount,
-            cryptoCurrency: order.cryptoCurrency,
-            fiatCurrency: order.fiatCurrency,
-            qrImageUrl: order.qrImageUrl,
-            description: order.description,
-            recipient: order.recipient,
-        }))
-        : [];
-
-    const filteredOrders = availableOrders.filter(order => {
+    const filteredOrders = data?.data?.orders?.filter(order => {
         const searchLower = searchTerm.toLowerCase();
         return (
             order.id.toLowerCase().includes(searchLower) ||
-            order.mainAmount.toLowerCase().includes(searchLower) ||
-            order.secondaryAmount.toLowerCase().includes(searchLower) ||
-            order.userInfo.toLowerCase().includes(searchLower) ||
-            order.date.toLowerCase().includes(searchLower)
+            `${order.cryptoAmount} ${order.cryptoCurrency}`.toLowerCase().includes(searchLower)||
+            `${order.fiatAmount} ${order.fiatCurrency}`.toLowerCase().includes(searchLower) ||
+            order.userId?.toLowerCase().includes(searchLower) ||
+            formatDateToSpanish(order.createdAt).toLowerCase().includes(searchLower)
         );
-    });
+    }) ?? [];
 
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
@@ -210,12 +172,12 @@ const AllyAvailableOrders: NextPage = () => {
                                         </CardTitle>
                                         <div className="space-y-1">
                                             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                                <span className="font-medium">{order.mainAmount}</span>
+                                                <span className="font-medium">{`${order.cryptoAmount} ${order.cryptoCurrency}`}</span>
                                                 <span className="mx-2">•</span>
-                                                <span>{order.secondaryAmount}</span>
+                                                <span>{`${order.fiatAmount} ${order.fiatCurrency}`}</span>
                                             </p>
-                                            <p className="text-xs text-neutral-500">{order.userInfo}</p>
-                                            <p className="text-xs text-neutral-500 dark:text-neutral-500">{order.date}</p>
+                                            <p className="text-xs text-neutral-500">{order.userId}</p>
+                                            <p className="text-xs text-neutral-500 dark:text-neutral-500">{formatDateToSpanish(order.createdAt)}</p>
                                         </div>
                                     </div>
                                     <Button
@@ -288,13 +250,13 @@ const AllyAvailableOrders: NextPage = () => {
                                 <div>
                                     <label
                                         className="text-sm font-medium text-neutral-700 dark:text-neutral-300">User</label>
-                                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.userInfo}</p>
+                                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.userId}</p>
                                 </div>
 
                                 <div>
                                     <label
                                         className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Date</label>
-                                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.date}</p>
+                                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{formatDateToSpanish(selectedOrder.createdAt)}</p>
                                 </div>
 
                                 {selectedOrder.description && (

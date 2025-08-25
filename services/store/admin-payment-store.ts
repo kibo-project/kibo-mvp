@@ -1,26 +1,12 @@
 import { create } from "zustand";
-
-interface Transaction {
-  id: string;
-  mainAmount: string;
-  secondaryAmount: string;
-  date: string;
-  userInfo: string;
-  cryptoAmount: number;
-  fiatAmount: number;
-  cryptoCurrency: string;
-  fiatCurrency: string;
-  qrImageUrl?: string;
-  description?: string;
-  recipient?: string;
-}
+import {OrderResponse} from "@/core/types/orders.types";
 
 interface AdminPaymentState {
   selectedTransactionId: string | null;
-  selectedTransaction: Transaction | null;
+  selectedTransaction: OrderResponse | null;
   paymentProofImage: File | Blob | null;
   setSelectedTransactionId: (id: string | null) => void;
-  setSelectedTransaction: (transaction: Transaction | null) => void;
+  setSelectedTransaction: (transaction: OrderResponse | null) => void;
   setPaymentProofImage: (image: File | Blob | null) => void;
   reset: () => void;
 }
