@@ -156,7 +156,7 @@ export interface OrderResponse {
 }
 
 export interface OrdersListResponse {
-  orders: Order[];
+  orders: OrderResponse[];
   pagination: {
     total: number;
     limit: number;

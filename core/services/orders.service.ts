@@ -80,9 +80,10 @@ export class OrdersService {
     }
 
     const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
+    const ordersResponse = orders.map(OrderMapper.orderToOrderResponse)
 
     return {
-      orders,
+      orders: ordersResponse,
       pagination: {
         total,
         limit,

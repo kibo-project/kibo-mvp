@@ -12,7 +12,7 @@ import {
   CreateOrderRequest,
   AvailableOrdersFilters,
   TakeOrderResponse,
-  GetOrdersResponse, OrderStatus,
+  GetOrdersResponse, OrderStatus, OrdersListResponse,
 } from "../types/orders.types";
 
 export class OrdersController {
@@ -109,7 +109,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
-      const result = await this.ordersService.getOrdersByUser(filters, userId);
+      const result: OrdersListResponse = await this.ordersService.getOrdersByUser(filters, userId);
       const response: ApiResponse<typeof result> = {
         success: true,
         data: result

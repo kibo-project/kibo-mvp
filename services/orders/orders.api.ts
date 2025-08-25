@@ -43,7 +43,7 @@ class OrdersApiService {
     return response.json();
   }
 
-  async getOrders(filters: OrdersFilters = {}): Promise<OrdersListResponse> {
+  async getOrders(filters: OrdersFilters = {}): Promise<ApiResponse<OrdersListResponse>> {
     const params = new URLSearchParams();
 
     if (filters.status) params.append('status', filters.status);
@@ -53,7 +53,7 @@ class OrdersApiService {
     const queryString = params.toString();
     const endpoint = `${ENDPOINTS.ORDERS}${queryString ? `?${queryString}` : ''}`;
 
-    return this.request<OrdersListResponse>(endpoint);
+    return this.request<ApiResponse<OrdersListResponse>>(endpoint);
   }
 
   async getOrderById(id: string): Promise<OrderDetailsResponse> {
