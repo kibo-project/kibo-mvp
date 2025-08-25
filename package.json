@@ -45,8 +45,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": "next lint --fix ."
   },
-  "packageManager": "yarn@3.2.3",
-  "resolutions": {
+  "overrides": {
     "ox": "0.8.6"
   }
 }
