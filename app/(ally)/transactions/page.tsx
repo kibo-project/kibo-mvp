@@ -4,25 +4,15 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { adminStatusButtonLabels, StyledOrderStatus } from "../../(user)/movements/MovementStatus";
+import { adminStatusButtonLabels} from "../../(user)/movements/MovementStatus";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { AdminProtected } from "~~/components/AdminProtected";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
 import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
 import { OrderStatus } from "@/services/orders";
-import { useAvailableOrders } from "@/hooks/orders/useAvailableOrders";
-
-// TODO: Delete LocalTransaction and replace with Order
-interface LocalTransaction {
-    id: string;
-    status: StyledOrderStatus;
-    mainAmount: string;
-    secondaryAmount: string;
-    date: string;
-    userInfo: string;
-    qrImage: string;
-}
+import { useOrders } from "@/hooks/orders/useOrders";
+import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const AdminTransactions: NextPage = () => {
     const router = useRouter();
@@ -31,7 +21,7 @@ const AdminTransactions: NextPage = () => {
         data,
         // isLoading,
         // error
-    } = useAvailableOrders();
+    } = useOrders();
 
     const { setSelectedTransactionId } = useAdminPaymentStore();
 
@@ -40,7 +30,7 @@ const AdminTransactions: NextPage = () => {
             setSelectedTransactionId(id);
 
             switch (status) {
-                case OrderStatus.AVAILABLE:
+                case OrderStatus.TAKEN:
                     router.push(`/transactions/${id}`);
                     break;
                 case OrderStatus.COMPLETED:
@@ -56,44 +46,16 @@ const AdminTransactions: NextPage = () => {
         [router, setSelectedTransactionId],
     );
 
-    // TODO: Replace LocalTransaction with Order from the API
-    const adminTransactions: LocalTransaction[] = data?.data?.orders
-        ? data.data.orders.map((order) => ({
-            id: order.id,
-            status:
-                order.status === OrderStatus.AVAILABLE
-                    ? OrderStatus.AVAILABLE
-                    : order.status === OrderStatus.COMPLETED
-                        ? OrderStatus.COMPLETED
-                        : order.status === OrderStatus.REFUNDED
-                            ? OrderStatus.REFUNDED
-                            : OrderStatus.AVAILABLE,
-            mainAmount: `${order.cryptoAmount} ${order.cryptoCurrency}`,
-            secondaryAmount: `${order.fiatAmount} ${order.fiatCurrency}`,
-            date: new Date(order.createdAt)
-                .toLocaleString("es-ES", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })
-                .replace(",", ""),
-            userInfo: `User ${order.userId ?? ""}`,
-            qrImage: order.qrImage || "",
-        }))
-        : [];
-
-    const filteredTransactions = adminTransactions.filter(transaction => {
+    const filteredTransactions = data?.data?.orders?.filter(transaction => {
         const searchLower = searchTerm.toLowerCase();
         return (
             transaction.id.toLowerCase().includes(searchLower) ||
-            transaction.mainAmount.toLowerCase().includes(searchLower) ||
-            transaction.secondaryAmount.toLowerCase().includes(searchLower) ||
-            transaction.userInfo.toLowerCase().includes(searchLower) ||
-            transaction.date.toLowerCase().includes(searchLower)
+            `${transaction.cryptoAmount} ${transaction.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
+            `${transaction.fiatAmount} ${transaction.fiatCurrency}`.toLowerCase().includes(searchLower) ||
+            transaction.userId?.toLowerCase().includes(searchLower) ||
+            formatDateToSpanish(transaction.createdAt).toLowerCase().includes(searchLower)
         );
-    });
+    }) ?? [];
 
     const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(e.target.value);
@@ -166,12 +128,12 @@ const AdminTransactions: NextPage = () => {
                                             </CardTitle>
                                             <div className="space-y-1">
                                                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                                                    <span className="font-medium">{transaction.mainAmount}</span>
+                                                    <span className="font-medium">{`${transaction.cryptoAmount} ${transaction.cryptoCurrency}`}</span>
                                                     <span className="mx-2">•</span>
-                                                    <span>{transaction.secondaryAmount}</span>
+                                                    <span>{`${transaction.fiatAmount} ${transaction.fiatCurrency}`}</span>
                                                 </p>
-                                                <p className="text-xs text-neutral-500">{transaction.userInfo}</p>
-                                                <p className="text-xs text-neutral-500 dark:text-neutral-500">{transaction.date}</p>
+                                                <p className="text-xs text-neutral-500">{transaction.id}</p>
+                                                <p className="text-xs text-neutral-500 dark:text-neutral-500">{ formatDateToSpanish(transaction.createdAt)}</p>
                                             </div>
                                         </div>
                                         <Button
