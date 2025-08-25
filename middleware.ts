@@ -1,20 +1,37 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
+import { extractTokenFromCookie, verifyToken } from "./utils/auth/jwt";
 
-export function middleware(request: NextRequest) {
-  // TODO: Implement your authentication logic here  
-  const token = true || request.cookies.get('auth-token')?.value || request.headers.get('authorization')
+export const runtime = "nodejs";
 
-  if (request.nextUrl.pathname.startsWith('/api/orders')) {
-
+export async function middleware(request: NextRequest) {
+  try {
+    const token = extractTokenFromCookie(request);
     if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.redirect(new URL("/login", request.url));
     }
-  }
 
-  return NextResponse.next()
+    const payload = await verifyToken(token);
+
+    const response = NextResponse.next();
+    response.headers.set("x-user-id", payload.userId);
+    response.headers.set("x-user-email", payload.email);
+    return response;
+
+  } catch (error) {
+    console.error("Invalid token", error);
+    const response = NextResponse.redirect(new URL("/login", request.url));
+    response.cookies.set("authToken", "", {
+      httpOnly: true,
+      maxAge: 0,
+      path: "/",
+    });
+    return response;
+  }
 }
 
 export const config = {
-  matcher: ['/api/:path*']
-}
+  matcher: [
+    "/api/supabase/controller/order/:path*"
+  ],
+};

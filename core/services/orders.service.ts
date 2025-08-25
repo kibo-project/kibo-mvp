@@ -1,122 +1,135 @@
-import { OrdersRepository } from '../repositories/orders.repository';
-import { 
+import {OrdersRepository} from '../repositories/orders.repository';
+import {UsersRepository} from '../repositories/users.repository';
+
+import {
   CreateOrderDto,
   GetOrdersDto,
-  GetAvailableOrdersDto,
   TakeOrderDto,
-  UploadProofDto,
-  CreateOrderData
+  UploadProofDto
 } from '../dto/orders.dto';
 
 import {
-  Order, 
-  OrderStatus, 
+  Order,
+  OrderStatus,
   Quote,
+  ImageDataFile,
+  AvailableOrdersFilters,
+  AvailableOrdersResponse,
+  CreateOrderRequest,
+  GetOrdersResponse, UserRole,
+    OrdersListResponse
 } from '../types/orders.types'
+
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
+  private userRepository: UsersRepository;
 
   constructor() {
     this.ordersRepository = new OrdersRepository();
+    this.userRepository = new UsersRepository();
   }
 
-  async createOrder(orderDto: CreateOrderDto, userId: string): Promise<Order> {
-    // 1. Validate quote (this would call quote service)
-    const quote = await this.validateQuote(orderDto.quoteId);
-    
-    if (!quote) {
-      throw new Error('Invalid or expired quote');
-    }
-
-    // 2. Validate user exists
-    // const user = await this.getUserById(userId);
-    // if (!user) {
-    //   throw new Error('User not found');
-    // }
-
-    // 3. Apply business rules
-    const orderData = this.buildOrderFromQuote(quote, orderDto, userId);
-
-    // 4. Create order
-    const order = await this.ordersRepository.create(orderData);
+  async createOrder(createOrderRequest: CreateOrderRequest): Promise<Order> {
+     const isValid = await this.ordersRepository.verifyUser(createOrderRequest.userId!,"user");
+     if (!isValid) {
+       throw new Error('User or role are not valid');
+     }
+     const activeOrders = await this.ordersRepository.activeOrders(createOrderRequest.userId!);
+     if (activeOrders>3) {
+       throw new Error('You have more than 3 orders available');
+     }
+     const createOrderDto: CreateOrderDto = {
+       status: OrderStatus.PENDING_PAYMENT,
+       fiatAmount: createOrderRequest.fiatAmount,
+       cryptoAmount: createOrderRequest.cryptoAmount,
+       fiatCurrency: 'BOB',
+       cryptoCurrency: 'USDT',
+       userId: createOrderRequest.userId!,
+       recipient: createOrderRequest.recipient,
+       description: createOrderRequest.description,
+     };
+     const order = await this.ordersRepository.create(createOrderDto);
+     const qrId = await this.uploadFile(createOrderRequest.qrImage!);
+    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
     // await this.notifyOrderCreated(order);
 
-    return order;
+    return updatedOrder;
   }
 
-  async getOrdersByUser(filters: GetOrdersDto, userId: string): Promise<{
-    orders: Order[];
-    pagination: {
-      total: number;
-      limit: number;
-      offset: number;
-      hasMore: boolean;
+  async getOrdersByUser(getOrdersResponse: GetOrdersResponse, userId: string): Promise<OrdersListResponse> {
+    const roleId = await this.userRepository.getRoleIdByUserId(userId);
+    const roleName = await this.userRepository.getRoleNameByRoleId(roleId) as UserRole;
+    const limit = getOrdersResponse.limit ?? 10;
+    const offset = getOrdersResponse.offset ?? 0;
+
+    const getOrdersDto: GetOrdersDto = {
+      status: getOrdersResponse.status,
+      limit,
+      offset,
     };
-  }> {
-    const { orders, total } = await this.ordersRepository.findMany(filters, userId);
-    
-    const limit = filters.limit || 10;
-    const offset = filters.offset || 0;
-    
+
+    if (roleName === "user") {
+      getOrdersDto.userId = userId;
+    } else if (roleName === "ally") {
+      getOrdersDto.allyId = userId;
+    }
+
+    const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
+
     return {
       orders,
       pagination: {
         total,
         limit,
         offset,
-        hasMore: offset + limit < total
-      }
+        hasMore: offset + limit < total,
+      },
     };
   }
 
-  async getOrderById(orderId: string, userId?: string): Promise<Order | null> {
+
+  async getOrderById(orderId: string, userId: string): Promise<Order | null> {
     const order = await this.ordersRepository.findById(orderId);
-    
     if (!order) {
       return null;
     }
-
-    // Verify access permissions
-    if (userId && !this.canUserAccessOrder(order, userId)) {
+    if (userId && ! await this.canUserAccessOrder(order, userId)) {
       throw new Error('Access denied to this order');
     }
-
-    // Add dynamic fields
-    return this.enrichOrderWithDynamicData(order);
+    return order;
   }
 
-  async getAvailableOrders(filters: GetAvailableOrdersDto): Promise<{
-    orders: Order[];
-    metadata: {
-      totalAvailable: number;
-      avgWaitTime: number;
-      yourActiveOrders: number;
-    };
-  }> {
+  async getAvailableOrders(filters: AvailableOrdersFilters, userId:string): Promise<AvailableOrdersResponse> {
+    const isAlly = await this.ordersRepository.verifyUser(userId, "ally");
+    if (!isAlly) {
+      throw new Error('Access denied for users are not allies');
+    }
     const orders = await this.ordersRepository.findAvailable(filters);
-    
-    // Calculate metadata
-    const enrichedOrders = orders.map(order => this.enrichOrderWithDynamicData(order));
-    
-    const metadata = {
-      totalAvailable: orders.length,
-      avgWaitTime: this.calculateAverageWaitTime(),
-      yourActiveOrders: 0 // This would be calculated based on current ally
-    };
+    const availableOrdersResponse: AvailableOrdersResponse = {
+      orders: orders ,
+      metadata: {
+        totalAvailable: orders.length,
+        avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
+        yourActiveOrders: 0,
+        // verificar este atributo sirve? En este nivel deberiamos verificar
+        // que si el Ally tiene ya otra orden en curso entonces no puede tomar la orden aniadir mas adelante
+      }
+    }
 
-    return {
-      orders: enrichedOrders,
-      metadata
-    };
+    return availableOrdersResponse;
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {
+    const isAlly = await this.ordersRepository.verifyUser(allyId, "ally");
+    if (!isAlly) {
+      throw new Error('Access denied for users are not allies');
+    }
     const order = await this.ordersRepository.findById(takeOrderDto.orderId);
-    
+
     if (!order) {
       throw new Error('Order not found');
     }
@@ -125,16 +138,15 @@ export class OrdersService {
       throw new Error('Order is not available for taking');
     }
 
-    // Validate ally can take this order
     await this.validateAllyCanTakeOrder(order, allyId);
 
-    // Update order status
     const updatedOrder = await this.ordersRepository.updateStatus(
       takeOrderDto.orderId, 
       OrderStatus.TAKEN,
       {
         allyId,
-        takenAt: new Date().toISOString()
+        takenAt: new Date().toISOString(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString()
       }
     );
 
@@ -144,8 +156,8 @@ export class OrdersService {
     return updatedOrder;
   }
 
-  async uploadProof(proofDto: UploadProofDto, allyId: string): Promise<Order> {
-    const order = await this.ordersRepository.findById(proofDto.orderId);
+  async uploadProof(uploadProofDto: UploadProofDto, allyId: string): Promise<Order> {
+    const order = await this.ordersRepository.findById(uploadProofDto.orderId);
     
     if (!order) {
       throw new Error('Order not found');
@@ -155,22 +167,21 @@ export class OrdersService {
       throw new Error('Order is not in taken status');
     }
 
-    if (order.ally?.id !== allyId) {
+    if (order.allyId !== allyId) {
       throw new Error('Only the assigned ally can upload proof');
     }
 
-    // Upload proof file to Supabase Storage
-    const proofUrl = await this.uploadProofFile(proofDto.proofFile);
-
-    // Update order with proof
+    const confirmationProof = await this.uploadFile(uploadProofDto.proofFile);
+    const confirmationProofUrl = await this.ordersRepository.getImageUrl(confirmationProof);
     const updatedOrder = await this.ordersRepository.updateStatus(
-      proofDto.orderId,
+      uploadProofDto.orderId,
       OrderStatus.COMPLETED,
       {
-        proofUrl,
-        bankTransactionId: proofDto.bankTransactionId,
+        confirmationProof,
+        confirmationProofUrl,
+        bankTransactionId: uploadProofDto.bankTransactionId,
         completedAt: new Date().toISOString(),
-        releaseTxHash: await this.releaseEscrow(order)
+        txHash: await this.releaseEscrow(order)
       }
     );
 
@@ -203,22 +214,6 @@ export class OrdersService {
     };
   }
 
-  private buildOrderFromQuote(quote: Quote, orderDto: CreateOrderDto, userId: string): CreateOrderData {
-    return {
-      id: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      status: OrderStatus.PENDING_PAYMENT,
-      amountFiat: quote.amountFiat,
-      amountCrypto: quote.amountCrypto,
-      fiatCurrency: 'BOB', // This should come from quote
-      cryptoToken: 'USDT', // This should come from quote
-      network: 'mantle', // This should come from quote
-      qrData: orderDto.qrData,
-      qrImageUrl: orderDto.qrImageUrl,
-      expiresAt: quote.expiresAt,
-      userId
-    };
-  }
-
   private enrichOrderWithDynamicData(order: Order): Order {
     const now = new Date();
     const expiresAt = new Date(order.expiresAt);
@@ -229,8 +224,9 @@ export class OrdersService {
     };
   }
 
-  private canUserAccessOrder(order: Order, userId: string): boolean {
-    return order.user?.id === userId || order.ally?.id === userId;
+  private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
+    const isAdmin = await this.ordersRepository.verifyUser(userId, "admin");
+    return order.userId === userId || order.allyId === userId || isAdmin;
   }
 
   private calculateAverageWaitTime(): number {
@@ -239,6 +235,13 @@ export class OrdersService {
   }
 
   private async validateAllyCanTakeOrder(order: Order, allyId: string): Promise<void> {
+    const now = new Date();
+    const expiresAt = new Date(order.expiresAt);
+
+    if (expiresAt <= now) {
+      throw new Error('this order has expired');
+    }
+
     // Add business validation logic:
     // - Check ally reputation
     // - Check active penalties
@@ -255,9 +258,35 @@ export class OrdersService {
     return `0xtx_hash_${Date.now()}`;
   }
 
-  private async uploadProofFile(file: File): Promise<string> {
-    // Upload to storage service (Supabase Storage, S3, etc.)
-    return `https://storage.example.com/proofs/${Date.now()}_${file.name}`;
+  private async uploadFile(file: File): Promise<string> {
+    const maxSizeInBytes = 5 * 1024 * 1024;
+    if (file.size > maxSizeInBytes) {
+      throw new Error('File size exceeds 5MB limit');
+    }
+    const originalName = file.name;
+    const extension = originalName.split(".").pop() || "";
+    const imageDataFile: ImageDataFile = {
+      name: originalName,
+      extension: extension,
+      createdAt: new Date().toISOString()
+    }
+    const { data, error } = await this.ordersRepository.uploadDbImage(imageDataFile);
+
+    if (error || !data) {
+      throw new Error(error || "Error saving image");
+    }
+
+    const filename = `order-${data.id}.${extension}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = new Uint8Array(arrayBuffer);
+
+    const uploadError = await this.ordersRepository.uploadImageToStorage(filename, fileBuffer, file.type);
+
+    if (uploadError) {
+      throw new Error(uploadError);
+    }
+
+    return data.id;
   }
 
   private async notifyOrderCreated(order: Order): Promise<void> {

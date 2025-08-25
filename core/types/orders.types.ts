@@ -1,4 +1,6 @@
 // Tipos base
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 export enum OrderStatus {
   PENDING_PAYMENT = 'PENDING_PAYMENT',
   AVAILABLE = 'AVAILABLE',
@@ -16,15 +18,31 @@ export type UserRole = 'user' | 'ally' | 'admin';
 // Interfaces principales
 export interface User {
   id: string;
-  walletAddress: string;
-  role: UserRole;
-  country: string;
-  verified: boolean;
-  successfulOrders: number;
+  name?: string;
+  walletAddress?: string;
+  role?: UserRole;
+  email?: string;
+  country?: string;
+  bankName?: string;
+  accountNumber?: string;
+  accountHolder?: string;
+  phone?: string;
+  availableBalance?: string;
+  lastLoginAt?: Date;
   reputation?: number;
-  lastActive?: string;
-  createdAt: string;
-  allyStats?: AllyStats;
+  createdAt?: string;
+  updatedAt?: string;
+  ////Delete stating here
+  verified?: boolean;
+  successfulOrders?: number;
+  lastActive?: string | Date;
+
+
+}
+export interface ImageDataFile{
+  name: string;
+  extension: string;
+  createdAt?: string;
 }
 
 export interface AllyStats {
@@ -36,23 +54,29 @@ export interface AllyStats {
 export interface Order {
   id: string;
   status: OrderStatus;
-  amountFiat: number;
-  amountCrypto: number;
+  fiatAmount: number;
+  cryptoAmount: number;
   fiatCurrency: Currency;
-  cryptoToken: CryptoToken;
-  network: Network;
+  cryptoCurrency: CryptoToken;
+  network?: Network;
   escrowAddress?: string;
   qrData?: string;
+  qrImage?: string;
   qrImageUrl?: string;
-  proofUrl?: string;
+  confirmationProof?: string;
+  confirmationProofUrl?:string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
   cancelledAt?: string;
   expiresAt: string;
+  description?: string;
+  recipient?: string;
   secondsRemaining?: number;
   escrowTxHash?: string;
-  releaseTxHash?: string;
+  txHash?: string;
+  userId?: string;
+  allyId?: string;
   bankTransactionId?: string;
   user?: Partial<User>;
   ally?: Partial<User>;
@@ -98,17 +122,35 @@ export interface Quote {
 
 // Request/Response types
 export interface CreateOrderRequest {
-  quoteId: string;
-  qrImageUrl?: string;
+  userId?: string;
+  fiatAmount: number;
+  cryptoAmount: number;
+  recipient: string;
+  description: string;
+  qrImage?: File;
 }
 
-export interface CreateOrderResponse {
-  success: boolean;
-  order: Order;
+export interface OrderResponse {
+  id: string;
+  status: OrderStatus;
+  fiatAmount: number;
+  cryptoAmount: number;
+  fiatCurrency: Currency;
+  cryptoCurrency: CryptoToken;
+  network?: Network;
+  escrowAddress?: string;
+  qrImageUrl?: string;
+  confirmationProofUrl?:string;
+  createdAt: string;
+  takenAt?: string;
+  completedAt?: string;
+  cancelledAt?: string;
+  expiresAt: string;
+  txHash?: string;
+
 }
 
 export interface OrdersListResponse {
-  success: boolean;
   orders: Order[];
   pagination: {
     total: number;
@@ -124,7 +166,6 @@ export interface OrderDetailsResponse {
 }
 
 export interface AvailableOrdersResponse {
-  success: boolean;
   orders: Order[];
   metadata: {
     totalAvailable: number;
@@ -132,9 +173,13 @@ export interface AvailableOrdersResponse {
     yourActiveOrders: number;
   };
 }
+export interface GetOrdersResponse {
+  status?: OrderStatus;
+  limit?: number;
+  offset?: number;
+}
 
 export interface TakeOrderResponse {
-  success: boolean;
   order: Order;
 }
 
@@ -185,3 +230,4 @@ export interface ApiError {
     details?: any;
   };
 }
+

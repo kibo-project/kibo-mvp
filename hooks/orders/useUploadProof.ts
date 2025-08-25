@@ -8,10 +8,8 @@ export const useUploadProof = () => {
     mutationFn: ({ orderId, data }: { orderId: string; data: UploadProofRequest }) => 
       ordersService.uploadProof(orderId, data),
     onSuccess: (data, { orderId }) => {
-      // Actualizar orden específica
       queryClient.setQueryData(['order', orderId], data);
       
-      // Invalidar listas
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['available-orders'] });
     },

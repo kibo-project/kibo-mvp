@@ -22,7 +22,7 @@ export const statusButtonLabels: Record<StyledOrderStatus, string> = {
   [OrderStatus.REFUNDED]: "Show",
 };
 
-export const adminStatusButtonLabels: Record<StyledOrderStatus, string> = {
+export const adminStatusButtonLabels:  Partial<Record<OrderStatus, string>> = {
   [OrderStatus.AVAILABLE]: "Review",
   [OrderStatus.COMPLETED]: "View",
   [OrderStatus.REFUNDED]: "Details",

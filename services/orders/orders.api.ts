@@ -1,28 +1,34 @@
-// Servicios reales (para cuando tu compañero termine la API)
 import {
   OrdersListResponse,
   OrderDetailsResponse,
   CreateOrderRequest,
-  CreateOrderResponse,
+  OrderResponse,
   AvailableOrdersResponse,
   TakeOrderResponse,
   CancelOrderResponse,
   UploadProofRequest,
-  UploadProofResponse,
   OrdersFilters,
   AvailableOrdersFilters
 } from '../../core/types/orders.types';
 import { ENDPOINTS } from '../../config/api';
+import {ApiResponse} from '../../core/types/generic.types';
+
 
 class OrdersApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '/api';
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL || '/api';
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
+    const defaultHeaders: Record<string, string> = {};
+    if (!(options.body instanceof FormData)) {
+      defaultHeaders['Content-Type'] = 'application/json';
+    }
+
     const response = await fetch(url, {
+      credentials: 'include', // Esto envía las cookies automáticamente
       headers: {
-        'Content-Type': 'application/json',
+        ...defaultHeaders,
         ...options.headers,
       },
       ...options,
@@ -52,10 +58,18 @@ class OrdersApiService {
     return this.request<OrderDetailsResponse>(ENDPOINTS.ORDER_BY_ID(id));
   }
 
-  async createOrder(data: CreateOrderRequest): Promise<CreateOrderResponse> {
-    return this.request<CreateOrderResponse>(ENDPOINTS.ORDERS, {
+  async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {
+    const formData = new FormData();
+
+    formData.append('fiatAmount', data.fiatAmount.toString());
+    formData.append('cryptoAmount', data.cryptoAmount.toString());
+    formData.append('recipient', data.recipient);
+    formData.append('description', data.description);
+    formData.append('qr', data.qrImage!);
+
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDERS, {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: formData,
     });
   }
 
@@ -65,7 +79,7 @@ class OrdersApiService {
     });
   }
 
-  async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<AvailableOrdersResponse> {
+  async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<ApiResponse<AvailableOrdersResponse>> {
     const params = new URLSearchParams();
 
     if (filters.country) params.append('country', filters.country);
@@ -77,16 +91,16 @@ class OrdersApiService {
     const queryString = params.toString();
     const endpoint = `${ENDPOINTS.AVAILABLE_ORDERS}${queryString ? `?${queryString}` : ''}`;
 
-    return this.request<AvailableOrdersResponse>(endpoint);
+    return this.request<ApiResponse<AvailableOrdersResponse>>(endpoint);
   }
 
-  async takeOrder(id: string): Promise<TakeOrderResponse> {
-    return this.request<TakeOrderResponse>(ENDPOINTS.TAKE_ORDER(id), {
-      method: 'POST',
+  async takeOrder(id: string): Promise<ApiResponse<TakeOrderResponse>> {
+    return this.request<ApiResponse<TakeOrderResponse>>(ENDPOINTS.TAKE_ORDER(id), {
+      method: 'PATCH',
     });
   }
 
-  async uploadProof(id: string, data: UploadProofRequest): Promise<UploadProofResponse> {
+  async uploadProof(id: string, data: UploadProofRequest): Promise<ApiResponse<OrderResponse>> {
     const formData = new FormData();
     formData.append('proof', data.proof);
 

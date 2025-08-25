@@ -1,0 +1,1 @@
+INSERT INTO "public"."roles" ("id", "name", "created_at") VALUES ('0f33eac8-e2eb-41e5-8149-1ef60bff25b9', 'ally', '2025-08-13'), ('89175f2b-f200-4d19-ad53-457205a65a5f', 'admin', '2025-08-13'), ('acbaa1cc-5ff2-4d98-b7be-802e4740719c', 'user', '2025-08-13');

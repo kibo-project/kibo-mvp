@@ -4,7 +4,6 @@ import { OrdersController } from '@/core/controllers/orders.controller';
 
 const controller = new OrdersController();
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  return controller.takeOrder(request, { params: { id } });
+export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  return controller.takeOrder(request, params);
 }
