@@ -11,10 +11,11 @@ export interface CustomJWTPayload extends JWTPayload {
     email: string;
 }
 
-export const generateToken = async (userId: string, email: string): Promise<string> => {
+export const generateToken = async (userId: string, privyId: string, role: string): Promise<string> => {
     const payload = {
         userId,
-        email,
+        privyId,
+        role,
     };
 
     return await new SignJWT(payload)

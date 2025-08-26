@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {User} from "@/core/types/users.types";
+import {User, UserResponse} from "@/core/types/users.types";
 
 
 export class UsersMapper {
@@ -22,6 +22,24 @@ export class UsersMapper {
             updatedAt: dbUser.updated_at,
         };
     }
+
+    static userToUserResponse(user: User): UserResponse {
+        return {
+            id: user.id!,
+            name: user.name,
+            walletAddress: user.walletAddress,
+            email: user.email,
+            country: user.country,
+            bankName: user.bankName,
+            accountNumber: user.accountNumber,
+            accountHolder: user.accountHolder,
+            phone: user.phone,
+            availableBalance: user.availableBalance,
+            lastLoginAt: user.lastLoginAt,
+            reputation: user.reputation,
+        };
+    }
+
 
     static privyUserToUser(privyResponse: any): User {
         const privyUser = privyResponse.user;

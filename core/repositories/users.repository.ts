@@ -108,24 +108,19 @@ export class UsersRepository {
         return UsersMapper.dbToUser(data)
     }
     async getRoleIdByUserId(userId: string): Promise<string> {
-        const {data, error} = await this.supabase
-        .from('users_roles')
-        .select('role_id')
-        .eq('user_id', userId)
-        .limit(1);
-        
+        const { data, error } = await this.supabase
+            .from('users_roles')
+            .select('role_id')
+            .eq('user_id', userId)
+            .limit(1);
+
         if (error) {
             throw new Error(`Error getting role Id: ${error.message}`);
         }
-        
-        // If no role found, assign default "user" role
+
         if (!data || data.length === 0) {
-            console.log(`No role found for user ${userId}, assigning default 'user' role`);
-            const defaultRoleId = await this.findRoleByName('user');
-            await this.createUserRole(userId, defaultRoleId);
-            return defaultRoleId;
+            throw new Error(`No role found for user ${userId}`);
         }
-        
         return data[0].role_id;
     }
 

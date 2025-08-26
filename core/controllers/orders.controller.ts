@@ -88,7 +88,7 @@ export class OrdersController {
 
   async getOrders(request: NextRequest): Promise<Response> {
     try {
-      /*const userId = request.headers.get("x-user-id");
+      const userId = request.headers.get("x-user-id");
       
       if (!userId) {
         return Response.json({
@@ -98,8 +98,7 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }*/
-      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617";
+      }
 
       const { searchParams } = new URL(request.url);
       const statusParam = searchParams.get('status');

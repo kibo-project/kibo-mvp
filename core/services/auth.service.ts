@@ -1,6 +1,8 @@
 import {AuthRepository} from '../repositories/auth.repository';
 import {UsersRepository} from '../repositories/users.repository';
 import {User} from '../types/users.types'
+import { UsersMapper } from "../mappers/users.mapper";
+
 import { generateToken } from "../../utils/auth/jwt";
 
 
@@ -15,17 +17,22 @@ export class AuthService {
 
     async login(token: string) {
         const privyUser = await this.authRepository.verifyPrivyToken(token);
-
+        let role;
         let user = await this.usersRepository.findUserByPrivyId(privyUser.privyId!);
         if (user) {
             user = await this.usersRepository.updateUser(user.id!);
+            role = await this.usersRepository.getRoleIdByUserId(user.id!);
+            role = await this.usersRepository.getRoleNameByRoleId(role)
+
+
         } else {
             user = await this.usersRepository.createUser(privyUser, "user");
+            role = "user"
         }
-        const jwtToken = await generateToken(user.id!, user.email!);
+        const jwtToken = await generateToken(user.id!, user.privyId!, role);
 
         return {
-            user: user,
+            userResponse: UsersMapper.userToUserResponse(user),
             token: jwtToken,
         };
     }

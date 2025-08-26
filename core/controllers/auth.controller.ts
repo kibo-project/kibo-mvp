@@ -3,7 +3,7 @@ import {NextRequest, NextResponse} from 'next/server';
 import {AuthService} from '../services/auth.service';
 import {ApiResponse} from '../types/generic.types';
 import { setAuthCookie } from "../../utils/auth/jwt";
-import {User} from '../types/users.types';
+import {UserResponse} from '../types/users.types';
 
 
 export class AuthController {
@@ -17,7 +17,7 @@ export class AuthController {
         try {
             const token = request.cookies.get('privy-token')?.value;
 
-            if (!token) {
+            if (!token || token.trim() === '') {
                 return NextResponse.json({
                     success: false,
                     error: { code: "UNAUTHORIZED", message: "No authentication token found" }
@@ -25,9 +25,9 @@ export class AuthController {
             }
 
             const result = await this.authService.login(token);
-            const responseData: ApiResponse<User> = {
+            const responseData: ApiResponse<UserResponse> = {
                 success: true,
-                data: result.user
+                data: result.userResponse,
             };
 
             const response = NextResponse.json(responseData);

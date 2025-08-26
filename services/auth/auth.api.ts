@@ -1,6 +1,6 @@
 import { ENDPOINTS } from '../../config/api';
 import {ApiResponse} from '../../core/types/generic.types';
-import {LoginResponse} from '../../core/types/auth.types';
+import {UserResponse} from "@/core/types/users.types";
 
 
 
@@ -16,7 +16,7 @@ class AuthApiService {
         }
 
         const response = await fetch(url, {
-            credentials: 'include', // Esto envía las cookies automáticamente
+            credentials: 'include',
             headers: {
                 ...defaultHeaders,
                 ...options.headers,
@@ -32,14 +32,11 @@ class AuthApiService {
 
         return response.json();
     }
-    async login(): Promise<ApiResponse<LoginResponse>> {
-        console.log('ENDPOINTS.CONNECT:', ENDPOINTS.CONNECT); // En tu servicio
-        return this.request<ApiResponse<LoginResponse>>(ENDPOINTS.CONNECT, {
+    async login(): Promise<ApiResponse<UserResponse>> {
+        return this.request<ApiResponse<UserResponse>>(ENDPOINTS.CONNECT, {
             method: 'POST',
-            // No body necesario - el token viene automáticamente en cookies
         });
     }
-
 }
 
 export const authApiService = new AuthApiService();

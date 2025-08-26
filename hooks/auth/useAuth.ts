@@ -13,7 +13,6 @@ export const useAuth = () => {
             if (data.success && data.data) {
                 queryClient.setQueryData(['auth', 'user'], data.data);
             }
-
         },
         onError: (error) => {
             console.error('Error logging in', error);
