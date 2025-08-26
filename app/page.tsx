@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import {useCallback, useEffect, useMemo} from "react";
 import type { NextPage } from "next";
 // import { mantleSepoliaTestnet } from "viem/chains";
 // import { useAccount, useBalance } from "wagmi";
@@ -13,6 +13,8 @@ import {
 import { ListIcon, PlaneIcon, QrCodeIcon } from "~~/components/icons/index";
 import { Badge } from "~~/components/kibo";
 import { useAuthStore } from "~~/services/store/auth-store.";
+import {useRouter} from "next/navigation";
+import {usePrivy} from "@privy-io/react-auth";
 
 interface TopButton {
   name: string;
@@ -22,22 +24,23 @@ interface TopButton {
 
 const Home: NextPage = () => {
   // const { address } = useAccount();
-  const {
-    // hasVisitedRoot,
-    // setHasVisitedRoot,
+    const { ready, authenticated} = usePrivy();
+
+    const {
+     hasVisitedRoot,
+     setHasVisitedRoot,
     isAdmin,
   } = useAuthStore();
-  // const router = useRouter();
-
+   const router = useRouter();
   // const { data: balance } = useBalance({
   //   address,
   //   chainId: mantleSepoliaTestnet.id,
   // });
 
-  // const redirectToLogin = useCallback(() => {
-  //   setHasVisitedRoot(true);
-  //   router.replace("/login");
-  // }, [setHasVisitedRoot, router]);
+   const redirectToLogin = useCallback(() => {
+     setHasVisitedRoot(true);
+     router.replace("/login");
+   }, [setHasVisitedRoot, router]);
 
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
@@ -148,11 +151,11 @@ const Home: NextPage = () => {
     []
   );
 
-  // useEffect(() => {
-  //   if (ready && !authenticated && !hasVisitedRoot) {
-  //     redirectToLogin();
-  //   }
-  // }, [ready, authenticated, hasVisitedRoot, redirectToLogin]);
+   useEffect(() => {
+     if (ready && !authenticated && !hasVisitedRoot) {
+       redirectToLogin();
+     }
+   }, [ready, authenticated, hasVisitedRoot, redirectToLogin]);
 
   // if (!ready) {
   //   return (

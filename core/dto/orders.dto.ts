@@ -16,17 +16,6 @@ export interface GetOrdersDto {
   limit: number;
   offset: number;
 }
-export interface GetOrderByIdDto {
-  orderId: string;
-}
-
-export interface GetAvailableOrdersDto {
-  country?: string;
-  minAmount?: number;
-  maxAmount?: number;
-  sortBy?: 'createdAt' | 'expiresAt' | 'amount';
-  limit?: number;
-}
 
 export interface TakeOrderDto {
   orderId: string;

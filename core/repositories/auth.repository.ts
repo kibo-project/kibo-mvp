@@ -1,4 +1,7 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from "@supabase/supabase-js";
+import {User} from "@/core/types/users.types";
+import { UsersMapper } from "../mappers/users.mapper";
 
 export class AuthRepository {
     private supabase;
@@ -9,7 +12,7 @@ export class AuthRepository {
             process.env.SUPABASE_SERVICE_ROLE_KEY!
         );
     }
-    async verifyPrivyToken(token: string): Promise<{privyId: string}> {
+    async verifyPrivyToken(token: string): Promise<User> {
         const response = await fetch("https://auth.privy.io/api/v1/users/me", {
             method: "GET",
             headers: {
@@ -25,11 +28,9 @@ export class AuthRepository {
             }
             throw new Error(`Error verifying token: ${response.status}`);
         }
-
         const userData = await response.json();
-        return {
-            privyId: userData.user.id,
-        };
+
+        return UsersMapper.privyUserToUser(userData);
     }
 
 

@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {NextRequest, NextResponse} from 'next/server';
 import {AuthService} from '../services/auth.service';
-import {AuthUserDto} from '../dto/auth.dto';
 import {ApiResponse} from '../types/generic.types';
 import { setAuthCookie } from "../../utils/auth/jwt";
-import {User} from '../types/orders.types';
+import {User} from '../types/users.types';
 
 
 export class AuthController {
@@ -16,34 +15,16 @@ export class AuthController {
 
     async login(request: NextRequest): Promise<NextResponse> {
         try {
-            const authHeader = request.headers.get("authorization");
-            if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            const token = request.cookies.get('privy-token')?.value;
+
+            if (!token) {
                 return NextResponse.json({
                     success: false,
-                    error: { code: "UNAUTHORIZED", message: "Authorization token is required" },
+                    error: { code: "UNAUTHORIZED", message: "No authentication token found" }
                 }, { status: 401 });
             }
 
-            const token = authHeader.replace("Bearer ", "");
-            const body = await request.json();
-            if(!body.privyId || !body.email || !body.password || !body.wallet || !body.name || !token) {
-                return NextResponse.json({
-                    success: false,
-                    error: {
-                        code: 'MISSING_FIELDS',
-                        message: 'privyId, email, password, wallet, name and token are required'
-                    }
-                }, { status: 400 });
-            }
-            const authUserDto: AuthUserDto = {
-                privyId: body.privyId,
-                email: body.email,
-                wallet: body.wallet,
-                token,
-                name: body.name,
-            };
-
-            const result = await this.authService.login(authUserDto);
+            const result = await this.authService.login(token);
             const responseData: ApiResponse<User> = {
                 success: true,
                 data: result.user
