@@ -41,8 +41,11 @@ interface AuthStore {
   /** Changes the user role (triggers re-renders and navigation) */
   setUserRole: (role: UserRole | null) => void;
 
-  /** Helper function to check if current user has admin privileges */
+
+    /** Helper function to check if current user has admin privileges */
   isAdmin: () => boolean;
+  reset: () => void;
+
 }
 
 /**
@@ -93,6 +96,8 @@ export const useAuthStore = create<AuthStore>()(
        * @returns {boolean} true if user role is 'admin'
        */
       isAdmin: () => get().userRole === "admin",
+        reset: () => set({ userRole: null }),
+
     }),
     {
       name: "kibo-auth-storage",

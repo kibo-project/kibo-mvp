@@ -2,7 +2,10 @@
 
 import { useState, useCallback } from "react";
 import { usePrivy, useLogout, useLogin } from "@privy-io/react-auth";
+import { useRouter } from "next/navigation";
 import { Badge } from "~~/components/kibo";
+import { useAuthStore } from "~~/services/store/auth-store.";
+
 import {
   WalletIcon,
   ArrowRightOnRectangleIcon,
@@ -21,10 +24,14 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   const { login } = useLogin();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const router = useRouter();
 
   const handleLogout = useCallback(() => {
     logout();
     setShowModal(false);
+    useAuthStore.getState().reset();
+
+    router.push("/login");
   }, [logout]);
 
   const handleLogin = useCallback(() => {
