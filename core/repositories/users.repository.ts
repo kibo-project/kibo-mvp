@@ -58,6 +58,7 @@ export class UsersRepository {
                 wallet: user.walletAddress,
                 created_at: user.createdAt,
                 last_login_at: user.lastLoginAt,
+                active_role_id: user.activeRoleId,
             })
             .select()
             .single();
