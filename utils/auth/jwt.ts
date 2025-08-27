@@ -8,7 +8,8 @@ const AUDIENCE = process.env.AUDIENCE!;
 
 export interface CustomJWTPayload extends JWTPayload {
     userId: string;
-    email: string;
+    role: string;
+    privyId: string;
 }
 
 export const generateToken = async (userId: string, privyId: string, role: string): Promise<string> => {

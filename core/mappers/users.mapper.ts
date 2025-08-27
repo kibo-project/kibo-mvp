@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {User, UserResponse} from "@/core/types/users.types";
+import {UserRole} from "@/core/types/orders.types";
 
 
 export class UsersMapper {
@@ -11,6 +12,7 @@ export class UsersMapper {
             name: dbUser.name,
             walletAddress: dbUser.wallet,
             email: dbUser.email,
+            activeRoleId: dbUser.active_role_id,
             country: dbUser.country,
             bankName: dbUser.bank_name,
             accountNumber: dbUser.account_number,
@@ -23,7 +25,7 @@ export class UsersMapper {
         };
     }
 
-    static userToUserResponse(user: User): UserResponse {
+    static userToUserResponse(user: User, role?: UserRole): UserResponse {
         return {
             id: user.id!,
             name: user.name,
@@ -31,6 +33,8 @@ export class UsersMapper {
             email: user.email,
             country: user.country,
             bankName: user.bankName,
+            activeRoleId: user.activeRoleId,
+            activeRoleName: role,
             accountNumber: user.accountNumber,
             accountHolder: user.accountHolder,
             phone: user.phone,

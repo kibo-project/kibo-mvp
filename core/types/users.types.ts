@@ -8,6 +8,8 @@ export interface UserResponse {
     email?: string;
     country?: string;
     bankName?: string;
+    activeRoleId?: string;
+    activeRoleName?: string;
     accountNumber?: string;
     accountHolder?: string;
     phone?: string;
@@ -29,6 +31,7 @@ export interface User {
     accountHolder?: string;
     phone?: string;
     availableBalance?: string;
+    activeRoleId?: string;
     lastLoginAt?: Date;
     reputation?: number;
     createdAt?: string;

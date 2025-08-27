@@ -19,7 +19,10 @@ export async function middleware(request: NextRequest) {
 
     const response = NextResponse.next();
     response.headers.set("x-user-id", payload.userId);
-    response.headers.set("x-user-email", payload.email);
+    response.headers.set("x-user-role", payload.role);
+    response.headers.set("x-user-privyId", payload.privyId);
+
+
     return response;
 
   } catch (error) {
@@ -36,6 +39,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/auth/profile",
-  //  "/api/orders/:path*",
+    "/api/orders/:path*",
   ],
 };

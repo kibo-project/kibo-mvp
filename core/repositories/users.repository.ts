@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from "@supabase/supabase-js";
 import { UsersMapper } from "../mappers/users.mapper";
 import {UserRole} from '../types/orders.types';
@@ -34,6 +33,19 @@ export class UsersRepository {
             .single();
 
         return data ? UsersMapper.dbToUser(data) : null;
+    }
+
+    async getActiveRoleIdByUserId(userId: string): Promise<string | null> {
+        const {data, error} = await this.supabase
+        .from('users')
+        .select('active_role_id')
+            .eq('id', userId)
+        .single();
+
+        if (error || !data){
+            console.log(`User '${userId}' does not have an active role id`);
+        }
+        return data!.active_role_id;
     }
 
 
@@ -124,7 +136,7 @@ export class UsersRepository {
         return data[0].role_id;
     }
 
-    async getRoleNameByRoleId(roleId: string): Promise<string> {
+    async getRoleNameByRoleId(roleId: string): Promise<UserRole> {
         const {data, error} = await this.supabase
         .from('roles')
         .select('name')
@@ -133,7 +145,7 @@ export class UsersRepository {
         if (error) {
             throw new Error(`Error getting role name: ${error.message}`);
         }
-        return data.name;
+        return data.name as UserRole;
     }
 
 }
