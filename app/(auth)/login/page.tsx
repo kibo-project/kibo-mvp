@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { setHasVisitedRoot } = useAuthStore();
+  const { setHasVisitedRoot, setUserRole} = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -28,8 +28,10 @@ const Login: NextPage = () => {
       backendLogin.mutate();
     }
   }, [authenticated, ready, backendLogin]);
+
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess) {
+      setUserRole(backendLogin.data.data!.activeRoleName)
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess, router]);

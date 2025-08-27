@@ -8,6 +8,8 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { SectionQrIcon } from "~~/components/icons";
 import { Button } from "~~/components/kibo";
 import { usePaymentStore } from "~~/services/store/payment-store";
+import { RoleGuard } from '@/components/RoleGuard';
+
 
 const PHOTO_WIDTH = 320;
 const DEFAULT_ASPECT_RATIO = 4 / 3;
@@ -165,7 +167,8 @@ const Camera: NextPage = () => {
   }, [initializeCamera]);
 
   return (
-    <div className="absolute z-40 h-dvh w-screen flex flex-col dark:bg-neutral-900 bg-neutral-50">
+      <RoleGuard requiredRole="user">
+      <div className="absolute z-40 h-dvh w-screen flex flex-col dark:bg-neutral-900 bg-neutral-50">
       {/* Header */}
       <header className="h-20 flex mx-4 items-center">
         <Link
@@ -277,6 +280,7 @@ const Camera: NextPage = () => {
         </div>
       </footer>
     </div>
+      </RoleGuard>
   );
 };
 

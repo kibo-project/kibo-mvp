@@ -8,7 +8,6 @@ import { NextPage } from "next";
 import { ArrowLeftIcon, CameraIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { Button, Card, CardBody, CardTitle } from "~~/components/kibo";
 import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
-import { useAuthStore } from "~~/services/store/auth-store.";
 import { useUploadProof } from "@/hooks/orders/useUploadProof";
 import { UploadProofRequest } from '../../../../core/types/orders.types';
 import { formatDateToSpanish } from "~~/utils/front.functions";
@@ -25,7 +24,6 @@ const PHOTO_WIDTH = 320;
 const DEFAULT_ASPECT_RATIO = 4 / 3;
 
 const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
-    const { isAdmin } = useAuthStore();
     const router = useRouter();
     const { selectedTransactionId, selectedTransaction, paymentProofImage, setPaymentProofImage } = useAdminPaymentStore();
     const { mutate: uploadProof, isPending: isUploading, error: uploadError } = useUploadProof();
@@ -49,15 +47,11 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
     const [previewImage, setPreviewImage] = useState<string | null>(null);
 
     useEffect(() => {
-        if (!isAdmin()) {
-            router.push("/");
-            return;
-        }
         if (transactionId && selectedTransactionId !== transactionId) {
             router.push("/transactions");
             return;
         }
-    }, [isAdmin, selectedTransactionId, transactionId, router]);
+    }, [ selectedTransactionId, transactionId, router]);
 
     const getErrorMessage = useCallback((error: Error): string => {
         const errorMessages: Record<string, string> = {
@@ -194,7 +188,7 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
         setPaymentProofImage(null);
     }, [setPaymentProofImage]);
 
-    if (!isAdmin() || !transactionId || selectedTransactionId !== transactionId || !selectedTransaction) {
+    if (!transactionId || selectedTransactionId !== transactionId || !selectedTransaction) {
         return null;
     }
 

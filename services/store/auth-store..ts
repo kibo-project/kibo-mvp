@@ -21,9 +21,9 @@ import { persist } from "zustand/middleware";
 
 /**
  * User role types supported in the application
- * @type {"user" | "admin"}
+ * @type {"user" | "admin | ally"}
  */
-export type UserRole = "user" | "admin";
+export type UserRole = "user" | "ally" | "admin";
 
 /**
  * Auth store interface defining state and actions
@@ -33,13 +33,13 @@ interface AuthStore {
   hasVisitedRoot: boolean;
 
   /** Current user role - determines access to admin features */
-  userRole: UserRole;
+  userRole: UserRole | null;
 
   /** Updates the root visit tracking flag */
   setHasVisitedRoot: (visited: boolean) => void;
 
   /** Changes the user role (triggers re-renders and navigation) */
-  setUserRole: (role: UserRole) => void;
+  setUserRole: (role: UserRole | null) => void;
 
   /** Helper function to check if current user has admin privileges */
   isAdmin: () => boolean;
@@ -77,7 +77,7 @@ export const useAuthStore = create<AuthStore>()(
       hasVisitedRoot: false,
 
       /** Default role is 'user' - admin access must be explicitly granted */
-      userRole: "user",
+      userRole: null,
 
       /** Track root page visits for login redirect logic */
       setHasVisitedRoot: visited => set({ hasVisitedRoot: visited }),

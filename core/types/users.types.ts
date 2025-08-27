@@ -9,7 +9,7 @@ export interface UserResponse {
     country?: string;
     bankName?: string;
     activeRoleId?: string;
-    activeRoleName?: string;
+    activeRoleName: UserRole;
     accountNumber?: string;
     accountHolder?: string;
     phone?: string;

@@ -25,7 +25,7 @@ export class UsersMapper {
         };
     }
 
-    static userToUserResponse(user: User, role?: UserRole): UserResponse {
+    static userToUserResponse(user: User, role: UserRole): UserResponse {
         return {
             id: user.id!,
             name: user.name,

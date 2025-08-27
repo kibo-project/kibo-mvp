@@ -37,7 +37,7 @@ const userMenuLinks: HeaderMenuLink[] = [
   },
 ];
 
-const adminMenuLinks: HeaderMenuLink[] = [
+const allyMenuLinks: HeaderMenuLink[] = [
   {
     label: "Home",
     href: "/",
@@ -48,15 +48,16 @@ const adminMenuLinks: HeaderMenuLink[] = [
     href: "/transactions",
     icon: <WalletIcon className="size-7 md:size-4" />,
   },
+  {
+    label: "Availables",
+    href: "/availables",  },
 ];
-
-export const menuLinks = userMenuLinks;
 
 export const HeaderMenuLinks = () => {
   const pathname = usePathname();
-  const { isAdmin } = useAuthStore();
+  const { userRole } = useAuthStore();
 
-  const currentMenuLinks = isAdmin() ? adminMenuLinks : userMenuLinks;
+  const currentMenuLinks = userRole==="ally" ? allyMenuLinks : userMenuLinks;
 
   return (
     <>
