@@ -16,29 +16,8 @@ export type Network = 'mantle' | 'ethereum' | 'polygon';
 export type UserRole = 'user' | 'ally' | 'admin';
 
 // Interfaces principales
-export interface User {
-  id: string;
-  name?: string;
-  walletAddress?: string;
-  role?: UserRole;
-  email?: string;
-  country?: string;
-  bankName?: string;
-  accountNumber?: string;
-  accountHolder?: string;
-  phone?: string;
-  availableBalance?: string;
-  lastLoginAt?: Date;
-  reputation?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  ////Delete stating here
-  verified?: boolean;
-  successfulOrders?: number;
-  lastActive?: string | Date;
 
 
-}
 export interface ImageDataFile{
   name: string;
   extension: string;
@@ -78,8 +57,6 @@ export interface Order {
   userId?: string;
   allyId?: string;
   bankTransactionId?: string;
-  user?: Partial<User>;
-  ally?: Partial<User>;
   timeline?: TimelineEvent[];
   bankingDetails?: BankingDetails;
   estimatedGain?: number;

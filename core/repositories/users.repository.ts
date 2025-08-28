@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {createClient} from "@supabase/supabase-js";
-import {AuthUserDto} from '../dto/auth.dto';
-import {User, UserRole} from '../types/orders.types';
+import { UsersMapper } from "../mappers/users.mapper";
+import {UserRole} from '../types/orders.types';
+import {User} from '../types/users.types';
+
 
 
 export class UsersRepository {
@@ -21,7 +22,7 @@ export class UsersRepository {
             .eq('privy_id', privyId)
             .single();
 
-        return data ? this.mapDbToUser(data) : null;
+        return data ? UsersMapper.dbToUser(data) : null;
     }
 
     async findUserById(userId: string): Promise<User | null> {
@@ -31,19 +32,33 @@ export class UsersRepository {
             .eq('id', userId)
             .single();
 
-        return data ? this.mapDbToUser(data) : null;
+        return data ? UsersMapper.dbToUser(data) : null;
+    }
+
+    async getActiveRoleIdByUserId(userId: string): Promise<string | null> {
+        const {data, error} = await this.supabase
+        .from('users')
+        .select('active_role_id')
+            .eq('id', userId)
+        .single();
+
+        if (error || !data){
+            console.log(`User '${userId}' does not have an active role id`);
+        }
+        return data!.active_role_id;
     }
 
 
-    async createUser(authUserDto: AuthUserDto, roleName: UserRole): Promise<User> {
+    async createUser(user: User, roleName: UserRole): Promise<User> {
         const {data, error} = await this.supabase
             .from('users')
             .insert({
-                privy_id: authUserDto.privyId,
-                email: authUserDto.email,
-                name: authUserDto.name,
-                wallet: authUserDto.wallet,
-                created_at: new Date().toISOString()
+                privy_id: user.privyId,
+                email: user.email,
+                wallet: user.walletAddress,
+                created_at: user.createdAt,
+                last_login_at: user.lastLoginAt,
+                active_role_id: user.activeRoleId,
             })
             .select()
             .single();
@@ -56,7 +71,7 @@ export class UsersRepository {
 
         await this.createUserRole(data.id, roleId);
 
-        return this.mapDbToUser(data);
+        return UsersMapper.dbToUser(data);
     }
 
     async createUserRole(userId: string, roleId: string) {
@@ -103,31 +118,26 @@ export class UsersRepository {
             throw new Error(`Error updating user: ${error.message}`);
         }
 
-        return this.mapDbToUser(data)
+        return UsersMapper.dbToUser(data)
     }
     async getRoleIdByUserId(userId: string): Promise<string> {
-        const {data, error} = await this.supabase
-        .from('users_roles')
-        .select('role_id')
-        .eq('user_id', userId)
-        .limit(1);
-        
+        const { data, error } = await this.supabase
+            .from('users_roles')
+            .select('role_id')
+            .eq('user_id', userId)
+            .limit(1);
+
         if (error) {
             throw new Error(`Error getting role Id: ${error.message}`);
         }
-        
-        // If no role found, assign default "user" role
+
         if (!data || data.length === 0) {
-            console.log(`No role found for user ${userId}, assigning default 'user' role`);
-            const defaultRoleId = await this.findRoleByName('user');
-            await this.createUserRole(userId, defaultRoleId);
-            return defaultRoleId;
+            throw new Error(`No role found for user ${userId}`);
         }
-        
         return data[0].role_id;
     }
 
-    async getRoleNameByRoleId(roleId: string): Promise<string> {
+    async getRoleNameByRoleId(roleId: string): Promise<UserRole> {
         const {data, error} = await this.supabase
         .from('roles')
         .select('name')
@@ -136,26 +146,7 @@ export class UsersRepository {
         if (error) {
             throw new Error(`Error getting role name: ${error.message}`);
         }
-        return data.name;
+        return data.name as UserRole;
     }
-
-    private mapDbToUser(dbUser: any): User {
-        return {
-            id: dbUser.id,
-            name: dbUser.name,
-            walletAddress: dbUser.wallet,
-            email: dbUser.email,
-            country: dbUser.country,
-            bankName: dbUser.bank_name,
-            accountNumber: dbUser.account_number,
-            accountHolder: dbUser.account_holder,
-            phone: dbUser.phone,
-            availableBalance: dbUser.available_balance,
-            lastLoginAt: dbUser.last_login_at,
-            createdAt: dbUser.created_at,
-            updatedAt: dbUser.updated_at,
-        };
-    }
-
 
 }

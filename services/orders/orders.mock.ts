@@ -257,7 +257,7 @@ class OrdersMockService {
       order: completedOrder,
       payment: {
         amountReleased: order.cryptoAmount,
-        recipientWallet: order.ally?.walletAddress || '',
+        recipientWallet: order.escrowAddress || '',
         networkFee: 0.008
       },
       message: `Payment proof uploaded and approved. ${order.cryptoAmount} USDT released to your wallet.`

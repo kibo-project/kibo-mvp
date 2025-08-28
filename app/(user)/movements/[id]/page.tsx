@@ -98,11 +98,11 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
                             </div>
                         </div>
 
-                        {order.user && (
+                        {order.userId && (
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
                                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">User</p>
-                                    <p className="text-sm font-medium">{order.user.reputation}</p>
+                                    <p className="text-sm font-medium">{order.status}</p>
                                 </div>
                                 {order.createdAt && (
                                     <div>
@@ -113,10 +113,10 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
                             </div>
                         )}
 
-                        {order.user && (
+                        {order.userId && (
                             <div>
                                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Wallet Address</p>
-                                <p className="text-sm font-medium break-all">{order.user.walletAddress}</p>
+                                <p className="text-sm font-medium break-all">{order.escrowAddress}</p>
                             </div>
                         )}
                     </div>

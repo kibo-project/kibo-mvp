@@ -4,7 +4,7 @@ import {useAuthStore} from "~~/services/store/auth-store.";
 
 export const NavigationApp = () => {
     const pathname = usePathname();
-    const {isAdmin} = useAuthStore();
+    const {userRole} = useAuthStore();
 
     const userMenuLinks = [
         {
@@ -53,7 +53,7 @@ export const NavigationApp = () => {
         },
     ];
 
-    const adminMenuLinks = [
+    const allyMenuLinks = [
         {
             label: "Home",
             href: "/",
@@ -83,10 +83,9 @@ export const NavigationApp = () => {
             ),
         },
         {
-            label: "Availables", //Nuevo item para admins
-            href: "/availables", //Nueva ruta para admins
+            label: "Availables",
+            href: "/availables",
             icon: (
-                //Nuevo icono tipo lista
                 <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7"/>
                 </svg>
@@ -94,7 +93,7 @@ export const NavigationApp = () => {
         },
     ];
 
-    const currentMenuLinks = isAdmin() ? adminMenuLinks : userMenuLinks;
+    const currentMenuLinks = userRole==="ally" ? allyMenuLinks : userMenuLinks;
 
     return (
         <nav

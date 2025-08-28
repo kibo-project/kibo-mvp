@@ -25,7 +25,8 @@ export class OrdersController {
   async createOrder(request: NextRequest): Promise<Response> {
     try {
 
-     /* const userId = request.headers.get("x-user-id");
+      const userId = request.headers.get("x-user-id");
+      console.log("USERID CREATE ORDER",userId);
       if (!userId) {
         return Response.json({
           success: false,
@@ -34,8 +35,7 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }*/
-      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617";
+      }
 
       const formData = await request.formData();
 
@@ -88,9 +88,11 @@ export class OrdersController {
 
   async getOrders(request: NextRequest): Promise<Response> {
     try {
-      /*const userId = request.headers.get("x-user-id");
-      
-      if (!userId) {
+      const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role");
+
+
+      if (!userId || !roleActiveNow) {
         return Response.json({
           success: false,
           error: {
@@ -98,8 +100,7 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }*/
-      const userId = "692b1378-67a6-48cc-8c88-e96a33b50617";
+      }
 
       const { searchParams } = new URL(request.url);
       const statusParam = searchParams.get('status');
@@ -109,7 +110,7 @@ export class OrdersController {
         limit: searchParams.get('limit') ? parseInt(searchParams.get('limit')!) : undefined,
         offset: searchParams.get('offset') ? parseInt(searchParams.get('offset')!) : undefined
       };
-      const result: OrdersListResponse = await this.ordersService.getOrdersByUser(filters, userId);
+      const result: OrdersListResponse = await this.ordersService.getOrdersByUser(filters, userId, roleActiveNow);
       const response: ApiResponse<typeof result> = {
         success: true,
         data: result
@@ -159,7 +160,7 @@ export class OrdersController {
 
   async getAvailableOrders(request: NextRequest): Promise<Response> {
     try {
-     /* const userId = request.headers.get("x-user-id");
+      const userId = request.headers.get("x-user-id");
       if (!userId) {
         return Response.json({
           success: false,
@@ -168,8 +169,7 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }*/
-      const userId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
+      }
       const { searchParams } = new URL(request.url);
       const sortByParam = searchParams.get('sortBy');
 
@@ -196,7 +196,7 @@ export class OrdersController {
 
   async takeOrder(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
-      /* const userId = request.headers.get("x-user-id");
+       const userId = request.headers.get("x-user-id");
       if (!userId) {
         return Response.json({
           success: false,
@@ -205,17 +205,16 @@ export class OrdersController {
             message: 'User authentication required'
           }
         }, { status: 401 });
-      }*/
+      }
 
       const resolvedParams = await params;
       const orderId = resolvedParams.id;
-      const allyId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
 
       const takeOrderDto: TakeOrderDto = {
         orderId: orderId,
       };
 
-      const order = await this.ordersService.takeOrder(takeOrderDto, allyId);
+      const order = await this.ordersService.takeOrder(takeOrderDto, userId);
       const takeOrderResponse: TakeOrderResponse = {
         order
       }
@@ -233,7 +232,7 @@ export class OrdersController {
 
   async uploadProof(request: NextRequest,  params: Promise<{ id: string }>): Promise<Response> {
     try {
-      /* const userId = request.headers.get("x-user-id");
+       const userId = request.headers.get("x-user-id");
     if (!userId) {
       return Response.json({
         success: false,
@@ -242,10 +241,9 @@ export class OrdersController {
           message: 'User authentication required'
         }
       }, { status: 401 });
-    }*/
+    }
       const resolvedParams = await params;
       const orderId = resolvedParams.id;
-      const allyId = "22387eb8-23cf-4b13-9968-0d7f44f42fea"
       const formData = await request.formData();
 
       const proofFile = formData.get('proof') as File;
@@ -269,7 +267,7 @@ export class OrdersController {
         notes: notes || undefined
       };
 
-      const order = await this.ordersService.uploadProof(uploadProofDto, allyId);
+      const order = await this.ordersService.uploadProof(uploadProofDto, userId);
       const orderResponse = OrderMapper.orderToOrderResponse(order);
 
 
