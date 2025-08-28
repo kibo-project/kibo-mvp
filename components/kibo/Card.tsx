@@ -24,14 +24,14 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
           {
             "border-0": !border,
           },
-          className,
+          className
         )}
         {...props}
       >
         {children}
       </div>
     );
-  },
+  }
 );
 
 Card.displayName = "Card";
@@ -45,7 +45,7 @@ export const CardBody = forwardRef<HTMLDivElement, CardBodyProps>(
     <div ref={ref} className={cn(compact ? "kibo-card-compact" : "kibo-card-body", className)} {...props}>
       {children}
     </div>
-  ),
+  )
 );
 
 CardBody.displayName = "CardBody";
@@ -59,7 +59,7 @@ export const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     <Component ref={ref} className={cn("kibo-card-title", className)} {...props}>
       {children}
     </Component>
-  ),
+  )
 );
 
 CardTitle.displayName = "CardTitle";
@@ -73,7 +73,7 @@ export const CardSubtitle = forwardRef<HTMLParagraphElement, CardSubtitleProps>(
     <p ref={ref} className={cn("kibo-card-subtitle", className)} {...props}>
       {children}
     </p>
-  ),
+  )
 );
 
 CardSubtitle.displayName = "CardSubtitle";

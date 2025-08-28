@@ -1,5 +1,5 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ordersService } from '../../services/orders';
+import { ordersService } from "../../services/orders";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useCancelOrder = () => {
   const queryClient = useQueryClient();
@@ -8,13 +8,13 @@ export const useCancelOrder = () => {
     mutationFn: (orderId: string) => ordersService.cancelOrder(orderId),
     onSuccess: (data, orderId) => {
       // Actualizar orden específica
-      queryClient.setQueryData(['order', orderId], (oldData: any) => ({
+      queryClient.setQueryData(["order", orderId], (oldData: any) => ({
         ...oldData,
-        order: { ...oldData?.order, ...data.order }
+        order: { ...oldData?.order, ...data.order },
       }));
 
       // Invalidar listas
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
     },
   });
 };

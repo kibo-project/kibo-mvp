@@ -1,10 +1,10 @@
-import { useCreateOrder } from '../../hooks/orders/useCreateOrder';
-import { useState } from 'react';
+import { useState } from "react";
+import { useCreateOrder } from "../../hooks/orders/useCreateOrder";
 
 const CreateOrder = () => {
   const createOrder = useCreateOrder();
-  const [quoteId, setQuoteId] = useState('');
-  const [qrImageUrl, setQrImageUrl] = useState('');
+  const [quoteId, setQuoteId] = useState("");
+  const [qrImageUrl, setQrImageUrl] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -18,12 +18,12 @@ const CreateOrder = () => {
         recipient: "Recipient name",
         description: "Payment description",
       });
-      alert('Order created successfully!');
-      setQuoteId('');
-      setQrImageUrl('');
+      alert("Order created successfully!");
+      setQuoteId("");
+      setQrImageUrl("");
     } catch (error) {
-      console.error('Error creating order:', error);
-      alert('Error creating order');
+      console.error("Error creating order:", error);
+      alert("Error creating order");
     } finally {
       setIsSubmitting(false);
     }
@@ -36,27 +36,17 @@ const CreateOrder = () => {
         <div>
           <label>
             Quote ID:
-            <input
-              type="text"
-              value={quoteId}
-              onChange={(e) => setQuoteId(e.target.value)}
-              required
-            />
+            <input type="text" value={quoteId} onChange={e => setQuoteId(e.target.value)} required />
           </label>
         </div>
         <div>
           <label>
             QR Image URL:
-            <input
-              type="text"
-              value={qrImageUrl}
-              onChange={(e) => setQrImageUrl(e.target.value)}
-              required
-            />
+            <input type="text" value={qrImageUrl} onChange={e => setQrImageUrl(e.target.value)} required />
           </label>
         </div>
         <button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Creating...' : 'Create Order'}
+          {isSubmitting ? "Creating..." : "Create Order"}
         </button>
       </form>
     </div>

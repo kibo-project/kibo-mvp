@@ -1,4 +1,5 @@
 import { create } from "zustand";
+
 // import scaffoldConfig from "~~/scaffold.config";
 // import { ChainWithAttributes, NETWORKS_EXTRA_DATA } from "~~/utils/scaffold-eth";
 
@@ -6,9 +7,7 @@ import { create } from "zustand";
 // TODO: Reemplazar los mocks por las importaciones reales
 // Mocks para desarrollo
 const scaffoldConfig = {
-  targetNetworks: [
-    { id: 1, name: "Ethereum Mainnet", rpcUrl: "https://mainnet.infura.io/v3/mock" },
-  ],
+  targetNetworks: [{ id: 1, name: "Ethereum Mainnet", rpcUrl: "https://mainnet.infura.io/v3/mock" }],
 };
 
 type ChainWithAttributes = {

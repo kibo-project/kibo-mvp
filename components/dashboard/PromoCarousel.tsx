@@ -97,7 +97,7 @@ export const PromoCarousel = ({
         setDragOffset(0);
       }
     },
-    [isDragging, startX, nextSlide, prevSlide],
+    [isDragging, startX, nextSlide, prevSlide]
   );
 
   const handleEnd = useCallback(() => {
@@ -112,14 +112,14 @@ export const PromoCarousel = ({
     (e: React.TouchEvent) => {
       handleStart(e.touches[0].clientX);
     },
-    [handleStart],
+    [handleStart]
   );
 
   const handleTouchMove = useCallback(
     (e: React.TouchEvent) => {
       handleMove(e.touches[0].clientX);
     },
-    [handleMove],
+    [handleMove]
   );
 
   const handleTouchEnd = useCallback(() => {
@@ -132,14 +132,14 @@ export const PromoCarousel = ({
       e.preventDefault();
       handleStart(e.clientX);
     },
-    [handleStart],
+    [handleStart]
   );
 
   const handleMouseMove = useCallback(
     (e: MouseEvent) => {
       handleMove(e.clientX);
     },
-    [handleMove],
+    [handleMove]
   );
 
   const handleMouseUp = useCallback(() => {
