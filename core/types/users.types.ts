@@ -4,6 +4,7 @@ export interface UserResponse {
     id: string;
     name?: string;
     walletAddress?: string;
+    privyId?: string;
     role?: UserRole;
     email?: string;
     country?: string;

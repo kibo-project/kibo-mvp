@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import {useState, useCallback, useEffect} from "react";
 import { usePrivy, useLogout, useLogin } from "@privy-io/react-auth";
 import { useRouter } from "next/navigation";
 import { Badge } from "~~/components/kibo";
 import { useAuthStore } from "~~/services/store/auth-store.";
+import { useAuth } from "@/hooks/auth/useAuth";
 
 import {
   WalletIcon,
@@ -22,16 +23,30 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   const { authenticated, user, ready } = usePrivy();
   const { logout } = useLogout();
   const { login } = useLogin();
+  const { userRole, setUserRole } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
+  const backendLogin  = useAuth(); // CONNECT: Importar hook useAuth
+
+  useEffect(() => {
+    if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
+      backendLogin.mutate();
+    }
+  }, [authenticated, ready]);
+
+  useEffect(() => {
+    if (authenticated && backendLogin.isSuccess && !userRole) {
+      setUserRole(backendLogin.data.data!.activeRoleName)
+      router.replace("/");
+    }
+  }, [authenticated, backendLogin.isSuccess]);
 
   const handleLogout = useCallback(() => {
     logout();
     setShowModal(false);
     useAuthStore.getState().reset();
-
-    router.push("/login");
+  //  router.push("/login");
   }, [logout]);
 
   const handleLogin = useCallback(() => {

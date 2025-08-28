@@ -30,6 +30,7 @@ export class UsersMapper {
             id: user.id!,
             name: user.name,
             walletAddress: user.walletAddress,
+            privyId: user.privyId,
             email: user.email,
             country: user.country,
             bankName: user.bankName,

@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { setHasVisitedRoot, setUserRole} = useAuthStore();
+  const { userRole, setHasVisitedRoot, setUserRole} = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -24,17 +24,19 @@ const Login: NextPage = () => {
   }, [login]);
 
   useEffect(() => {
-    if (authenticated && ready && !backendLogin.isSuccess && !backendLogin.isPending) {
+    if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
+      console.log("DESPUES DEL LOGIN ENTRA ACA?")
+
       backendLogin.mutate();
     }
-  }, [authenticated, ready, backendLogin]);
+  }, [authenticated, ready]);
 
   useEffect(() => {
-    if (authenticated && backendLogin.isSuccess) {
+    if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
       setUserRole(backendLogin.data.data!.activeRoleName)
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess, router]);
+  }, [authenticated, backendLogin.isSuccess]);
 
   useEffect(() => {
     setHasVisitedRoot(true);
