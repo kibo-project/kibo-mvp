@@ -1,3 +1,3 @@
-import { authApiService } from './auth.api';
+import { authApiService } from "./auth.api";
 
 export const authService = authApiService;

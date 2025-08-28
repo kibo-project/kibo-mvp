@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PrivyProvider } from "@privy-io/react-auth";
-import { createConfig, WagmiProvider } from "wagmi";
 import { RainbowKitProvider } from "@rainbow-me/rainbowkit";
-import { http } from "wagmi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mantle } from "viem/chains";
+import { WagmiProvider, createConfig } from "wagmi";
+import { http } from "wagmi";
 
 const wagmiConfig = createConfig({
   chains: [mantle],

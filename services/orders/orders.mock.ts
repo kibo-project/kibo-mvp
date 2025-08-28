@@ -1,27 +1,27 @@
 import {
-  Order,
-  OrdersListResponse,
-  OrderDetailsResponse,
-  CreateOrderRequest,
-  OrderResponse,
+  AvailableOrdersFilters,
   AvailableOrdersResponse,
-  TakeOrderResponse,
   CancelOrderResponse,
+  CreateOrderRequest,
+  Order,
+  OrderDetailsResponse,
+  OrderResponse,
+  OrderStatus,
+  OrdersFilters,
+  OrdersListResponse,
+  TakeOrderResponse,
   UploadProofRequest,
   UploadProofResponse,
-  OrdersFilters,
-  AvailableOrdersFilters,
-  OrderStatus
-} from '../../core/types/orders.types';
+} from "../../core/types/orders.types";
 import {
-  mockOrders,
-  mockDelay,
-  generateMockId,
   calculateSecondsRemaining,
-  mockQuotes,
+  generateMockId,
   generateTimeline,
-  mockUsers
-} from './mock-data';
+  mockDelay,
+  mockOrders,
+  mockQuotes,
+  mockUsers,
+} from "./mock-data";
 
 class OrdersMockService {
   private orders: Order[] = [...mockOrders];
@@ -40,9 +40,9 @@ class OrdersMockService {
     // Actualizar secondsRemaining para órdenes activas
     filteredOrders = filteredOrders.map(order => ({
       ...order,
-      secondsRemaining: [OrderStatus.PENDING_PAYMENT, 'AVAILABLE', 'TAKEN'].includes(order.status)
+      secondsRemaining: [OrderStatus.PENDING_PAYMENT, "AVAILABLE", "TAKEN"].includes(order.status)
         ? calculateSecondsRemaining(order.expiresAt)
-        : undefined
+        : undefined,
     }));
 
     // Ordenar por fecha (más recientes primero)
@@ -56,8 +56,8 @@ class OrdersMockService {
         total: filteredOrders.length,
         limit,
         offset,
-        hasMore: offset + limit < filteredOrders.length
-      }
+        hasMore: offset + limit < filteredOrders.length,
+      },
     };
   }
 
@@ -68,20 +68,20 @@ class OrdersMockService {
     const order = this.orders.find(o => o.id === id);
 
     if (!order) {
-      throw new Error('Order not found');
+      throw new Error("Order not found");
     }
 
     // Actualizar secondsRemaining si está activa
     const updatedOrder = {
       ...order,
-      secondsRemaining: [OrderStatus.PENDING_PAYMENT, 'AVAILABLE', 'TAKEN'].includes(order.status)
+      secondsRemaining: [OrderStatus.PENDING_PAYMENT, "AVAILABLE", "TAKEN"].includes(order.status)
         ? calculateSecondsRemaining(order.expiresAt)
-        : undefined
+        : undefined,
     };
 
     return {
       success: true,
-      order: updatedOrder
+      order: updatedOrder,
     };
   }
 
@@ -91,23 +91,23 @@ class OrdersMockService {
 
     const orderIndex = this.orders.findIndex(o => o.id === id);
     if (orderIndex === -1) {
-      throw new Error('Order not found');
+      throw new Error("Order not found");
     }
 
     const order = this.orders[orderIndex];
 
     if (order.status !== OrderStatus.PENDING_PAYMENT) {
-      throw new Error('Cannot cancel order - order already progressed beyond PENDING_PAYMENT');
+      throw new Error("Cannot cancel order - order already progressed beyond PENDING_PAYMENT");
     }
 
     const cancelledOrder = {
       ...order,
-      status: 'CANCELLED' as OrderStatus,
+      status: "CANCELLED" as OrderStatus,
       cancelledAt: new Date().toISOString(),
       timeline: [
-        ...order.timeline || [],
-        { status: 'CANCELLED' as OrderStatus, timestamp: new Date().toISOString() }
-      ]
+        ...(order.timeline || []),
+        { status: "CANCELLED" as OrderStatus, timestamp: new Date().toISOString() },
+      ],
     };
 
     this.orders[orderIndex] = cancelledOrder;
@@ -117,9 +117,9 @@ class OrdersMockService {
       order: {
         id: cancelledOrder.id,
         status: cancelledOrder.status,
-        cancelledAt: cancelledOrder.cancelledAt
+        cancelledAt: cancelledOrder.cancelledAt,
       },
-      message: 'Order cancelled successfully'
+      message: "Order cancelled successfully",
     };
   }
 
@@ -127,10 +127,10 @@ class OrdersMockService {
   async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<AvailableOrdersResponse> {
     await mockDelay();
 
-    const { country = 'BO', minAmount, maxAmount, sortBy = 'expiresAt', limit = 50 } = filters;
+    const { country = "BO", minAmount, maxAmount, sortBy = "expiresAt", limit = 50 } = filters;
 
     let availableOrders = this.orders.filter(order => {
-      if (order.status !== 'AVAILABLE') return false;
+      if (order.status !== "AVAILABLE") return false;
       if (order.userCountry && order.userCountry !== country) return false;
       if (minAmount && order.fiatAmount < minAmount) return false;
       if (maxAmount && order.fiatAmount > maxAmount) return false;
@@ -144,17 +144,17 @@ class OrdersMockService {
     // Actualizar secondsRemaining
     availableOrders = availableOrders.map(order => ({
       ...order,
-      secondsRemaining: calculateSecondsRemaining(order.expiresAt)
+      secondsRemaining: calculateSecondsRemaining(order.expiresAt),
     }));
 
     // Ordenamiento
     availableOrders.sort((a, b) => {
       switch (sortBy) {
-        case 'amount':
+        case "amount":
           return b.fiatAmount - a.fiatAmount;
-        case 'createdAt':
+        case "createdAt":
           return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case 'expiresAt':
+        case "expiresAt":
         default:
           return new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime();
       }
@@ -167,8 +167,8 @@ class OrdersMockService {
       metadata: {
         totalAvailable: availableOrders.length,
         avgWaitTime: 245, // segundos promedio
-        yourActiveOrders: 0
-      }
+        yourActiveOrders: 0,
+      },
     };
   }
 
@@ -178,44 +178,41 @@ class OrdersMockService {
 
     const orderIndex = this.orders.findIndex(o => o.id === id);
     if (orderIndex === -1) {
-      throw new Error('Order not found');
+      throw new Error("Order not found");
     }
 
     const order = this.orders[orderIndex];
 
-    if (order.status !== 'AVAILABLE') {
-      throw new Error('Order is not available for taking');
+    if (order.status !== "AVAILABLE") {
+      throw new Error("Order is not available for taking");
     }
 
     if (new Date(order.expiresAt) < new Date()) {
-      throw new Error('Order has expired');
+      throw new Error("Order has expired");
     }
 
     const takenOrder = {
       ...order,
-      status: 'TAKEN' as OrderStatus,
+      status: "TAKEN" as OrderStatus,
       takenAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 min para completar
       ally: mockUsers[1], // Ally que toma la orden
-      qrData: 'BANCO_UNION|123456789|REF_KBO025',
+      qrData: "BANCO_UNION|123456789|REF_KBO025",
       qrImageUrl: order.qrImage || `https://via.placeholder.com/300x300/cc6600/ffffff?text=Taken+${Date.now()}`,
-      timeline: [
-        ...order.timeline || [],
-        { status: 'TAKEN' as OrderStatus, timestamp: new Date().toISOString() }
-      ],
+      timeline: [...(order.timeline || []), { status: "TAKEN" as OrderStatus, timestamp: new Date().toISOString() }],
       bankingDetails: {
-        bank: 'Banco Unión',
-        accountNumber: '123456789',
-        beneficiary: 'Juan Pérez',
+        bank: "Banco Unión",
+        accountNumber: "123456789",
+        beneficiary: "Juan Pérez",
         reference: `KBO${Math.floor(Math.random() * 1000)}`,
-        exactAmount: `${order.fiatAmount.toFixed(2)} BOB`
-      }
+        exactAmount: `${order.fiatAmount.toFixed(2)} BOB`,
+      },
     };
 
     this.orders[orderIndex] = takenOrder;
 
     return {
-      order: takenOrder
+      order: takenOrder,
     };
   }
 
@@ -225,13 +222,13 @@ class OrdersMockService {
 
     const orderIndex = this.orders.findIndex(o => o.id === id);
     if (orderIndex === -1) {
-      throw new Error('Order not found');
+      throw new Error("Order not found");
     }
 
     const order = this.orders[orderIndex];
 
-    if (order.status !== 'TAKEN') {
-      throw new Error('Order must be in TAKEN status to upload proof');
+    if (order.status !== "TAKEN") {
+      throw new Error("Order must be in TAKEN status to upload proof");
     }
 
     // Simular upload de archivo
@@ -239,15 +236,15 @@ class OrdersMockService {
 
     const completedOrder = {
       ...order,
-      status: 'COMPLETED' as OrderStatus,
+      status: "COMPLETED" as OrderStatus,
       completedAt: new Date().toISOString(),
       proofUrl: mockProofUrl,
       bankTransactionId: data.bankTransactionId || `TXN${Date.now()}`,
       releaseTxHash: `0x${Math.random().toString(16).substring(2, 42)}`,
       timeline: [
-        ...order.timeline || [],
-        { status: 'COMPLETED' as OrderStatus, timestamp: new Date().toISOString() }
-      ]
+        ...(order.timeline || []),
+        { status: "COMPLETED" as OrderStatus, timestamp: new Date().toISOString() },
+      ],
     };
 
     this.orders[orderIndex] = completedOrder;
@@ -257,10 +254,10 @@ class OrdersMockService {
       order: completedOrder,
       payment: {
         amountReleased: order.cryptoAmount,
-        recipientWallet: order.escrowAddress || '',
-        networkFee: 0.008
+        recipientWallet: order.escrowAddress || "",
+        networkFee: 0.008,
       },
-      message: `Payment proof uploaded and approved. ${order.cryptoAmount} USDT released to your wallet.`
+      message: `Payment proof uploaded and approved. ${order.cryptoAmount} USDT released to your wallet.`,
     };
   }
 
@@ -269,7 +266,7 @@ class OrdersMockService {
     setInterval(() => {
       // Actualizar secondsRemaining de órdenes activas
       this.orders = this.orders.map(order => {
-        if ([OrderStatus.PENDING_PAYMENT, 'AVAILABLE', 'TAKEN'].includes(order.status)) {
+        if ([OrderStatus.PENDING_PAYMENT, "AVAILABLE", "TAKEN"].includes(order.status)) {
           const secondsRemaining = calculateSecondsRemaining(order.expiresAt);
 
           // Simular expiración automática
@@ -279,10 +276,10 @@ class OrdersMockService {
               case OrderStatus.PENDING_PAYMENT:
                 newStatus = OrderStatus.CANCELLED;
                 break;
-              case 'AVAILABLE':
+              case "AVAILABLE":
                 newStatus = OrderStatus.CANCELLED;
                 break;
-              case 'TAKEN':
+              case "TAKEN":
                 newStatus = OrderStatus.REFUNDED;
                 break;
               default:
@@ -293,16 +290,13 @@ class OrdersMockService {
               ...order,
               status: newStatus,
               secondsRemaining: 0,
-              timeline: [
-                ...order.timeline || [],
-                { status: newStatus, timestamp: new Date().toISOString() }
-              ]
+              timeline: [...(order.timeline || []), { status: newStatus, timestamp: new Date().toISOString() }],
             };
           }
 
           return {
             ...order,
-            secondsRemaining
+            secondsRemaining,
           };
         }
         return order;
@@ -314,6 +308,6 @@ class OrdersMockService {
 export const ordersMockService = new OrdersMockService();
 
 // Iniciar simulación de updates en tiempo real
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   ordersMockService.simulateOrderUpdates();
 }

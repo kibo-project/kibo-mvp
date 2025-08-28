@@ -1,6 +1,6 @@
 // app/api/orders/[id]/take/route.ts
-import { NextRequest } from 'next/server';
-import { OrdersController } from '@/core/controllers/orders.controller';
+import { NextRequest } from "next/server";
+import { OrdersController } from "@/core/controllers/orders.controller";
 
 const controller = new OrdersController();
 

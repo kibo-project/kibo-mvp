@@ -1,5 +1,5 @@
-import { quoteApiService } from './quote.api';
+import { quoteApiService } from "./quote.api";
 
 export const quoteService = quoteApiService;
 
-export * from '../../core/types/quote.types';
+export * from "../../core/types/quote.types";

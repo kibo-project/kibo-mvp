@@ -1,4 +1,4 @@
-import { OrderStatus, Currency, CryptoToken, Network, UserRole } from '../types/orders.types';
+import { CryptoToken, Currency, Network, OrderStatus, UserRole } from "../types/orders.types";
 
 export interface CreateOrderDto {
   userId: string;

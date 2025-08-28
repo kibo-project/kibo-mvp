@@ -15,7 +15,7 @@ export const usePaymentStore = create<PaymentState>(set => ({
   qrImage: null,
   qrImageBase64: null,
   setAmount: amt => set({ amount: amt }),
-  setQrImage: (image) => set({ qrImage: image }),
+  setQrImage: image => set({ qrImage: image }),
   setQrImageBase64: url => set({ qrImageBase64: url }),
   reset: () => set({ amount: null, qrImage: null, qrImageBase64: null }),
 }));

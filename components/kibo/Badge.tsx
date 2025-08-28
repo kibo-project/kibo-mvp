@@ -24,7 +24,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
             "text-xs px-2.5 py-1": size === "md",
             "text-sm px-3 py-1.5": size === "lg",
           },
-          className,
+          className
         )}
         {...props}
       >
@@ -32,7 +32,7 @@ export const Badge = forwardRef<HTMLSpanElement, BadgeProps>(
         {children}
       </span>
     );
-  },
+  }
 );
 
 Badge.displayName = "Badge";

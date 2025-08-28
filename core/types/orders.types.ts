@@ -2,23 +2,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export enum OrderStatus {
-  PENDING_PAYMENT = 'PENDING_PAYMENT',
-  AVAILABLE = 'AVAILABLE',
-  TAKEN = 'TAKEN',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
+  PENDING_PAYMENT = "PENDING_PAYMENT",
+  AVAILABLE = "AVAILABLE",
+  TAKEN = "TAKEN",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED",
 }
 
-export type Currency = 'BOB' | 'USD';
-export type CryptoToken = 'USDT' | 'USDC';
-export type Network = 'mantle' | 'ethereum' | 'polygon';
-export type UserRole = 'user' | 'ally' | 'admin';
+export type Currency = "BOB" | "USD";
+export type CryptoToken = "USDT" | "USDC";
+export type Network = "mantle" | "ethereum" | "polygon";
+export type UserRole = "user" | "ally" | "admin";
 
 // Interfaces principales
 
-
-export interface ImageDataFile{
+export interface ImageDataFile {
   name: string;
   extension: string;
   createdAt?: string;
@@ -43,7 +42,7 @@ export interface Order {
   qrImage?: string;
   qrImageUrl?: string;
   confirmationProof?: string;
-  confirmationProofUrl?:string;
+  confirmationProofUrl?: string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
@@ -120,7 +119,7 @@ export interface OrderResponse {
   qrImage?: string;
   qrImageUrl?: string;
   confirmationProof?: string;
-  confirmationProofUrl?:string;
+  confirmationProofUrl?: string;
   description?: string;
   recipient?: string;
   createdAt: string;
@@ -129,7 +128,6 @@ export interface OrderResponse {
   cancelledAt?: string;
   expiresAt: string;
   txHash?: string;
-
 }
 
 export interface OrdersListResponse {
@@ -199,7 +197,7 @@ export interface AvailableOrdersFilters {
   country?: string;
   minAmount?: number;
   maxAmount?: number;
-  sortBy?: 'createdAt' | 'expiresAt' | 'amount';
+  sortBy?: "createdAt" | "expiresAt" | "amount";
   limit?: number;
 }
 
@@ -212,4 +210,3 @@ export interface ApiError {
     details?: any;
   };
 }
-

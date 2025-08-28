@@ -11,7 +11,7 @@ export interface ApiResponse<T> {
   };
 }
 
- export interface ApiErrorResponse {
+export interface ApiErrorResponse {
   success: false;
   error: {
     code: string;
@@ -19,4 +19,3 @@ export interface ApiResponse<T> {
     details?: any;
   };
 }
-

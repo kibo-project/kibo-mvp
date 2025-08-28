@@ -1,9 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { ordersService } from '../../services/orders';
+import { ordersService } from "../../services/orders";
+import { useQuery } from "@tanstack/react-query";
 
 export const useOrder = (id: string) => {
   return useQuery({
-    queryKey: ['order', id],
+    queryKey: ["order", id],
     queryFn: () => ordersService.getOrderById(id),
     enabled: !!id, // Solo ejecutar si hay ID
     staleTime: 10 * 1000, // 10 segundos
