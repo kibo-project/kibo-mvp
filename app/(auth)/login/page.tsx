@@ -25,7 +25,6 @@ const Login: NextPage = () => {
 
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
-      console.log("DESPUES DEL LOGIN ENTRA ACA?")
 
       backendLogin.mutate();
     }
