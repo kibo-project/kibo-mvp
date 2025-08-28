@@ -8,13 +8,15 @@ const AUDIENCE = process.env.AUDIENCE!;
 
 export interface CustomJWTPayload extends JWTPayload {
     userId: string;
-    email: string;
+    role: string;
+    privyId: string;
 }
 
-export const generateToken = async (userId: string, email: string): Promise<string> => {
+export const generateToken = async (userId: string, privyId: string, role: string): Promise<string> => {
     const payload = {
         userId,
-        email,
+        privyId,
+        role,
     };
 
     return await new SignJWT(payload)

@@ -1,6 +1,7 @@
 // src/services/orders/mock-data.ts
 
-import { Order, User, TimelineEvent, OrderStatus, Quote } from '../../core/types/orders.types';
+import { Order,TimelineEvent, OrderStatus, Quote } from '../../core/types/orders.types';
+import { User } from '../../core/types/users.types';
 
 // ==========================================
 // USUARIOS MOCK
@@ -152,8 +153,6 @@ export const mockOrders: Order[] = [
     escrowTxHash: '0xabc123def456ghi789jkl012mno345pqr678stu901vwx234yz567',
     txHash: '0xdef456ghi789jkl012mno345pqr678stu901vwx234yz567abc123',
     bankTransactionId: 'TXN123456789',
-    user: mockUsers[0],
-    ally: mockUsers[2], // ally_770g0622
     timeline: generateTimeline(OrderStatus.COMPLETED, '2025-08-08T10:30:00Z'),
     bankingDetails: {
       bank: 'Banco Unión',
@@ -181,8 +180,6 @@ export const mockOrders: Order[] = [
     expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(), // 3 min desde ahora
     secondsRemaining: 180,
     escrowTxHash: '0xbcd234efa567hij890klm123nop456qrs789tuv012wxy345zab678',
-    user: mockUsers[0],
-    ally: mockUsers[3], // ally_880h1733
     timeline: generateTimeline(OrderStatus.TAKEN, '2025-08-08T15:15:00Z'),
     bankingDetails: {
       bank: 'Banco BISA',
@@ -207,7 +204,6 @@ export const mockOrders: Order[] = [
     expiresAt: new Date(Date.now() + 8 * 60 * 1000).toISOString(), // 8 min desde ahora
     secondsRemaining: 480,
     escrowTxHash: '0xcde345fgb678ijk901lmn234opq567rst890uvw123xyz456abc789',
-    user: mockUsers[1], // user diferente
     timeline: generateTimeline(OrderStatus.AVAILABLE, '2025-08-08T15:45:00Z'),
     userCountry: 'BO',
     estimatedGain: 71.77,
@@ -231,7 +227,6 @@ export const mockOrders: Order[] = [
     createdAt: '2025-08-08T16:00:00Z',
     expiresAt: new Date(Date.now() + 2 * 60 * 1000).toISOString(), // 2 min desde ahora
     secondsRemaining: 120,
-    user: mockUsers[0],
     timeline: generateTimeline(OrderStatus.PENDING_PAYMENT, '2025-08-08T16:00:00Z')
   },
 
@@ -249,7 +244,6 @@ export const mockOrders: Order[] = [
     createdAt: '2025-08-08T09:30:00Z',
     cancelledAt: '2025-08-08T09:30:30Z',
     expiresAt: '2025-08-08T09:33:00Z',
-    user: mockUsers[0],
     timeline: generateTimeline(OrderStatus.CANCELLED, '2025-08-08T09:30:00Z')
   },
 
@@ -270,8 +264,6 @@ export const mockOrders: Order[] = [
     expiresAt: '2025-08-08T08:07:00Z',
     escrowTxHash: '0xdef456ghi789jkl012mno345pqr678stu901vwx234yz567abc123def',
     txHash: '0xghi789jkl012mno345pqr678stu901vwx234yz567abc123def456ghi',
-    user: mockUsers[1],
-    ally: mockUsers[2],
     timeline: generateTimeline(OrderStatus.REFUNDED, '2025-08-08T08:00:00Z'),
     bankingDetails: {
       bank: 'Banco Nacional de Bolivia',
@@ -296,7 +288,6 @@ export const mockOrders: Order[] = [
     expiresAt: new Date(Date.now() + 13 * 60 * 1000).toISOString(), // Expira en 13 min
     secondsRemaining: 780,
     escrowTxHash: '0xfgh890jkl123mno456pqr789stu012vwx345yz678abc901def234ghi',
-    user: mockUsers[1],
     timeline: generateTimeline(OrderStatus.AVAILABLE, new Date(Date.now() - 2 * 60 * 1000).toISOString()),
     userCountry: 'BO',
     estimatedGain: 10.77,
@@ -319,7 +310,6 @@ export const mockOrders: Order[] = [
     expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // Expira en 10 min
     secondsRemaining: 600,
     escrowTxHash: '0xghi901jkl234mno567pqr890stu123vwx456yz789abc012def345ghi',
-    user: mockUsers[0],
     timeline: generateTimeline(OrderStatus.AVAILABLE, new Date(Date.now() - 5 * 60 * 1000).toISOString()),
     userCountry: 'BO',
     estimatedGain: 114.84,
@@ -349,8 +339,6 @@ export const mockOrders: Order[] = [
     escrowTxHash: '0xhij012jkl345mno678pqr901stu234vwx567yz890abc123def456ghi',
     txHash: '0xjkl345mno678pqr901stu234vwx567yz890abc123def456ghi789jkl',
     bankTransactionId: 'TXN987654321',
-    user: mockUsers[1],
-    ally: mockUsers[2],
     timeline: generateTimeline(OrderStatus.COMPLETED, '2025-08-07T14:20:00Z'),
     bankingDetails: {
       bank: 'Banco FIE',
@@ -465,11 +453,11 @@ export const generateMockBankingDetails = () => {
 export const getOrdersByRole = (role: 'user' | 'ally' | 'admin', userId: string): Order[] => {
   switch (role) {
     case 'user':
-      return mockOrders.filter(order => order.user?.id === userId);
+      return mockOrders.filter(order => order.userId === userId);
 
     case 'ally':
       return mockOrders.filter(order =>
-        order.user?.id === userId || order.ally?.id === userId
+        order.userId === userId || order.allyId === userId
       );
 
     case 'admin':

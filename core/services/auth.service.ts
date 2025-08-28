@@ -1,7 +1,10 @@
 import {AuthRepository} from '../repositories/auth.repository';
 import {UsersRepository} from '../repositories/users.repository';
-import {AuthUserDto} from '../dto/auth.dto';
-import {User} from '../types/orders.types'
+import {User} from '../types/users.types'
+import {UserRole} from '../types/orders.types';
+
+import { UsersMapper } from "../mappers/users.mapper";
+
 import { generateToken } from "../../utils/auth/jwt";
 
 
@@ -14,21 +17,28 @@ export class AuthService {
         this.usersRepository = new UsersRepository();
     }
 
-    async login(authUserDto: AuthUserDto) {
-        const privyUser = await this.authRepository.verifyPrivyToken(authUserDto.token);
-        if (privyUser.privyId !== authUserDto.privyId) {
-            throw new Error("Token does not match user");
-        }
-        let user = await this.usersRepository.findUserByPrivyId(authUserDto.privyId);
+    async login(token: string) {
+        const privyUser = await this.authRepository.verifyPrivyToken(token);
+        let role: UserRole;
+        let user = await this.usersRepository.findUserByPrivyId(privyUser.privyId!);
         if (user) {
-            user = await this.usersRepository.updateUser(user.id);
+            console.log("ENTRA AL IF =======",user);
+            user = await this.usersRepository.updateUser(user.id!);
+            role = await this.usersRepository.getRoleNameByRoleId(user.activeRoleId!)
+
         } else {
-            user = await this.usersRepository.createUser(authUserDto, "user");
+            console.log("ENTRA AL ELSE =======",user);
+            role = "user";
+            const roleId = await this.usersRepository.findRoleByName(role)
+            user = await this.usersRepository.createUser({
+                ...privyUser,
+                activeRoleId: roleId,
+            }, role);
         }
-        const jwtToken = await generateToken(user.id, authUserDto.email);
+        const jwtToken = await generateToken(user.id!, user.privyId!, role);
 
         return {
-            user: user,
+            userResponse: UsersMapper.userToUserResponse(user, role),
             token: jwtToken,
         };
     }

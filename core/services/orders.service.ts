@@ -61,9 +61,19 @@ export class OrdersService {
     return updatedOrder;
   }
 
-  async getOrdersByUser(getOrdersResponse: GetOrdersResponse, userId: string): Promise<OrdersListResponse> {
-    const roleId = await this.userRepository.getRoleIdByUserId(userId);
-    const roleName = await this.userRepository.getRoleNameByRoleId(roleId) as UserRole;
+  async getOrdersByUser(getOrdersResponse: GetOrdersResponse, userId: string, roleActiveNow: string): Promise<OrdersListResponse> {
+    const activeRoleId = await this.userRepository.getActiveRoleIdByUserId(userId);
+    if (!activeRoleId) {
+      throw new Error('User does not have an active role');
+    }
+    console.log("Active role id", activeRoleId);
+    const roleNameActive = await this.userRepository.getRoleNameByRoleId(activeRoleId) as UserRole;
+    console.log(`nameRoleActivo  ${roleNameActive}`);
+    if (roleNameActive !== roleActiveNow) {
+      throw new Error('You must log in as ${requiredRole} to access this resource. Currently logged in as ${req.user.roleName}');
+
+    }
+
     const limit = getOrdersResponse.limit ?? 10;
     const offset = getOrdersResponse.offset ?? 0;
 
@@ -73,11 +83,12 @@ export class OrdersService {
       offset,
     };
 
-    if (roleName === "user") {
+    if (roleNameActive === "user") {
       getOrdersDto.userId = userId;
-    } else if (roleName === "ally") {
+    } else if (roleNameActive === "ally") {
       getOrdersDto.allyId = userId;
     }
+    console.log("getOrdersDto" ,getOrdersDto);
 
     const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse)
