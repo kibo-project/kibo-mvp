@@ -2,44 +2,22 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 export enum OrderStatus {
-  PENDING_PAYMENT = 'PENDING_PAYMENT',
-  AVAILABLE = 'AVAILABLE',
-  TAKEN = 'TAKEN',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  REFUNDED = 'REFUNDED',
+  PENDING_PAYMENT = "PENDING_PAYMENT",
+  AVAILABLE = "AVAILABLE",
+  TAKEN = "TAKEN",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  REFUNDED = "REFUNDED",
 }
 
-export type Currency = 'BOB' | 'USD';
-export type CryptoToken = 'USDT' | 'USDC';
-export type Network = 'mantle' | 'ethereum' | 'polygon';
-export type UserRole = 'user' | 'ally' | 'admin';
+export type Currency = "BOB" | "USD";
+export type CryptoToken = "USDT" | "USDC";
+export type Network = "mantle" | "ethereum" | "polygon";
+export type UserRole = "user" | "ally" | "admin";
 
 // Interfaces principales
-export interface User {
-  id: string;
-  name?: string;
-  walletAddress?: string;
-  role?: UserRole;
-  email?: string;
-  country?: string;
-  bankName?: string;
-  accountNumber?: string;
-  accountHolder?: string;
-  phone?: string;
-  availableBalance?: string;
-  lastLoginAt?: Date;
-  reputation?: number;
-  createdAt?: string;
-  updatedAt?: string;
-  ////Delete stating here
-  verified?: boolean;
-  successfulOrders?: number;
-  lastActive?: string | Date;
 
-
-}
-export interface ImageDataFile{
+export interface ImageDataFile {
   name: string;
   extension: string;
   createdAt?: string;
@@ -64,7 +42,7 @@ export interface Order {
   qrImage?: string;
   qrImageUrl?: string;
   confirmationProof?: string;
-  confirmationProofUrl?:string;
+  confirmationProofUrl?: string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
@@ -78,8 +56,6 @@ export interface Order {
   userId?: string;
   allyId?: string;
   bankTransactionId?: string;
-  user?: Partial<User>;
-  ally?: Partial<User>;
   timeline?: TimelineEvent[];
   bankingDetails?: BankingDetails;
   estimatedGain?: number;
@@ -132,6 +108,7 @@ export interface CreateOrderRequest {
 
 export interface OrderResponse {
   id: string;
+  userId?: string;
   status: OrderStatus;
   fiatAmount: number;
   cryptoAmount: number;
@@ -139,19 +116,22 @@ export interface OrderResponse {
   cryptoCurrency: CryptoToken;
   network?: Network;
   escrowAddress?: string;
+  qrImage?: string;
   qrImageUrl?: string;
-  confirmationProofUrl?:string;
+  confirmationProof?: string;
+  confirmationProofUrl?: string;
+  description?: string;
+  recipient?: string;
   createdAt: string;
   takenAt?: string;
   completedAt?: string;
   cancelledAt?: string;
   expiresAt: string;
   txHash?: string;
-
 }
 
 export interface OrdersListResponse {
-  orders: Order[];
+  orders: OrderResponse[];
   pagination: {
     total: number;
     limit: number;
@@ -166,7 +146,7 @@ export interface OrderDetailsResponse {
 }
 
 export interface AvailableOrdersResponse {
-  orders: Order[];
+  orders: OrderResponse[];
   metadata: {
     totalAvailable: number;
     avgWaitTime: number;
@@ -217,7 +197,7 @@ export interface AvailableOrdersFilters {
   country?: string;
   minAmount?: number;
   maxAmount?: number;
-  sortBy?: 'createdAt' | 'expiresAt' | 'amount';
+  sortBy?: "createdAt" | "expiresAt" | "amount";
   limit?: number;
 }
 
@@ -230,4 +210,3 @@ export interface ApiError {
     details?: any;
   };
 }
-

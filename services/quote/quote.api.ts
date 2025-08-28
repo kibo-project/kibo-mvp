@@ -1,44 +1,43 @@
-import { QuoteRequest, QuoteResponse } from '../../core/types/quote.types';
-import {ApiResponse} from '../../core/types/generic.types';
-import { ENDPOINTS } from '../../config/api';
+import { ENDPOINTS } from "../../config/api";
+import { ApiResponse } from "../../core/types/generic.types";
+import { QuoteRequest, QuoteResponse } from "../../core/types/quote.types";
 
 class QuoteApiService {
-    private baseUrl = process.env.NEXT_PUBLIC_API_URL!;
+  private baseUrl = process.env.NEXT_PUBLIC_API_URL!;
 
-    private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    // TODO: Update this request with standar urlization
+    const url = `/api${endpoint}`;
 
-        // TODO: Update this request with standar urlization
-        const url = `/api${endpoint}`;
+    const response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      ...options,
+    });
 
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-                ...options.headers,
-            },
-            ...options,
-        });
-
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        return response.json();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    async getQuote(params: QuoteRequest): Promise<ApiResponse<QuoteResponse>> {
-        const queryParams = new URLSearchParams({
-            fiatAmount: params.fiatAmount.toString(),
-            fiatCurrency: params.fiatCurrency,
-            cryptoCurrency: params.cryptoCurrency,
-            network: params.network,
-        });
+    return response.json();
+  }
 
-        const endpoint = `${ENDPOINTS.QUOTE}?${queryParams.toString()}`;
+  async getQuote(params: QuoteRequest): Promise<ApiResponse<QuoteResponse>> {
+    const queryParams = new URLSearchParams({
+      fiatAmount: params.fiatAmount.toString(),
+      fiatCurrency: params.fiatCurrency,
+      cryptoCurrency: params.cryptoCurrency,
+      network: params.network,
+    });
 
-        return this.request<ApiResponse<QuoteResponse>>(endpoint, {
-            method: 'GET',
-        });
-    }
+    const endpoint = `${ENDPOINTS.QUOTE}?${queryParams.toString()}`;
+
+    return this.request<ApiResponse<QuoteResponse>>(endpoint, {
+      method: "GET",
+    });
+  }
 }
 
 export const quoteApiService = new QuoteApiService();

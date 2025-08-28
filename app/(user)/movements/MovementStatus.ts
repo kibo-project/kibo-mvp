@@ -1,8 +1,6 @@
 import { OrderStatus } from "@/services/orders";
-export type StyledOrderStatus =
-  | OrderStatus.AVAILABLE
-  | OrderStatus.COMPLETED
-  | OrderStatus.REFUNDED;
+
+export type StyledOrderStatus = OrderStatus.AVAILABLE | OrderStatus.COMPLETED | OrderStatus.REFUNDED;
 
 export const statusStyles: Record<StyledOrderStatus, string> = {
   [OrderStatus.AVAILABLE]: "text-yellow-600 dark:text-yellow-400",
@@ -22,7 +20,7 @@ export const statusButtonLabels: Record<StyledOrderStatus, string> = {
   [OrderStatus.REFUNDED]: "Show",
 };
 
-export const adminStatusButtonLabels:  Partial<Record<OrderStatus, string>> = {
+export const adminStatusButtonLabels: Partial<Record<OrderStatus, string>> = {
   [OrderStatus.AVAILABLE]: "Review",
   [OrderStatus.COMPLETED]: "View",
   [OrderStatus.REFUNDED]: "Details",

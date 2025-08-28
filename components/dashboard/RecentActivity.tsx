@@ -1,22 +1,12 @@
 import React from "react";
 import Link from "next/link";
+import { OrderResponse } from "@/core/types/orders.types";
 import { Card, CardBody } from "~~/components/kibo";
-
-export interface ActivityItem {
-  id: string;
-  title: string;
-  subtitle: string;
-  amount?: string;
-  status?: string;
-  icon?: React.ReactNode;
-  color?: string;
-  href?: string;
-  onClick?: () => void;
-}
+import { formatDateToSpanish, getStatusColor, getStatusIcon } from "~~/utils/front.functions";
 
 interface RecentActivityProps {
   title: string;
-  items: ActivityItem[];
+  orders: OrderResponse[];
   viewAllHref?: string;
   emptyMessage?: string;
   className?: string;
@@ -24,61 +14,51 @@ interface RecentActivityProps {
 
 export const RecentActivity: React.FC<RecentActivityProps> = ({
   title,
-  items,
+  orders,
   viewAllHref,
   emptyMessage = "No recent activity",
   className = "",
 }) => {
-  const ActivityItemComponent = ({ item }: { item: ActivityItem }) => {
+  const OrderItemComponent = ({ order }: { order: OrderResponse }) => {
     const content = (
       <div className="p-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${item.color || "bg-primary/10"} flex items-center justify-center`}>
-              {item.icon || <span className="text-sm font-bold text-primary">{item.title[0]}</span>}
+            <div className={`w-10 h-10 rounded-full ${getStatusColor(order.status)} flex items-center justify-center`}>
+              {getStatusIcon(order.status)}
             </div>
             <div>
-              <h4 className="font-medium text-sm text-base-content">{item.title}</h4>
+              <h4 className="font-medium text-sm text-base-content">
+                {order.cryptoCurrency} → {order.fiatCurrency}
+              </h4>
               <div className="flex items-center gap-2">
-                <p className="text-xs text-base-content opacity-60">{item.subtitle}</p>
-                {item.status && <span className="text-xs text-base-content opacity-50">• {item.status}</span>}
+                <p className="text-xs text-base-content opacity-60">{formatDateToSpanish(order.createdAt)}</p>
+
+                <span className="text-xs text-base-content opacity-50">• {order.status}</span>
               </div>
             </div>
           </div>
-          {item.amount && (
-            <div className="text-right">
-              <span className="font-semibold text-base-content">{item.amount}</span>
+          <div className="text-right">
+            <div className="font-semibold text-base-content">
+              {order.fiatAmount} {order.fiatCurrency}
             </div>
-          )}
+            <div className="text-xs text-base-content opacity-60">
+              {order.cryptoAmount} {order.cryptoCurrency}
+            </div>
+          </div>
         </div>
       </div>
     );
 
-    if (item.href) {
-      return (
-        <Link
-          href={item.href}
-          key={item.id}
-          className="block hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
-        >
-          {content}
-        </Link>
-      );
-    }
-
-    if (item.onClick) {
-      return (
-        <button
-          onClick={item.onClick}
-          key={item.id}
-          className="w-full text-left hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
-        >
-          {content}
-        </button>
-      );
-    }
-
-    return <div key={item.id}>{content}</div>;
+    return (
+      <Link
+        href={`/orders/${order.id}`}
+        key={order.id}
+        className="block hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
+      >
+        {content}
+      </Link>
+    );
   };
 
   return (
@@ -100,10 +80,12 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
       <Card>
         <CardBody>
-          {items.length > 0 ? (
+          {/* ORDER: Cambio de items.length a orders.length */}
+          {orders.length > 0 ? (
             <div className="space-y-0">
-              {items.map(item => (
-                <ActivityItemComponent key={item.id} item={item} />
+              {/* ORDER: Cambio de items.map a orders.map */}
+              {orders.map(order => (
+                <OrderItemComponent key={order.id} order={order} />
               ))}
             </div>
           ) : (
@@ -114,7 +96,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     strokeWidth={2}
-                    d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                   />
                 </svg>
               </div>

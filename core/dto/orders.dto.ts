@@ -1,4 +1,4 @@
-import { OrderStatus, Currency, CryptoToken, Network, UserRole } from '../types/orders.types';
+import { CryptoToken, Currency, Network, OrderStatus, UserRole } from "../types/orders.types";
 
 export interface CreateOrderDto {
   userId: string;
@@ -15,17 +15,6 @@ export interface GetOrdersDto {
   status?: OrderStatus;
   limit: number;
   offset: number;
-}
-export interface GetOrderByIdDto {
-  orderId: string;
-}
-
-export interface GetAvailableOrdersDto {
-  country?: string;
-  minAmount?: number;
-  maxAmount?: number;
-  sortBy?: 'createdAt' | 'expiresAt' | 'amount';
-  limit?: number;
 }
 
 export interface TakeOrderDto {

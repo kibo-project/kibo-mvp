@@ -50,7 +50,7 @@ export const ModalHeader = forwardRef<HTMLDivElement, ModalHeaderProps>(
         )}
       </div>
     );
-  },
+  }
 );
 
 ModalHeader.displayName = "ModalHeader";
@@ -83,13 +83,13 @@ export const ModalFooter = forwardRef<HTMLDivElement, ModalFooterProps>(
           "justify-end": justify === "end",
           "justify-between": justify === "between",
         },
-        className,
+        className
       )}
       {...props}
     >
       {children}
     </div>
-  ),
+  )
 );
 
 ModalFooter.displayName = "ModalFooter";

@@ -1,5 +1,5 @@
 import React from "react";
-import { statusButtonLabels, statusStyles, statusTitles, StyledOrderStatus } from "./MovementStatus";
+import { StyledOrderStatus, statusButtonLabels, statusStyles, statusTitles } from "./MovementStatus";
 import { OrderStatus } from "@/services/orders";
 
 export interface MovementCardProps {

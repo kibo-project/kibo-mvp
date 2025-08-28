@@ -23,14 +23,14 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               "pr-10": rightIcon,
               "w-full": fullWidth,
             },
-            className,
+            className
           )}
           {...props}
         />
         {rightIcon && <div className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-500">{rightIcon}</div>}
       </div>
     );
-  },
+  }
 );
 
 Input.displayName = "Input";
@@ -52,12 +52,12 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             "kibo-input-error": error,
             "w-full": fullWidth,
           },
-          className,
+          className
         )}
         {...props}
       />
     );
-  },
+  }
 );
 
 Textarea.displayName = "Textarea";

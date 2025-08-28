@@ -1,15 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
-import { usePrivy, useLogout, useLogin } from "@privy-io/react-auth";
-import { Badge } from "~~/components/kibo";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 import {
-  WalletIcon,
   ArrowRightOnRectangleIcon,
-  ClipboardDocumentIcon,
   CheckIcon,
+  ClipboardDocumentIcon,
+  WalletIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { Badge } from "~~/components/kibo";
+import { useAuthStore } from "~~/services/store/auth-store.";
 
 interface LoginButtonProps {
   className?: string;
@@ -19,12 +22,30 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   const { authenticated, user, ready } = usePrivy();
   const { logout } = useLogout();
   const { login } = useLogin();
+  const { userRole, setUserRole } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  const router = useRouter();
+  const backendLogin = useAuth(); // CONNECT: Importar hook useAuth
+
+  useEffect(() => {
+    if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
+      backendLogin.mutate();
+    }
+  }, [authenticated, ready]);
+
+  useEffect(() => {
+    if (authenticated && backendLogin.isSuccess && !userRole) {
+      setUserRole(backendLogin.data.data!.activeRoleName);
+      router.replace("/");
+    }
+  }, [authenticated, backendLogin.isSuccess]);
 
   const handleLogout = useCallback(() => {
     logout();
     setShowModal(false);
+    useAuthStore.getState().reset();
+    //  router.push("/login");
   }, [logout]);
 
   const handleLogin = useCallback(() => {
@@ -82,21 +103,13 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
         onClick={() => setShowModal(true)}
       >
         <WalletIcon className="size-4" />
-        {user?.wallet?.address
-          ? formatAddress(user.wallet.address)
-          : "Connected"}
+        {user?.wallet?.address ? formatAddress(user.wallet.address) : "Connected"}
       </Badge>
 
       {/* Modal */}
       {showModal && (
-        <div
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={handleModalClose}
-        >
-          <div
-            className="bg-neutral-900 rounded-2xl shadow-xl max-w-sm w-full p-6 relative"
-            onClick={handleModalClick}
-          >
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={handleModalClose}>
+          <div className="bg-neutral-900 rounded-2xl shadow-xl max-w-sm w-full p-6 relative" onClick={handleModalClick}>
             {/* Close Button */}
             <button
               onClick={handleModalClose}
@@ -107,9 +120,7 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
 
             <div className="text-center">
               {/* Title */}
-              <h3 className="text-xl font-semibold text-white mb-6">
-                Connected
-              </h3>
+              <h3 className="text-xl font-semibold text-white mb-6">Connected</h3>
 
               {/* Wallet Avatar */}
               <div className="relative mb-6">
@@ -127,23 +138,15 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
               {/* Wallet Address */}
               {user?.wallet?.address && (
                 <div className="flex items-center justify-center gap-2 mb-3">
-                  <p className="text-white text-sm font-mono">
-                    {formatAddress(user.wallet.address)}
-                  </p>
+                  <p className="text-white text-sm font-mono">{formatAddress(user.wallet.address)}</p>
                   <button
                     onClick={copyToClipboard}
                     className={`p-1 rounded transition-all duration-200 ${
-                      copied
-                        ? "text-green-400"
-                        : "text-gray-400 hover:text-white"
+                      copied ? "text-green-400" : "text-gray-400 hover:text-white"
                     }`}
                     title={copied ? "Copied!" : "Copy address"}
                   >
-                    {copied ? (
-                      <CheckIcon className="size-4" />
-                    ) : (
-                      <ClipboardDocumentIcon className="size-4" />
-                    )}
+                    {copied ? <CheckIcon className="size-4" /> : <ClipboardDocumentIcon className="size-4" />}
                   </button>
                 </div>
               )}

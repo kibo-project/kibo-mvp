@@ -24,7 +24,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       ...props
     },
-    ref,
+    ref
   ) => {
     return (
       <button
@@ -51,7 +51,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           {
             "w-full": fullWidth,
           },
-          className,
+          className
         )}
         disabled={disabled || loading}
         {...props}
@@ -62,7 +62,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         {!loading && rightIcon && rightIcon}
       </button>
     );
-  },
+  }
 );
 
 Button.displayName = "Button";

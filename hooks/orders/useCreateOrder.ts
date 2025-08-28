@@ -1,22 +1,22 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { ordersService, CreateOrderRequest } from '../../services/orders';
+import { CreateOrderRequest, ordersService } from "../../services/orders";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useCreateOrder = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: (data: CreateOrderRequest) => ordersService.createOrder(data),
-    onSuccess: (data) => {
+    onSuccess: data => {
       // Invalidar lista de órdenes para que se recargue
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
 
       // Opcional: agregar la nueva orden al cache optimísticamente
       if (data.success && data.data) {
-        queryClient.setQueryData(['order', data.data.id], data.data);
+        queryClient.setQueryData(["order", data.data.id], data.data);
       }
     },
-    onError: (error) => {
-      console.error('Error creating order:', error);
+    onError: error => {
+      console.error("Error creating order:", error);
     },
   });
 };
