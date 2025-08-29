@@ -63,12 +63,10 @@ export class OrdersService {
     if (!activeRoleId) {
       throw new Error("User does not have an active role");
     }
-    console.log("Active role id", activeRoleId);
     const roleNameActive = (await this.userRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
-    console.log(`nameRoleActivo  ${roleNameActive}`);
     if (roleNameActive !== roleActiveNow) {
       throw new Error(
-        "You must log in as ${requiredRole} to access this resource. Currently logged in as ${req.user.roleName}"
+        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
       );
     }
 

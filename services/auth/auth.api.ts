@@ -1,5 +1,6 @@
 import { ENDPOINTS } from "../../config/api";
 import { ApiResponse } from "../../core/types/generic.types";
+import { TakeOrderResponse } from "@/core/types/orders.types";
 import { UserResponse } from "@/core/types/users.types";
 
 class AuthApiService {
@@ -33,6 +34,12 @@ class AuthApiService {
   async login(): Promise<ApiResponse<UserResponse>> {
     return this.request<ApiResponse<UserResponse>>(ENDPOINTS.CONNECT, {
       method: "POST",
+    });
+  }
+  async changeRole(roleId: string): Promise<ApiResponse<UserResponse>> {
+    return this.request<ApiResponse<UserResponse>>(ENDPOINTS.CHANGE_ROLE, {
+      method: "PATCH",
+      body: JSON.stringify({ roleId }),
     });
   }
 }
