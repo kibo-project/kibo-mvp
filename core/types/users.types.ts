@@ -11,6 +11,8 @@ export interface UserResponse {
   bankName?: string;
   activeRoleId?: string;
   activeRoleName: UserRole;
+  roleNames?: UserRole[];
+  howRoles?: number;
   accountNumber?: string;
   accountHolder?: string;
   phone?: string;

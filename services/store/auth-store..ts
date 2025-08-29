@@ -34,12 +34,16 @@ interface AuthStore {
 
   /** Current user role - determines access to admin features */
   userRole: UserRole | null;
+  howRoles: number;
+  roleNames: UserRole[];
 
   /** Updates the root visit tracking flag */
   setHasVisitedRoot: (visited: boolean) => void;
 
   /** Changes the user role (triggers re-renders and navigation) */
   setUserRole: (role: UserRole | null) => void;
+  setHowRoles: (howRoles: number | 0) => void;
+  setRoleNames: (roleNames: UserRole[] | []) => void;
 
   /** Helper function to check if current user has admin privileges */
   isAdmin: () => boolean;
@@ -79,6 +83,8 @@ export const useAuthStore = create<AuthStore>()(
 
       /** Default role is 'user' - admin access must be explicitly granted */
       userRole: null,
+      howRoles: 0,
+      roleNames: [],
 
       /** Track root page visits for login redirect logic */
       setHasVisitedRoot: visited => set({ hasVisitedRoot: visited }),
@@ -88,18 +94,20 @@ export const useAuthStore = create<AuthStore>()(
        * Used by RoleSwitcher component for development/demo
        */
       setUserRole: role => set({ userRole: role }),
+      setHowRoles: howRoles => set({ howRoles }),
+      setRoleNames: role => set({ roleNames: role }),
 
       /**
        * Check if current user has admin privileges
        * @returns {boolean} true if user role is 'admin'
        */
       isAdmin: () => get().userRole === "admin",
-      reset: () => set({ userRole: null }),
+      reset: () => set({ userRole: null, howRoles: 0, roleNames: [] }),
     }),
     {
       name: "kibo-auth-storage",
       /** Only persist userRole - hasVisitedRoot is session-only */
-      partialize: state => ({ userRole: state.userRole }),
+      partialize: state => ({ userRole: state.userRole, roleNames: state.roleNames, howRoles: state.howRoles }),
     }
   )
 );

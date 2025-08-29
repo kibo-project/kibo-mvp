@@ -4,12 +4,12 @@
 
 ## 🔗 Enlaces Rápidos
 
-| Recurso | Link |
-|---------|------|
-| 🚀 **Video Demo** | [Ver en YouTube](https://www.youtube.com/watch?v=cRYuQf6sPX4) |
-| 🌐 **App en Vivo** | [kibo-app.vercel.app](https://kibo-app.vercel.app/) |
-| 🎨 **Prototipo UI** | [Figma Design](https://www.figma.com/proto/Wfx266KqFmr3lx25zp5f4C/Kibo?page-id=0%3A1&node-id=23-2&viewport=2842%2C841%2C0.64&t=yFMKWsbfSIa77Zjj-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=52%3A1457) |
-| 📋 **Lista de Espera** | [Únete aquí](https://docs.google.com/spreadsheets/d/1dk7zSf_jUvgI-7QNyQgQfbuEz_8bXHEh7Yqko5CT_eA/edit?usp=sharing) |
+| Recurso                | Link                                                                                                                                                                                                                         |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 🚀 **Video Demo**      | [Ver en YouTube](https://www.youtube.com/watch?v=cRYuQf6sPX4)                                                                                                                                                                |
+| 🌐 **App en Vivo**     | [kibo-app.vercel.app](https://kibo-app.vercel.app/)                                                                                                                                                                          |
+| 🎨 **Prototipo UI**    | [Figma Design](https://www.figma.com/proto/Wfx266KqFmr3lx25zp5f4C/Kibo?page-id=0%3A1&node-id=23-2&viewport=2842%2C841%2C0.64&t=yFMKWsbfSIa77Zjj-1&scaling=scale-down&content-scaling=fixed&starting-point-node-id=52%3A1457) |
+| 📋 **Lista de Espera** | [Únete aquí](https://docs.google.com/spreadsheets/d/1dk7zSf_jUvgI-7QNyQgQfbuEz_8bXHEh7Yqko5CT_eA/edit?usp=sharing)                                                                                                           |
 
 ## 🎯 Validación de Mercado
 
@@ -41,6 +41,7 @@ Asegúrate de tener instalado:
 ## 🚀 Comenzando
 
 ### 1. Clona e instala dependencias
+
 ```bash
 git clone https://github.com/YOUR_USERNAME/kibo.git
 cd kibo
@@ -48,13 +49,17 @@ yarn install
 ```
 
 ### 2. Configura el entorno
+
 Crea `.env.local` en `packages/nextjs/` con tus credenciales Privy:
+
 ```bash
 NEXT_PUBLIC_PRIVY_APP_ID=your-privy-app-id
 ```
 
 ### 3. Desarrollo local
+
 Inicia la aplicación frontend:
+
 ```bash
 yarn start
 ```
@@ -62,4 +67,3 @@ yarn start
 Abre [http://localhost:3000](http://localhost:3000) en tu navegador para ver la app.
 
 > **Próximamente:** Integración con Mantle, Hardhat y despliegue de contratos inteligentes.
-
