@@ -21,12 +21,13 @@ export class AuthService {
     const privyUser = await this.authRepository.verifyPrivyToken(token);
     let role: UserRole;
     let roleNames: UserRole[] = [];
+    let roleIds: string[] = [];
     let howRoles: number = 1;
     let user = await this.usersRepository.findUserByPrivyId(privyUser.privyId!);
     if (user) {
       user = await this.usersRepository.updateUser(user.id!);
       role = await this.usersRepository.getRoleNameByRoleId(user.activeRoleId!);
-      const roleIds = await this.usersRepository.getRoleIdsByUserId(user.id!);
+      roleIds = await this.usersRepository.getRoleIdsByUserId(user.id!);
       if (roleIds.length > 1) {
         roleNames = await Promise.all(roleIds.map(roleId => this.usersRepository.getRoleNameByRoleId(roleId)));
         howRoles = roleIds.length;
@@ -45,7 +46,7 @@ export class AuthService {
     const jwtToken = await generateToken(user.id!, user.privyId!, role);
 
     return {
-      userResponse: UsersMapper.userToUserResponse(user, role, roleNames, howRoles),
+      userResponse: UsersMapper.userToUserResponse(user, role, roleNames, roleIds, howRoles),
       token: jwtToken,
     };
   }

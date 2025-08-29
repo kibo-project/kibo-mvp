@@ -6,7 +6,7 @@ export const useRoleChange = () => {
 
   return useMutation({
     mutationFn: (roleId: string) => authService.changeRole(roleId),
-    onSuccess: (data, roleId) => {
+    onSuccess: data => {
       queryClient.invalidateQueries({ queryKey: ["auth"] });
       if (data.success && data.data) {
         queryClient.setQueryData(["auth", "user"], data.data);

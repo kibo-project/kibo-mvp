@@ -12,6 +12,7 @@ export interface UserResponse {
   activeRoleId?: string;
   activeRoleName: UserRole;
   roleNames?: UserRole[];
+  roleIds?: string[];
   howRoles?: number;
   accountNumber?: string;
   accountHolder?: string;

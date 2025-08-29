@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UserRole } from "@/core/types/orders.types";
+import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { usePrivy } from "@privy-io/react-auth";
 import type { NextPage } from "next";
@@ -21,17 +23,12 @@ interface TopButton {
 const Home: NextPage = () => {
   // const { address } = useAccount();
   const { ready, authenticated } = usePrivy();
-  const {
-    data,
-    // isLoading,
-    // error
-  } = useOrders();
+  const { data } = useOrders();
 
-  const { hasVisitedRoot, setHasVisitedRoot, userRole, howRoles, roleNames } = useAuthStore();
+  const { hasVisitedRoot, setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const router = useRouter();
-
+  const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-
   const currentView = userRole === "admin" ? "ally" : userRole || "user";
 
   // const { data: balance } = useBalance({
@@ -54,11 +51,19 @@ const Home: NextPage = () => {
   }, [roleNames, userRole, howRoles]);
 
   // ROLE: Handle role shift (placeholder function)
-  const handleRoleChange = useCallback((newRole: string) => {
-    console.log(`Changing role to: ${newRole}`);
-    // TODO: Implement role shift logic in backend
-    setShowRoleSelector(false);
-  }, []);
+  const handleRoleChange = useCallback(
+    (newRole: UserRole) => {
+      console.log(`Changing role to: ${newRole}`);
+      const roleIndex = roleNames.indexOf(newRole);
+      const roleId = roleIds[roleIndex];
+
+      if (roleId) {
+        roleChangeMutation.mutate(roleId);
+      }
+      setShowRoleSelector(false);
+    },
+    [roleNames, roleIds, roleChangeMutation]
+  );
 
   const quickActions: TopButton[] = useMemo(
     () => [
@@ -87,6 +92,12 @@ const Home: NextPage = () => {
     }
   }, [ready, authenticated, hasVisitedRoot, redirectToLogin]);
 
+  useEffect(() => {
+    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
+      setUserRole(roleChangeMutation.data.data.activeRoleName);
+    }
+  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole]);
+
   // if (!ready) {
   //   return (
   //     <div className="flex justify-center items-center h-dvh bg-primary">
@@ -112,7 +123,7 @@ const Home: NextPage = () => {
               className="bg-white/5 text-white hover:bg-white/20 cursor-pointer transition-all duration-200 py-2 px-3 min-w-16 flex justify-center"
               onClick={() => howRoles > 1 && setShowRoleSelector(!showRoleSelector)}
             >
-              {currentView === "ally" ? "ally" : "User"}
+              {currentView === "ally" ? "ally" : "user"}
               {/* ROLE: Show dropdown arrow if multiple roles */}
               {howRoles > 1 && <span className="ml-1 text-xs">▼</span>}
             </Badge>

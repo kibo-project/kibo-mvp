@@ -26,6 +26,7 @@ export class UsersMapper {
     user: User,
     activeRoleName: UserRole,
     rolesNames?: UserRole[],
+    roleIds?: string[],
     howRoles?: number
   ): UserResponse {
     return {
@@ -40,6 +41,7 @@ export class UsersMapper {
       activeRoleName: activeRoleName,
       howRoles: howRoles,
       roleNames: rolesNames,
+      roleIds: roleIds,
       accountNumber: user.accountNumber,
       accountHolder: user.accountHolder,
       phone: user.phone,

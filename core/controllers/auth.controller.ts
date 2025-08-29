@@ -49,7 +49,7 @@ export class AuthController {
             success: false,
             error: {
               code: "UNAUTHORIZED",
-              message: "User authentication required",
+              message: "User authentication required LLEGA ACA",
             },
           },
           { status: 401 }
