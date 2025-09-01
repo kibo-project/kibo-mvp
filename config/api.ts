@@ -10,6 +10,7 @@ export const ENDPOINTS = {
   CONNECT: "/auth/connect",
   PROFILE: "/auth/profile",
   CHANGE_ROLE: "/auth/shift",
+  LOGOUT: "/auth/logout",
 
   // Orders
   ORDERS: "/orders",

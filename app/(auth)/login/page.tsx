@@ -12,7 +12,7 @@ import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { userRole, setHasVisitedRoot, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
+  const { userRole, hasVisitedRoot, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -20,9 +20,11 @@ const Login: NextPage = () => {
   const handlePrivyLogin = useCallback(() => {
     login();
   }, [login]);
-
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
+      console.log("user logged out LLAMA ACA POR QUE ENTRA ACA LOGIN/PAGE.TSX");
+      console.log("ESTADO HAS VISITED EN LOGIN ", hasVisitedRoot);
+
       backendLogin.mutate();
     }
   }, [authenticated, ready]);
@@ -39,9 +41,10 @@ const Login: NextPage = () => {
     }
   }, [authenticated, backendLogin.isSuccess]);
 
-  useEffect(() => {
-    setHasVisitedRoot(true);
-  }, [setHasVisitedRoot]);
+  //useEffect(() => {
+  // console.log(" NO ENTRA POR QUE PRIMERO SE PONE HASVISITED TRUE");
+  //setHasVisitedRoot(true);
+  //}, [setHasVisitedRoot]);
 
   if (!ready || backendLogin.isPending) {
     return (

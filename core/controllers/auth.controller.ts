@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { setAuthCookie } from "../../utils/auth/jwt";
+import { clearAuthCookie, setAuthCookie } from "../../utils/auth/jwt";
 import { AuthService } from "../services/auth.service";
 import { ApiResponse } from "../types/generic.types";
 import { UserResponse } from "../types/users.types";
@@ -38,7 +38,17 @@ export class AuthController {
     }
   }
 
-  async logout(request: NextRequest): Promise<void> {}
+  async logout(request: NextRequest): Promise<Response> {
+    try {
+      const response = NextResponse.json({
+        success: true,
+        message: `Logged out successfully`,
+      });
+      return clearAuthCookie(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
 
   async changeUser(request: NextRequest): Promise<Response> {
     try {
