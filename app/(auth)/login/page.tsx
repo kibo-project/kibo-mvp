@@ -22,9 +22,6 @@ const Login: NextPage = () => {
   }, [login]);
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
-      console.log("user logged out LLAMA ACA POR QUE ENTRA ACA LOGIN/PAGE.TSX");
-      console.log("ESTADO HAS VISITED EN LOGIN ", hasVisitedRoot);
-
       backendLogin.mutate();
     }
   }, [authenticated, ready]);
