@@ -36,6 +36,12 @@ class AuthApiService {
       method: "POST",
     });
   }
+
+  async logout(): Promise<Response> {
+    return this.request<Response>(ENDPOINTS.LOGOUT, {
+      method: "POST",
+    });
+  }
   async changeRole(roleId: string): Promise<ApiResponse<UserResponse>> {
     return this.request<ApiResponse<UserResponse>>(ENDPOINTS.CHANGE_ROLE, {
       method: "PATCH",

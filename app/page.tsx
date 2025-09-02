@@ -25,7 +25,7 @@ const Home: NextPage = () => {
   const { ready, authenticated } = usePrivy();
   const { data } = useOrders();
 
-  const { hasVisitedRoot, setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
+  const { setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const router = useRouter();
   const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
@@ -36,21 +36,19 @@ const Home: NextPage = () => {
   //   chainId: mantleSepoliaTestnet.id,
   // });
 
-  const redirectToLogin = useCallback(() => {
-    setHasVisitedRoot(true);
-    router.replace("/login");
-  }, [setHasVisitedRoot, router]);
-
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
-
+  useEffect(() => {
+    if (ready && !authenticated) {
+      router.replace("/login");
+    }
+  }, [ready, authenticated, router]);
   const availableRoles = useMemo(() => {
     if (!roleNames || howRoles <= 1) return [];
     return roleNames.filter(role => role !== userRole);
   }, [roleNames, userRole, howRoles]);
 
-  // ROLE: Handle role shift (placeholder function)
   const handleRoleChange = useCallback(
     (newRole: UserRole) => {
       console.log(`Changing role to: ${newRole}`);
@@ -87,12 +85,6 @@ const Home: NextPage = () => {
   );
 
   useEffect(() => {
-    if (ready && !authenticated && !hasVisitedRoot) {
-      redirectToLogin();
-    }
-  }, [ready, authenticated, hasVisitedRoot, redirectToLogin]);
-
-  useEffect(() => {
     if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
       setUserRole(roleChangeMutation.data.data.activeRoleName);
     }
@@ -108,6 +100,9 @@ const Home: NextPage = () => {
   //     </div>
   //   );
   // }
+  useEffect(() => {
+    setHasVisitedRoot(true);
+  }, [setHasVisitedRoot]);
 
   const BalanceHeader = () => {
     return (

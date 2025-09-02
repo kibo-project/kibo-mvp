@@ -63,3 +63,14 @@ export const setAuthCookie = (response: NextResponse, token: string): NextRespon
   });
   return response;
 };
+
+export const clearAuthCookie = (response: NextResponse): NextResponse => {
+  response.cookies.set("authToken", "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    expires: new Date(0),
+    path: "/",
+  });
+  return response;
+};
