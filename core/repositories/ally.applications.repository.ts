@@ -1,6 +1,10 @@
 import { AllyApplicationsMapper } from "@/core/mappers/ally.applications.mapper";
-import { OrderMapper } from "@/core/mappers/order.mapper";
-import { AllyApplication, AllyApplicationDto, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
+import {
+  AllyApplication,
+  AllyApplicationDto,
+  ApplicationsFiltersRequest,
+  applicationStatus,
+} from "@/core/types/ally.applications.types";
 import { createClient } from "@supabase/supabase-js";
 
 export class AllyApplicationsRepository {
@@ -62,24 +66,34 @@ export class AllyApplicationsRepository {
     };
   }
 
-  async approveApplication(applicationId: string, adminId: string): Promise<AllyApplication> {
+  async updateStatus(
+    id: string,
+    status: applicationStatus,
+    reviewedBy: string,
+    updates?: Partial<{
+      updatedAt: string;
+      reviewedAt: string;
+      rejectionReason: string;
+    }>
+  ): Promise<AllyApplication> {
+    const updateData: any = { status, reviewed_by: reviewedBy };
+    if (updates?.updatedAt) updateData.updated_at = updates.updatedAt;
+    if (updates?.reviewedAt) updateData.reviewed_at = updates.reviewedAt;
+    if (updates?.rejectionReason) updateData.rejection_reason = updates.rejectionReason;
     const { data, error } = await this.supabase
       .from("ally_applications")
-      .update({
-        status: "APPROVE",
-        updated_at: new Date().toISOString(),
-        reviewed_by: adminId,
-        reviewed_at: new Date().toISOString(),
-      })
-      .eq("id", applicationId);
+      .update(updateData)
+      .eq("id", id)
+      .select("*")
+      .single();
     if (error) {
-      throw new Error(`Error approving application: ${error.message}`);
+      throw new Error(`Failed to update application status: ${error.message}`);
     }
     return AllyApplicationsMapper.dbToAllyApplication(data);
   }
 
   async findById(applicationId: string): Promise<AllyApplication | null> {
-    const { data, error } = await this.supabase.from("ally_applications").select("id").eq("id", applicationId).single();
+    const { data, error } = await this.supabase.from("ally_applications").select("*").eq("id", applicationId).single();
     if (error) {
       if (error.code === "PGRST116") return null;
       throw new Error(`Failed to find order: ${error.message}`);

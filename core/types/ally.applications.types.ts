@@ -1,5 +1,3 @@
-import { OrderResponse } from "@/core/types/orders.types";
-
 export enum applicationStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",

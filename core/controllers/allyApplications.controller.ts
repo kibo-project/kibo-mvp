@@ -12,9 +12,11 @@ import { UserRole } from "@/core/types/orders.types";
 
 export class AllyApplicationsController {
   private allyApplicationsService: AllyApplicationsService;
+
   constructor() {
     this.allyApplicationsService = new AllyApplicationsService();
   }
+
   async applicationToAlly(request: NextRequest) {
     try {
       const userId = request.headers.get("x-user-id");
@@ -60,6 +62,7 @@ export class AllyApplicationsController {
       return this.handleError(error);
     }
   }
+
   async getApplications(request: NextRequest) {
     try {
       const userId = request.headers.get("x-user-id");
@@ -71,7 +74,7 @@ export class AllyApplicationsController {
             success: false,
             error: {
               code: "UNAUTHORIZED",
-              message: "User authentication required",
+              message: "Admin authentication required",
             },
           },
           { status: 401 }
@@ -101,35 +104,7 @@ export class AllyApplicationsController {
 
   async approveApplicationById(request: NextRequest, params: Promise<{ id: string }>) {
     try {
-      const userId = request.headers.get("x-user-id");
-      const roleActiveNow = request.headers.get("x-user-role") as UserRole;
-
-      if (!userId || !roleActiveNow) {
-        return Response.json(
-          {
-            success: false,
-            error: {
-              code: "UNAUTHORIZED",
-              message: "User authentication required",
-            },
-          },
-          { status: 401 }
-        );
-      }
-      const resolvedParams = await params;
-      const applicationId = resolvedParams.id;
-      if (!applicationId) {
-        return Response.json(
-          {
-            success: false,
-            error: {
-              code: "APPLICATION ID NOT_FOUND",
-              message: "ApplicationId is required",
-            },
-          },
-          { status: 401 }
-        );
-      }
+      const { userId, roleActiveNow, applicationId } = await this.validateRequest(request, params);
       const application = await this.allyApplicationsService.approveApplication(userId, roleActiveNow, applicationId);
       const response: ApiResponse<AllyApplication> = {
         success: true,
@@ -139,6 +114,46 @@ export class AllyApplicationsController {
     } catch (error) {
       return this.handleError(error);
     }
+  }
+
+  async rejectApplicationById(request: NextRequest, params: Promise<{ id: string }>) {
+    try {
+      const { userId, roleActiveNow, applicationId } = await this.validateRequest(request, params);
+      const { reason } = await request.json();
+      const application = await this.allyApplicationsService.rejectApplication(
+        userId,
+        roleActiveNow,
+        applicationId,
+        reason
+      );
+      const response: ApiResponse<AllyApplication> = {
+        success: true,
+        data: application,
+      };
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+  private async validateRequest(
+    request: NextRequest,
+    params: Promise<{ id: string }>
+  ): Promise<{ userId: string; roleActiveNow: UserRole; applicationId: string }> {
+    const userId = request.headers.get("x-user-id");
+    const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
+    if (!userId || !roleActiveNow) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    const resolvedParams = await params;
+    const applicationId = resolvedParams.id;
+
+    if (!applicationId) {
+      throw new Error("APPLICATION_ID_NOT_FOUND");
+    }
+
+    return { userId, roleActiveNow: roleActiveNow, applicationId };
   }
 
   private handleError(error: any): NextResponse {

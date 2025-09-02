@@ -31,8 +31,9 @@ export class AllyApplicationsService {
     };
     return await this.allyApplicationsRepository.createApplication(allyApplicationDto);
   }
+
   async getApplications(applicationFilers: ApplicationsFiltersRequest, userId: string, roleActiveNow: UserRole) {
-    this.validateUser(userId, "admin", roleActiveNow);
+    await this.validateUser(userId, "admin", roleActiveNow);
     const applications = await this.allyApplicationsRepository.getApplications(applicationFilers);
     return {
       applications: applications.applications,
@@ -44,19 +45,43 @@ export class AllyApplicationsService {
       },
     };
   }
+
   async approveApplication(userId: string, roleActiveNow: UserRole, applicationId: string) {
-    this.validateUser(userId, "admin", roleActiveNow);
+    await this.validateUser(userId, "admin", roleActiveNow);
     const existsApplication = await this.allyApplicationsRepository.findById(applicationId);
     if (!existsApplication) {
       throw new Error(`Application does not exist`);
     }
-    const application = await this.allyApplicationsRepository.approveApplication(applicationId, userId);
+    const approved = "APPROVED" as applicationStatus;
+    const application = await this.allyApplicationsRepository.updateStatus(applicationId, approved, userId, {
+      updatedAt: new Date().toISOString(),
+      reviewedAt: new Date().toISOString(),
+    });
+
     if (application) {
       const roleId = await this.usersRepository.findRoleIdByName("ally");
       await this.usersRepository.createUserRole(application.userId, roleId);
     }
     return application;
   }
+
+  async rejectApplication(userId: string, roleActiveNow: UserRole, applicationId: string, reason: string) {
+    await this.validateUser(userId, "admin", roleActiveNow);
+    const existsApplication = await this.allyApplicationsRepository.findById(applicationId);
+    if (!existsApplication) {
+      throw new Error(`Application does not exist`);
+    }
+    if (existsApplication.status != "PENDING") {
+      throw new Error(`Application ${applicationId} has already been reviewed`);
+    }
+    const rejected = "REJECTED" as applicationStatus;
+    return await this.allyApplicationsRepository.updateStatus(applicationId, rejected, userId, {
+      updatedAt: new Date().toISOString(),
+      reviewedAt: new Date().toISOString(),
+      rejectionReason: reason,
+    });
+  }
+
   private async validateUser(userId: string, roleAllowed: UserRole, roleActiveNow: UserRole) {
     const isValid = await this.usersRepository.verifyUser(userId, roleAllowed);
     if (!isValid) {
