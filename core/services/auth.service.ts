@@ -31,7 +31,7 @@ export class AuthService {
       }
     } else {
       role = "user";
-      const roleId = await this.usersRepository.findRoleByName(role);
+      const roleId = await this.usersRepository.findRoleIdByName(role);
       user = await this.usersRepository.createUser(
         {
           ...privyUser,

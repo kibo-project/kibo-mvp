@@ -29,16 +29,10 @@ export class AllyApplicationsService {
       address: allyApplicationRequest.address,
       status: applicationStatus.PENDING,
     };
-    return this.allyApplicationsRepository.createApplication(allyApplicationDto);
+    return await this.allyApplicationsRepository.createApplication(allyApplicationDto);
   }
   async getApplications(applicationFilers: ApplicationsFiltersRequest, userId: string, roleActiveNow: UserRole) {
-    const isAdmin = await this.usersRepository.verifyUser(userId, "admin");
-    if (!isAdmin) {
-      throw new Error(`Admin role is required ${userId}`);
-    }
-    if (roleActiveNow != "admin") {
-      throw new Error(`Role active now is ${userId} ,admin role active now is required`);
-    }
+    this.validateUser(userId, "admin", roleActiveNow);
     const applications = await this.allyApplicationsRepository.getApplications(applicationFilers);
     return {
       applications: applications.applications,
@@ -49,5 +43,27 @@ export class AllyApplicationsService {
         hasMore: applicationFilers.offset! + applicationFilers.limit! < applications.total,
       },
     };
+  }
+  async approveApplication(userId: string, roleActiveNow: UserRole, applicationId: string) {
+    this.validateUser(userId, "admin", roleActiveNow);
+    const existsApplication = await this.allyApplicationsRepository.findById(applicationId);
+    if (!existsApplication) {
+      throw new Error(`Application does not exist`);
+    }
+    const application = await this.allyApplicationsRepository.approveApplication(applicationId, userId);
+    if (application) {
+      const roleId = await this.usersRepository.findRoleIdByName("ally");
+      await this.usersRepository.createUserRole(application.userId, roleId);
+    }
+    return application;
+  }
+  private async validateUser(userId: string, roleAllowed: UserRole, roleActiveNow: UserRole) {
+    const isValid = await this.usersRepository.verifyUser(userId, roleAllowed);
+    if (!isValid) {
+      throw new Error(`${roleAllowed} role is required for user ${userId}`);
+    }
+    if (roleActiveNow !== roleAllowed) {
+      throw new Error(`Role active now is ${roleActiveNow}, ${roleAllowed} role is required active now`);
+    }
   }
 }

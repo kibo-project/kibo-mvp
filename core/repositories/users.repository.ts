@@ -49,7 +49,7 @@ export class UsersRepository {
       throw new Error(`Error creating user: ${error.message}`);
     }
 
-    const roleId = await this.findRoleByName(roleName);
+    const roleId = await this.findRoleIdByName(roleName);
 
     await this.createUserRole(data.id, roleId);
 
@@ -66,7 +66,7 @@ export class UsersRepository {
     }
   }
 
-  async findRoleByName(name: string): Promise<string> {
+  async findRoleIdByName(name: string): Promise<string> {
     const { data, error } = await this.supabase.from("roles").select("id").eq("name", name).limit(1);
 
     if (error) {

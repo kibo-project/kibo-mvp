@@ -99,6 +99,48 @@ export class AllyApplicationsController {
     }
   }
 
+  async approveApplicationById(request: NextRequest, params: Promise<{ id: string }>) {
+    try {
+      const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
+      if (!userId || !roleActiveNow) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "User authentication required",
+            },
+          },
+          { status: 401 }
+        );
+      }
+      const resolvedParams = await params;
+      const applicationId = resolvedParams.id;
+      if (!applicationId) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "APPLICATION ID NOT_FOUND",
+              message: "ApplicationId is required",
+            },
+          },
+          { status: 401 }
+        );
+      }
+      const application = await this.allyApplicationsService.approveApplication(userId, roleActiveNow, applicationId);
+      const response: ApiResponse<AllyApplication> = {
+        success: true,
+        data: application,
+      };
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
   private handleError(error: any): NextResponse {
     console.error("User Controller Error:", error);
 

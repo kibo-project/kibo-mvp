@@ -1,4 +1,5 @@
 import { AllyApplicationsMapper } from "@/core/mappers/ally.applications.mapper";
+import { OrderMapper } from "@/core/mappers/order.mapper";
 import { AllyApplication, AllyApplicationDto, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
 import { createClient } from "@supabase/supabase-js";
 
@@ -41,6 +42,7 @@ export class AllyApplicationsRepository {
     }
     return AllyApplicationsMapper.dbToAllyApplication(data);
   }
+
   async getApplications(
     filters: ApplicationsFiltersRequest
   ): Promise<{ applications: AllyApplication[]; total: number }> {
@@ -58,5 +60,31 @@ export class AllyApplicationsRepository {
       applications: data.map(AllyApplicationsMapper.dbToAllyApplication),
       total: count || 0,
     };
+  }
+
+  async approveApplication(applicationId: string, adminId: string): Promise<AllyApplication> {
+    const { data, error } = await this.supabase
+      .from("ally_applications")
+      .update({
+        status: "APPROVE",
+        updated_at: new Date().toISOString(),
+        reviewed_by: adminId,
+        reviewed_at: new Date().toISOString(),
+      })
+      .eq("id", applicationId);
+    if (error) {
+      throw new Error(`Error approving application: ${error.message}`);
+    }
+    return AllyApplicationsMapper.dbToAllyApplication(data);
+  }
+
+  async findById(applicationId: string): Promise<AllyApplication | null> {
+    const { data, error } = await this.supabase.from("ally_applications").select("id").eq("id", applicationId).single();
+    if (error) {
+      if (error.code === "PGRST116") return null;
+      throw new Error(`Failed to find order: ${error.message}`);
+    }
+
+    return AllyApplicationsMapper.dbToAllyApplication(data);
   }
 }
