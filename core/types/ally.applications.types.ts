@@ -1,3 +1,5 @@
+import { OrderResponse } from "@/core/types/orders.types";
+
 export enum applicationStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
@@ -30,4 +32,20 @@ export interface AllyApplication {
   reviewedAt?: Date;
   reviewedBy?: string;
   rejectionReason?: string;
+}
+
+export interface ApplicationsFiltersRequest {
+  status?: applicationStatus;
+  limit: number;
+  offset: number;
+}
+
+export interface ApplicationsListResponse {
+  applications: AllyApplication[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 }
