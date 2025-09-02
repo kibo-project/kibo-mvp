@@ -25,21 +25,20 @@ import { persist } from "zustand/middleware";
  */
 export type UserRole = "user" | "ally" | "admin";
 
-/**
- * Auth store interface defining state and actions
- */
 interface AuthStore {
-  /** Tracks if user has visited the root page (used for login flow) */
   hasVisitedRoot: boolean;
-
-  /** Current user role - determines access to admin features */
   userRole: UserRole | null;
+  howRoles: number;
+  roleNames: UserRole[];
+  roleIds: string[];
 
-  /** Updates the root visit tracking flag */
   setHasVisitedRoot: (visited: boolean) => void;
 
   /** Changes the user role (triggers re-renders and navigation) */
   setUserRole: (role: UserRole | null) => void;
+  setHowRoles: (howRoles: number | 0) => void;
+  setRoleNames: (roleNames: UserRole[] | []) => void;
+  setRoleIds: (roleIds: string[] | []) => void;
 
   /** Helper function to check if current user has admin privileges */
   isAdmin: () => boolean;
@@ -79,6 +78,9 @@ export const useAuthStore = create<AuthStore>()(
 
       /** Default role is 'user' - admin access must be explicitly granted */
       userRole: null,
+      howRoles: 0,
+      roleNames: [],
+      roleIds: [],
 
       /** Track root page visits for login redirect logic */
       setHasVisitedRoot: visited => set({ hasVisitedRoot: visited }),
@@ -88,18 +90,26 @@ export const useAuthStore = create<AuthStore>()(
        * Used by RoleSwitcher component for development/demo
        */
       setUserRole: role => set({ userRole: role }),
+      setHowRoles: howRoles => set({ howRoles }),
+      setRoleNames: roleNames => set({ roleNames }),
+      setRoleIds: roleIds => set({ roleIds }),
 
       /**
        * Check if current user has admin privileges
        * @returns {boolean} true if user role is 'admin'
        */
       isAdmin: () => get().userRole === "admin",
-      reset: () => set({ userRole: null }),
+      reset: () => set({ userRole: null, howRoles: 0, roleNames: [], roleIds: [] }),
     }),
     {
       name: "kibo-auth-storage",
       /** Only persist userRole - hasVisitedRoot is session-only */
-      partialize: state => ({ userRole: state.userRole }),
+      partialize: state => ({
+        userRole: state.userRole,
+        roleNames: state.roleNames,
+        howRoles: state.howRoles,
+        roleIds: state.roleIds,
+      }),
     }
   )
 );

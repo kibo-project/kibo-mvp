@@ -80,24 +80,25 @@ export class UsersRepository {
     return data[0].id;
   }
 
-  async updateUser(userId: string): Promise<User> {
+  async updateUser(userId: string, newActiveRoleId?: string): Promise<User> {
     const { data, error } = await this.supabase
       .from("users")
       .update({
         last_login_at: new Date().toISOString(),
+        active_role_id: newActiveRoleId,
       })
       .eq("id", userId)
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Error updating user: ${error.message}`);
+    if (error || !data) {
+      throw new Error(`Error updating user`);
     }
 
     return UsersMapper.dbToUser(data);
   }
-  async getRoleIdByUserId(userId: string): Promise<string> {
-    const { data, error } = await this.supabase.from("users_roles").select("role_id").eq("user_id", userId).limit(1);
+  async getRoleIdsByUserId(userId: string): Promise<string[]> {
+    const { data, error } = await this.supabase.from("users_roles").select("role_id").eq("user_id", userId);
 
     if (error) {
       throw new Error(`Error getting role Id: ${error.message}`);
@@ -106,7 +107,7 @@ export class UsersRepository {
     if (!data || data.length === 0) {
       throw new Error(`No role found for user ${userId}`);
     }
-    return data[0].role_id;
+    return data.map(row => row.role_id);
   }
 
   async getRoleNameByRoleId(roleId: string): Promise<UserRole> {

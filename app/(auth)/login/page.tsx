@@ -12,7 +12,7 @@ import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { userRole, setHasVisitedRoot, setUserRole } = useAuthStore();
+  const { userRole, setHasVisitedRoot, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -30,6 +30,11 @@ const Login: NextPage = () => {
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
       setUserRole(backendLogin.data.data!.activeRoleName);
+      if (backendLogin.data.data.howRoles! > 1) {
+        setHowRoles(backendLogin.data.data.howRoles!);
+        setRoleNames(backendLogin.data.data.roleNames!);
+        setRoleIds(backendLogin.data.data.roleIds!);
+      }
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess]);

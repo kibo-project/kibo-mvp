@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { UserRole } from "@/core/types/orders.types";
+import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { usePrivy } from "@privy-io/react-auth";
 import type { NextPage } from "next";
@@ -21,15 +23,12 @@ interface TopButton {
 const Home: NextPage = () => {
   // const { address } = useAccount();
   const { ready, authenticated } = usePrivy();
-  const {
-    data,
-    // isLoading,
-    // error
-  } = useOrders();
+  const { data } = useOrders();
 
-  const { hasVisitedRoot, setHasVisitedRoot, userRole } = useAuthStore();
+  const { hasVisitedRoot, setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const router = useRouter();
-
+  const roleChangeMutation = useRoleChange();
+  const [showRoleSelector, setShowRoleSelector] = useState(false);
   const currentView = userRole === "admin" ? "ally" : userRole || "user";
 
   // const { data: balance } = useBalance({
@@ -45,6 +44,26 @@ const Home: NextPage = () => {
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
+
+  const availableRoles = useMemo(() => {
+    if (!roleNames || howRoles <= 1) return [];
+    return roleNames.filter(role => role !== userRole);
+  }, [roleNames, userRole, howRoles]);
+
+  // ROLE: Handle role shift (placeholder function)
+  const handleRoleChange = useCallback(
+    (newRole: UserRole) => {
+      console.log(`Changing role to: ${newRole}`);
+      const roleIndex = roleNames.indexOf(newRole);
+      const roleId = roleIds[roleIndex];
+
+      if (roleId) {
+        roleChangeMutation.mutate(roleId);
+      }
+      setShowRoleSelector(false);
+    },
+    [roleNames, roleIds, roleChangeMutation]
+  );
 
   const quickActions: TopButton[] = useMemo(
     () => [
@@ -73,6 +92,12 @@ const Home: NextPage = () => {
     }
   }, [ready, authenticated, hasVisitedRoot, redirectToLogin]);
 
+  useEffect(() => {
+    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
+      setUserRole(roleChangeMutation.data.data.activeRoleName);
+    }
+  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole]);
+
   // if (!ready) {
   //   return (
   //     <div className="flex justify-center items-center h-dvh bg-primary">
@@ -89,14 +114,35 @@ const Home: NextPage = () => {
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
         <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex-1" />
-          <Badge
-            variant="info"
-            size="sm"
-            className="bg-white/5 text-white hover:bg-white/20 cursor-pointer transition-all duration-200 py-2 px-3 min-w-16 flex justify-center"
-            //   onClick={handleViewSwitch}
-          >
-            {currentView === "ally" ? "Ally" : "User"}
-          </Badge>
+
+          {/* ROLE: Role selector container */}
+          <div className="relative">
+            <Badge
+              variant="info"
+              size="sm"
+              className="bg-white/5 text-white hover:bg-white/20 cursor-pointer transition-all duration-200 py-2 px-3 min-w-16 flex justify-center"
+              onClick={() => howRoles > 1 && setShowRoleSelector(!showRoleSelector)}
+            >
+              {currentView === "ally" ? "ally" : "user"}
+              {/* ROLE: Show dropdown arrow if multiple roles */}
+              {howRoles > 1 && <span className="ml-1 text-xs">▼</span>}
+            </Badge>
+
+            {/* ROLE: Role selector dropdown */}
+            {showRoleSelector && howRoles > 1 && (
+              <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-10 min-w-24">
+                {availableRoles.map(role => (
+                  <button
+                    key={role}
+                    onClick={() => handleRoleChange(role)}
+                    className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left capitalize"
+                  >
+                    {role === "admin" ? "ally" : role}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <h2 className="text-base mb-2 font-medium opacity-90">USDT</h2>
         {/* <div className="flex items-baseline justify-center gap-1 mb-6 md:mb-8">

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UserRole } from "@/core/types/orders.types";
 import { User, UserResponse } from "@/core/types/users.types";
 
@@ -23,7 +22,13 @@ export class UsersMapper {
     };
   }
 
-  static userToUserResponse(user: User, role: UserRole): UserResponse {
+  static userToUserResponse(
+    user: User,
+    activeRoleName: UserRole,
+    rolesNames?: UserRole[],
+    roleIds?: string[],
+    howRoles?: number
+  ): UserResponse {
     return {
       id: user.id!,
       name: user.name,
@@ -33,7 +38,10 @@ export class UsersMapper {
       country: user.country,
       bankName: user.bankName,
       activeRoleId: user.activeRoleId,
-      activeRoleName: role,
+      activeRoleName: activeRoleName,
+      howRoles: howRoles,
+      roleNames: rolesNames,
+      roleIds: roleIds,
       accountNumber: user.accountNumber,
       accountHolder: user.accountHolder,
       phone: user.phone,
