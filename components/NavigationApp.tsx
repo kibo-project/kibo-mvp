@@ -92,10 +92,63 @@ export const NavigationApp = () => {
       ),
     },
   ];
-
-  // NAVEGACIÓN: Memoize current menu links to react to userRole changes
+  const adminMenuLinks = [
+    {
+      label: "Home",
+      href: "/",
+      icon: (
+        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Applications",
+      href: "admin/applications",
+      icon: (
+        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Users",
+      href: "admin/users",
+      icon: (
+        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+          />
+        </svg>
+      ),
+    },
+    {
+      label: "Orders",
+      href: "admin/orders",
+      icon: (
+        <svg className="size-7 md:size-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h7" />
+        </svg>
+      ),
+    },
+  ];
   const currentMenuLinks = useMemo(() => {
-    return userRole === "ally" || userRole === "admin" ? allyMenuLinks : userMenuLinks;
+    if (userRole === "admin") return adminMenuLinks;
+    if (userRole === "ally") return allyMenuLinks;
+    return userMenuLinks;
   }, [userRole]);
 
   return (
