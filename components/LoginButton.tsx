@@ -29,6 +29,7 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   const router = useRouter();
   const backendLogin = useAuth();
   const logoutCookie = useLogoutCookie();
+  const [hasLoggedOut, setHasLoggedOut] = useState(false);
 
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
@@ -42,16 +43,21 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess]);
+  useEffect(() => {
+    if (ready && !authenticated && (hasLoggedOut || hasVisitedRoot)) {
+      router.replace("/login");
+      setHasLoggedOut(false);
+    }
+  }, [ready, authenticated, hasLoggedOut, hasVisitedRoot, router]);
 
   const handleLogout = useCallback(() => {
     logout();
     logoutCookie.mutate();
     setShowModal(false);
     useAuthStore.getState().reset();
-    console.log("ESTADO DEL HAS VISITED", hasVisitedRoot);
     setHasVisitedRoot(false);
-  }, [logout, logoutCookie]);
-
+    setHasLoggedOut(true);
+  }, [logout, logoutCookie, hasVisitedRoot, setHasVisitedRoot]);
   const handleLogin = useCallback(() => {
     login();
   }, [login]);
