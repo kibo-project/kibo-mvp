@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { useLogoutCookie } from "@/hooks/auth/useLogoutCookie";
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 import {
   ArrowRightOnRectangleIcon,
@@ -22,11 +23,12 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   const { authenticated, user, ready } = usePrivy();
   const { logout } = useLogout();
   const { login } = useLogin();
-  const { userRole, setUserRole } = useAuthStore();
+  const { userRole, setUserRole, hasVisitedRoot, setHasVisitedRoot } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
-  const backendLogin = useAuth(); // CONNECT: Importar hook useAuth
+  const backendLogin = useAuth();
+  const logoutCookie = useLogoutCookie();
 
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
@@ -43,10 +45,12 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
 
   const handleLogout = useCallback(() => {
     logout();
+    logoutCookie.mutate();
     setShowModal(false);
     useAuthStore.getState().reset();
-    //  router.push("/login");
-  }, [logout]);
+    console.log("ESTADO DEL HAS VISITED", hasVisitedRoot);
+    setHasVisitedRoot(false);
+  }, [logout, logoutCookie]);
 
   const handleLogin = useCallback(() => {
     login();

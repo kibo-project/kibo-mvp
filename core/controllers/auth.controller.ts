@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from "next/server";
-import { setAuthCookie } from "../../utils/auth/jwt";
+import { clearAuthCookie, setAuthCookie } from "../../utils/auth/jwt";
 import { AuthService } from "../services/auth.service";
 import { ApiResponse } from "../types/generic.types";
 import { UserResponse } from "../types/users.types";
@@ -34,6 +33,61 @@ export class AuthController {
 
       const response = NextResponse.json(responseData);
       return setAuthCookie(response, result.token);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async logout(request: NextRequest): Promise<Response> {
+    try {
+      const response = NextResponse.json({
+        success: true,
+        message: `Logged out successfully`,
+      });
+      return clearAuthCookie(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async changeUser(request: NextRequest): Promise<Response> {
+    try {
+      const userId = request.headers.get("x-user-id");
+      if (!userId) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "User authentication required LLEGA ACA",
+            },
+          },
+          { status: 401 }
+        );
+      }
+      const body = await request.json();
+      const { roleId } = body;
+
+      if (!roleId) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: {
+              code: "BAD_REQUEST",
+              message: "roleId is required",
+            },
+          },
+          { status: 400 }
+        );
+      }
+      const updatedUser = await this.authService.changeUserRole(userId, roleId);
+      const responseData: ApiResponse<UserResponse> = {
+        success: true,
+        data: updatedUser.userResponse,
+      };
+
+      const response = NextResponse.json(responseData);
+      return setAuthCookie(response, updatedUser.token);
     } catch (error) {
       return this.handleError(error);
     }

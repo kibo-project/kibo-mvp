@@ -12,7 +12,7 @@ import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { userRole, setHasVisitedRoot, setUserRole } = useAuthStore();
+  const { userRole, hasVisitedRoot, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -20,7 +20,6 @@ const Login: NextPage = () => {
   const handlePrivyLogin = useCallback(() => {
     login();
   }, [login]);
-
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
       backendLogin.mutate();
@@ -30,13 +29,19 @@ const Login: NextPage = () => {
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
       setUserRole(backendLogin.data.data!.activeRoleName);
+      if (backendLogin.data.data.howRoles! > 1) {
+        setHowRoles(backendLogin.data.data.howRoles!);
+        setRoleNames(backendLogin.data.data.roleNames!);
+        setRoleIds(backendLogin.data.data.roleIds!);
+      }
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess]);
 
-  useEffect(() => {
-    setHasVisitedRoot(true);
-  }, [setHasVisitedRoot]);
+  //useEffect(() => {
+  // console.log(" NO ENTRA POR QUE PRIMERO SE PONE HASVISITED TRUE");
+  //setHasVisitedRoot(true);
+  //}, [setHasVisitedRoot]);
 
   if (!ready || backendLogin.isPending) {
     return (

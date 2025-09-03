@@ -49,7 +49,7 @@ export class UsersRepository {
       throw new Error(`Error creating user: ${error.message}`);
     }
 
-    const roleId = await this.findRoleByName(roleName);
+    const roleId = await this.findRoleIdByName(roleName);
 
     await this.createUserRole(data.id, roleId);
 
@@ -66,7 +66,7 @@ export class UsersRepository {
     }
   }
 
-  async findRoleByName(name: string): Promise<string> {
+  async findRoleIdByName(name: string): Promise<string> {
     const { data, error } = await this.supabase.from("roles").select("id").eq("name", name).limit(1);
 
     if (error) {
@@ -80,24 +80,25 @@ export class UsersRepository {
     return data[0].id;
   }
 
-  async updateUser(userId: string): Promise<User> {
+  async updateUser(userId: string, newActiveRoleId?: string): Promise<User> {
     const { data, error } = await this.supabase
       .from("users")
       .update({
         last_login_at: new Date().toISOString(),
+        active_role_id: newActiveRoleId,
       })
       .eq("id", userId)
       .select()
       .single();
 
-    if (error) {
-      throw new Error(`Error updating user: ${error.message}`);
+    if (error || !data) {
+      throw new Error(`Error updating user`);
     }
 
     return UsersMapper.dbToUser(data);
   }
-  async getRoleIdByUserId(userId: string): Promise<string> {
-    const { data, error } = await this.supabase.from("users_roles").select("role_id").eq("user_id", userId).limit(1);
+  async getRoleIdsByUserId(userId: string): Promise<string[]> {
+    const { data, error } = await this.supabase.from("users_roles").select("role_id").eq("user_id", userId);
 
     if (error) {
       throw new Error(`Error getting role Id: ${error.message}`);
@@ -106,7 +107,7 @@ export class UsersRepository {
     if (!data || data.length === 0) {
       throw new Error(`No role found for user ${userId}`);
     }
-    return data[0].role_id;
+    return data.map(row => row.role_id);
   }
 
   async getRoleNameByRoleId(roleId: string): Promise<UserRole> {
@@ -115,5 +116,32 @@ export class UsersRepository {
       throw new Error(`Error getting role name: ${error.message}`);
     }
     return data.name as UserRole;
+  }
+  async verifyUser(userId: string, rolename: string) {
+    const { data: roles, error: roleError } = await this.supabase
+      .from("roles")
+      .select("*")
+      .eq("name", rolename)
+      .limit(1);
+
+    if (roleError || !roles || roles.length === 0) {
+      console.log(`Role '${rolename}' not found`);
+      return false;
+    }
+    const role = roles[0];
+
+    const { data: userRole, error: userRoleError } = await this.supabase
+      .from("users_roles")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("role_id", role.id)
+      .limit(1);
+
+    if (!userRole || userRole.length === 0 || userRoleError) {
+      console.log(`User ${userId} doesn't have role ${rolename}, checking if user exists`);
+      return false;
+    }
+
+    return true;
   }
 }

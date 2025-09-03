@@ -17,15 +17,15 @@ import { OrderMapper } from "@/core/mappers/order.mapper";
 
 export class OrdersService {
   private ordersRepository: OrdersRepository;
-  private userRepository: UsersRepository;
+  private usersRepository: UsersRepository;
 
   constructor() {
     this.ordersRepository = new OrdersRepository();
-    this.userRepository = new UsersRepository();
+    this.usersRepository = new UsersRepository();
   }
 
   async createOrder(createOrderRequest: CreateOrderRequest): Promise<Order> {
-    const isValid = await this.ordersRepository.verifyUser(createOrderRequest.userId!, "user");
+    const isValid = await this.usersRepository.verifyUser(createOrderRequest.userId!, "user");
     if (!isValid) {
       throw new Error("User or role are not valid");
     }
@@ -59,16 +59,14 @@ export class OrdersService {
     userId: string,
     roleActiveNow: string
   ): Promise<OrdersListResponse> {
-    const activeRoleId = await this.userRepository.getActiveRoleIdByUserId(userId);
+    const activeRoleId = await this.usersRepository.getActiveRoleIdByUserId(userId);
     if (!activeRoleId) {
       throw new Error("User does not have an active role");
     }
-    console.log("Active role id", activeRoleId);
-    const roleNameActive = (await this.userRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
-    console.log(`nameRoleActivo  ${roleNameActive}`);
+    const roleNameActive = (await this.usersRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
     if (roleNameActive !== roleActiveNow) {
       throw new Error(
-        "You must log in as ${requiredRole} to access this resource. Currently logged in as ${req.user.roleName}"
+        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
       );
     }
 
@@ -114,7 +112,7 @@ export class OrdersService {
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId: string): Promise<AvailableOrdersResponse> {
-    const isAlly = await this.ordersRepository.verifyUser(userId, "ally");
+    const isAlly = await this.usersRepository.verifyUser(userId, "ally");
     if (!isAlly) {
       throw new Error("Access denied for users are not allies");
     }
@@ -134,7 +132,7 @@ export class OrdersService {
   }
 
   async takeOrder(takeOrderDto: TakeOrderDto, allyId: string): Promise<Order> {
-    const isAlly = await this.ordersRepository.verifyUser(allyId, "ally");
+    const isAlly = await this.usersRepository.verifyUser(allyId, "ally");
     if (!isAlly) {
       throw new Error("Access denied for users are not allies");
     }
@@ -227,7 +225,7 @@ export class OrdersService {
   }
 
   private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
-    const isAdmin = await this.ordersRepository.verifyUser(userId, "admin");
+    const isAdmin = await this.usersRepository.verifyUser(userId, "admin");
     return order.userId === userId || order.allyId === userId || isAdmin;
   }
 

@@ -86,7 +86,7 @@ export const PromoCarousel = ({
 
       setDragOffset(newOffset);
 
-      // Trigger slide change when dragged 15% of container width
+      // Trigger slide shift when dragged 15% of container width
       if (Math.abs(diff) > containerWidth * 0.15) {
         if (diff > 0) {
           nextSlide();
