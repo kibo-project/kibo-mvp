@@ -29,7 +29,6 @@ const Home: NextPage = () => {
   const router = useRouter();
   const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-  // ADMIN: Updated to handle admin role display
   const currentView = userRole === "admin" ? "admin" : userRole || "user";
 
   // const { data: balance } = useBalance({
@@ -40,11 +39,11 @@ const Home: NextPage = () => {
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
-  useEffect(() => {
-    if (ready && !authenticated) {
-      router.replace("/login");
-    }
-  }, [ready, authenticated, router]);
+  //useEffect(() => {
+  //  if (ready && !authenticated) {
+  //    router.replace("/login");
+  //  }
+  //}, [ready, authenticated, router]);
 
   const availableRoles = useMemo(() => {
     if (!roleNames || howRoles <= 1) return [];
