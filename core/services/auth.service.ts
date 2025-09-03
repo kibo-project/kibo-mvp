@@ -4,17 +4,14 @@ import { AuthRepository } from "../repositories/auth.repository";
 import { UsersRepository } from "../repositories/users.repository";
 import { UserRole } from "../types/orders.types";
 import { User } from "../types/users.types";
-import { OrdersRepository } from "@/core/repositories/orders.repository";
 
 export class AuthService {
   private authRepository: AuthRepository;
   private usersRepository: UsersRepository;
-  private ordersRepository: OrdersRepository;
 
   constructor() {
     this.authRepository = new AuthRepository();
     this.usersRepository = new UsersRepository();
-    this.ordersRepository = new OrdersRepository();
   }
 
   async login(token: string) {
@@ -34,7 +31,7 @@ export class AuthService {
       }
     } else {
       role = "user";
-      const roleId = await this.usersRepository.findRoleByName(role);
+      const roleId = await this.usersRepository.findRoleIdByName(role);
       user = await this.usersRepository.createUser(
         {
           ...privyUser,
@@ -52,7 +49,7 @@ export class AuthService {
   }
   async changeUserRole(userId: string, roleId: string) {
     const roleName = await this.usersRepository.getRoleNameByRoleId(roleId);
-    const isValid = await this.ordersRepository.verifyUser(userId, roleName);
+    const isValid = await this.usersRepository.verifyUser(userId, roleName);
     if (!isValid) {
       throw new Error("This user do not can access to this role");
     }

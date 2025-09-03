@@ -31,3 +31,19 @@ export interface AllyApplication {
   reviewedBy?: string;
   rejectionReason?: string;
 }
+
+export interface ApplicationsFiltersRequest {
+  status?: applicationStatus;
+  limit: number;
+  offset: number;
+}
+
+export interface ApplicationsListResponse {
+  applications: AllyApplication[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
+}

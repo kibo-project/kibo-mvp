@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AllyApplication, AllyApplicationRequest } from "../types/ally.applications.types";
+import {
+  AllyApplication,
+  AllyApplicationRequest,
+  ApplicationsFiltersRequest,
+  ApplicationsListResponse,
+  applicationStatus,
+} from "../types/ally.applications.types";
 import { AllyApplicationsService } from "@/core/services/ally.applications.service";
 import { ApiResponse } from "@/core/types/generic.types";
+import { UserRole } from "@/core/types/orders.types";
 
 export class AllyApplicationsController {
   private allyApplicationsService: AllyApplicationsService;
+
   constructor() {
     this.allyApplicationsService = new AllyApplicationsService();
   }
+
   async applicationToAlly(request: NextRequest) {
     try {
       const userId = request.headers.get("x-user-id");
@@ -52,6 +61,99 @@ export class AllyApplicationsController {
     } catch (error) {
       return this.handleError(error);
     }
+  }
+
+  async getApplications(request: NextRequest) {
+    try {
+      const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
+      if (!userId || !roleActiveNow) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "Admin authentication required",
+            },
+          },
+          { status: 401 }
+        );
+      }
+
+      const { searchParams } = new URL(request.url);
+      const applicationsFilters: ApplicationsFiltersRequest = {
+        status: searchParams.get("status") as applicationStatus | undefined,
+        limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10,
+        offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0,
+      };
+      const result: ApplicationsListResponse = await this.allyApplicationsService.getApplications(
+        applicationsFilters,
+        userId,
+        roleActiveNow
+      );
+      const response: ApiResponse<ApplicationsListResponse> = {
+        success: true,
+        data: result,
+      };
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async approveApplicationById(request: NextRequest, params: Promise<{ id: string }>) {
+    try {
+      const { userId, roleActiveNow, applicationId } = await this.validateRequest(request, params);
+      const application = await this.allyApplicationsService.approveApplication(userId, roleActiveNow, applicationId);
+      const response: ApiResponse<AllyApplication> = {
+        success: true,
+        data: application,
+      };
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  async rejectApplicationById(request: NextRequest, params: Promise<{ id: string }>) {
+    try {
+      const { userId, roleActiveNow, applicationId } = await this.validateRequest(request, params);
+      const { reason } = await request.json();
+      const application = await this.allyApplicationsService.rejectApplication(
+        userId,
+        roleActiveNow,
+        applicationId,
+        reason
+      );
+      const response: ApiResponse<AllyApplication> = {
+        success: true,
+        data: application,
+      };
+      return Response.json(response);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+  private async validateRequest(
+    request: NextRequest,
+    params: Promise<{ id: string }>
+  ): Promise<{ userId: string; roleActiveNow: UserRole; applicationId: string }> {
+    const userId = request.headers.get("x-user-id");
+    const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
+    if (!userId || !roleActiveNow) {
+      throw new Error("UNAUTHORIZED");
+    }
+
+    const resolvedParams = await params;
+    const applicationId = resolvedParams.id;
+
+    if (!applicationId) {
+      throw new Error("APPLICATION_ID_NOT_FOUND");
+    }
+
+    return { userId, roleActiveNow: roleActiveNow, applicationId };
   }
 
   private handleError(error: any): NextResponse {
