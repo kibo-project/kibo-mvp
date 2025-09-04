@@ -2,17 +2,15 @@
 
 import { useCallback, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { NextPage } from "next";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
   const { login } = useLogin();
-  const { userRole, hasVisitedRoot, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
+  const { userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -20,11 +18,19 @@ const Login: NextPage = () => {
   const handlePrivyLogin = useCallback(() => {
     login();
   }, [login]);
+
+  // Redirigir si ya está autenticado
+  useEffect(() => {
+    if (ready && authenticated && userRole) {
+      router.replace("/");
+    }
+  }, [ready, authenticated, userRole, router]);
+
   useEffect(() => {
     if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
       backendLogin.mutate();
     }
-  }, [authenticated, ready]);
+  }, [authenticated, ready, userRole, backendLogin]);
 
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
@@ -36,14 +42,18 @@ const Login: NextPage = () => {
       }
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess]);
-
-  //useEffect(() => {
-  // console.log(" NO ENTRA POR QUE PRIMERO SE PONE HASVISITED TRUE");
-  //setHasVisitedRoot(true);
-  //}, [setHasVisitedRoot]);
+  }, [authenticated, backendLogin.isSuccess, backendLogin.data, userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds, router]);
 
   if (!ready || backendLogin.isPending) {
+    return (
+      <div className="flex justify-center items-center min-h-dvh bg-primary">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  // Si ya está autenticado, mostrar loading mientras redirige
+  if (authenticated && userRole) {
     return (
       <div className="flex justify-center items-center min-h-dvh bg-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>

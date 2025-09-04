@@ -27,7 +27,6 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
         {!shouldExclude && <Header />}
         <main className="relative flex flex-col flex-1">{children}</main>
         {!shouldExclude && <NavigationApp />}
-        {/* <Footer /> */}
       </div>
       <Toaster />
     </>
