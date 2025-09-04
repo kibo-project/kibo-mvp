@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { UsersMapper } from "../mappers/users.mapper";
 import { User } from "@/core/types/users.types";
 import { createClient } from "@supabase/supabase-js";
@@ -25,8 +24,10 @@ export class AuthRepository {
       }
       throw new Error(`Error verifying token: ${response.status}`);
     }
+    console.log("RESPONSE", response);
+    console.log("USERDATA", response.body);
     const userData = await response.json();
-
+    console.log("USERDATA", userData);
     return UsersMapper.privyUserToUser(userData);
   }
 }

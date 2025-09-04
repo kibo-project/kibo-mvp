@@ -2,19 +2,34 @@
 
 import { useCallback, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { NextPage } from "next";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
-  const { login } = useLogin();
   const { userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
-
+  const { login } = useLogin({
+    onComplete: ({ user }) => {
+      const hasWallet = user.linkedAccounts?.some(account => account.type === "wallet");
+      if (hasWallet) {
+        if (!backendLogin.isPending && !backendLogin.isSuccess && !userRole) {
+          backendLogin.mutate();
+        }
+      } else {
+        console.warn("No wallet found after login completion");
+      }
+    },
+    onError: error => {
+      console.error("Login error:", error);
+    },
+  });
   const handlePrivyLogin = useCallback(() => {
     login();
   }, [login]);
@@ -27,12 +42,6 @@ const Login: NextPage = () => {
   }, [ready, authenticated, userRole, router]);
 
   useEffect(() => {
-    if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
-      backendLogin.mutate();
-    }
-  }, [authenticated, ready, userRole, backendLogin]);
-
-  useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
       setUserRole(backendLogin.data.data!.activeRoleName);
       if (backendLogin.data.data.howRoles! > 1) {
@@ -42,7 +51,12 @@ const Login: NextPage = () => {
       }
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess, backendLogin.data, userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds, router]);
+  }, [authenticated, backendLogin.isSuccess]);
+
+  //useEffect(() => {
+  // console.log(" NO ENTRA POR QUE PRIMERO SE PONE HASVISITED TRUE");
+  //setHasVisitedRoot(true);
+  //}, [setHasVisitedRoot]);
 
   if (!ready || backendLogin.isPending) {
     return (
@@ -81,7 +95,19 @@ const Login: NextPage = () => {
           >
             Login with Privy
           </button>
+
+          <Link
+            href="/"
+            className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors duration-200 flex gap-2 justify-center items-center font-medium"
+          >
+            <span>Continue as Guest</span>
+            <ArrowLeftIcon className="size-4 rotate-180" />
+          </Link>
         </div>
+
+        <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-6">
+          Guest mode is for demo purposes only.
+        </p>
       </div>
     </div>
   );
