@@ -107,8 +107,7 @@ const Home: NextPage = () => {
   const BalanceHeader = () => {
     return (
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex-1" />
+        <div className="flex items-center justify-between gap-2">
 
           {/* ROLE: Role selector container */}
           <div className="relative">
@@ -118,7 +117,7 @@ const Home: NextPage = () => {
               className="bg-white/5 text-white hover:bg-white/20 cursor-pointer transition-all duration-200 py-2 px-3 min-w-16 flex justify-center"
               onClick={() => howRoles > 1 && setShowRoleSelector(!showRoleSelector)}
             >
-              {currentView === "ally" ? "ally" : "user"}
+              {currentView === "ally" ? "ally" : "User"}
               {/* ROLE: Show dropdown arrow if multiple roles */}
               {howRoles > 1 && <span className="ml-1 text-xs">▼</span>}
             </Badge>
@@ -140,12 +139,6 @@ const Home: NextPage = () => {
           </div>
         </div>
         <h2 className="text-base mb-2 font-medium opacity-90">USDT</h2>
-        {/* <div className="flex items-baseline justify-center gap-1 mb-6 md:mb-8">
-          <h1 className="text-6xl font-bold">{Math.floor(parseFloat(formattedBalance))}</h1>
-          <span className="text-2xl font-medium opacity-75">
-            ,{(parseFloat(formattedBalance) % 1).toFixed(2).slice(2)}
-          </span>
-        </div> */}
         <QuickActions actions={quickActions} />
       </div>
     );
@@ -176,7 +169,7 @@ const Home: NextPage = () => {
   );
 
   return (
-    <div className="flex bg-primary items-center flex-col grow pt-0 md:pt-10 min-dvh">
+    <div className="flex bg-primary items-center flex-col grow pt-0 md:pt-2 min-dvh">
       <BalanceHeader />
       <div className="flex-1 w-full bg-neutral-100 dark:bg-neutral-800 mb-20 md:mb-0 pt-8">
         {currentView === "ally" ? <AllyContent /> : <UserContent />}
