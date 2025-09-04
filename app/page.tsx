@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { UserRole } from "@/core/types/orders.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useOrders } from "@/hooks/orders/useOrders";
@@ -22,11 +21,10 @@ interface TopButton {
 
 const Home: NextPage = () => {
   // const { address } = useAccount();
-  const { ready, authenticated } = usePrivy();
-  const { data } = useOrders();
+  const { authenticated } = usePrivy();
+  const { data } = useOrders({ enabled: authenticated });
 
   const { setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
-  const router = useRouter();
   const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const currentView = userRole === "admin" ? "ally" : userRole || "user";
@@ -39,11 +37,6 @@ const Home: NextPage = () => {
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
-  useEffect(() => {
-    if (ready && !authenticated) {
-      router.replace("/login");
-    }
-  }, [ready, authenticated, router]);
   const availableRoles = useMemo(() => {
     if (!roleNames || howRoles <= 1) return [];
     return roleNames.filter(role => role !== userRole);
@@ -108,7 +101,6 @@ const Home: NextPage = () => {
     return (
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
         <div className="flex items-center justify-between gap-2">
-
           {/* ROLE: Role selector container */}
           <div className="relative">
             <Badge
