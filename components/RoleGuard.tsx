@@ -7,7 +7,7 @@ import { usePrivy } from "@privy-io/react-auth";
 
 interface RoleGuardProps {
   children: React.ReactNode;
-  requiredRole: "user" | "ally";
+  requiredRole: "user" | "ally" | "admin";
 }
 
 export const RoleGuard = ({ children, requiredRole }: RoleGuardProps) => {
@@ -20,9 +20,13 @@ export const RoleGuard = ({ children, requiredRole }: RoleGuardProps) => {
       return;
     }
 
-    if (ready && userRole && !canAccess(requiredRole)) {
-      router.push("/404");
+    if (authenticated && userRole == "user" && !canAccess(requiredRole)) {
+      router.push("/");
       return;
+    } else {
+      if (ready && userRole && !canAccess(requiredRole)) {
+        router.push("/404");
+      }
     }
   }, [userRole, requiredRole, canAccess, router, ready, authenticated]);
 
