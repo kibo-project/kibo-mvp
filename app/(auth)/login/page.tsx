@@ -71,19 +71,7 @@ const Login: NextPage = () => {
           >
             Login with Privy
           </button>
-
-          <Link
-            href="/"
-            className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors duration-200 flex gap-2 justify-center items-center font-medium"
-          >
-            <span>Continue as Guest</span>
-            <ArrowLeftIcon className="size-4 rotate-180" />
-          </Link>
         </div>
-
-        <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-6">
-          Guest mode is for demo purposes only.
-        </p>
       </div>
     </div>
   );

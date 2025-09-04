@@ -13,10 +13,6 @@ import { Toaster } from "react-hot-toast";
 import { Footer } from "~~/components/Footer";
 import { Header } from "~~/components/Header";
 
-// import { BlockieAvatar } from "~~/components/scaffold-eth";
-// import { useInitializeNativeCurrencyPrice } from "~~/hooks/scaffold-eth";
-// import { wagmiConfig } from "~~/services/web3/wagmiConfig";
-
 const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
   // useInitializeNativeCurrencyPrice();
   const pathname = usePathname();
@@ -31,7 +27,7 @@ const ScaffoldEthApp = ({ children }: { children: React.ReactNode }) => {
         {!shouldExclude && <Header />}
         <main className="relative flex flex-col flex-1">{children}</main>
         {!shouldExclude && <NavigationApp />}
-        <Footer />
+        {/* <Footer /> */}
       </div>
       <Toaster />
     </>
@@ -47,38 +43,10 @@ export const queryClient = new QueryClient({
 });
 
 export const ScaffoldEthAppWithProviders = ({ children }: { children: React.ReactNode }) => {
-  // const { resolvedTheme } = useTheme();
-  // const isDarkMode = resolvedTheme === "dark";
-  // const [mounted, setMounted] = useState(false);
-
-  // useEffect(() => {
-  //   setMounted(true);
-  // }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <ProgressBar height="3px" color="#2299dd" />
       <ScaffoldEthApp>{children}</ScaffoldEthApp>
     </QueryClientProvider>
   );
-
-  // TODO: Add the following providers when ready
-  // return (
-  //   <PrivyProvider
-  //     appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID as string}
-  //     config={{
-  //       embeddedWallets: {
-  //         ethereum: {
-  //           createOnLogin: "users-without-wallets",
-  //         },
-  //       },
-  //     }}
-  //   >
-  //     {/* <WagmiProvider config={wagmiConfig}> */}
-  //       <QueryClientProvider client={queryClient}>
-  //         <ProgressBar height="3px" color="#2299dd" />
-  //         <ScaffoldEthApp>{children}</ScaffoldEthApp>
-  //       </QueryClientProvider>
-  //     {/* </WagmiProvider> */}
-  //   </PrivyProvider>
-  // );
 };

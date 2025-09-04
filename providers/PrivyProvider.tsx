@@ -16,23 +16,19 @@ const wagmiConfig = createConfig({
   ssr: true,
 });
 
-const privyConfig = {
-  loginMethods: ["email", "wallet", "google", "apple"],
-  embeddedWallets: { createOnLogin: "users-without-wallets" },
-  appearance: { theme: "light" },
-} as const;
-
 export default function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
   return (
     <PrivyProvider
       appId={process.env.NEXT_PUBLIC_PRIVY_APP_ID!}
       config={{
+        loginMethods: ["wallet"],
         embeddedWallets: {
           ethereum: {
             createOnLogin: "users-without-wallets",
           },
         },
+        appearance: { theme: "light" },
       }}
     >
       <QueryClientProvider client={queryClient}>
