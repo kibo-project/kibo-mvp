@@ -2,7 +2,8 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
-import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { ApplicationCard } from "@/components/ApplicationCard";
+import { Button, Card, CardBody, Input } from "@/components/kibo";
 import { AllyApplication, ApplicationStatus } from "@/core/types/ally.applications.types";
 import { useApplications } from "@/hooks/applications/useApplications";
 import { formatDateToSpanish } from "@/utils/front.functions";
@@ -11,7 +12,6 @@ import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 
 const Applications: NextPage = () => {
   const { data, isLoading, error, refetch } = useApplications();
-
   const [searchTerm, setSearchTerm] = useState<string>("");
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -26,8 +26,13 @@ const Applications: NextPage = () => {
         formatDateToSpanish(application.createdAt).toLowerCase().includes(searchLower)
       );
     }) ?? [];
-  const handleMovementAction = useCallback((id: string) => {}, []);
+  const handleApprove = (id: string) => {
+    console.log("Approve application:", id);
+  };
 
+  const handleReject = (id: string) => {
+    console.log("Reject application:", id);
+  };
   return (
     <div className="md:mx-auto md:min-w-md px-4">
       {/* Header */}
@@ -54,58 +59,22 @@ const Applications: NextPage = () => {
       <div className="kibo-section-spacing mb-32">
         {filteredApplications.length > 0 ? (
           filteredApplications.map(application => (
-            <Card key={application.id} shadow="sm">
-              <CardBody>
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <CardTitle className="text-base mb-1 flex items-center gap-2">
-                      <span className="text-neutral-900 dark:text-neutral-100">Application</span>
-                      <Badge
-                        variant={
-                          application.status === ApplicationStatus.APPROVED
-                            ? "success"
-                            : application.status === ApplicationStatus.PENDING
-                              ? "warning"
-                              : "error"
-                        }
-                        size="sm"
-                      >
-                        {application.status === ApplicationStatus.PENDING && "Pending"}
-                        {application.status === ApplicationStatus.APPROVED && "Approved"}
-                        {application.status === ApplicationStatus.REJECTED && "rejected"}
-                      </Badge>
-                    </CardTitle>
-                    <div className="space-y-1">
-                      <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                        <span className="font-medium">{`FULL NAME: ${application.fullName}`}</span>
-                        <span className="mx-2">•</span>
-                        <span>{`PHONE: ${application.address}`}</span>
-                        <span>{`ADDRESS: ${application.address}`}</span>
-                      </p>
-                      <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                        {formatDateToSpanish(application.createdAt)}
-                      </p>
-                    </div>
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              actionButtons={
+                application.status === ApplicationStatus.PENDING ? (
+                  <div className="flex gap-2 justify-end">
+                    <Button size="sm" onClick={() => handleReject(application.id)}>
+                      Reject
+                    </Button>
+                    <Button size="sm" onClick={() => handleApprove(application.id)}>
+                      Approve
+                    </Button>
                   </div>
-                  <Button
-                    variant={
-                      application.status === ApplicationStatus.PENDING
-                        ? "primary"
-                        : application.status === ApplicationStatus.APPROVED
-                          ? "secondary"
-                          : "ghost"
-                    }
-                    size="xs"
-                    className="self-center min-w-20"
-                    onClick={() => handleMovementAction(application.id)}
-                  >
-                    {application.status === ApplicationStatus.PENDING && "View"}
-                    {application.status === ApplicationStatus.APPROVED && "Details"}
-                    {application.status === ApplicationStatus.REJECTED && "Details"}
-                  </Button>
-                </div>
-              </CardBody>
-            </Card>
+                ) : undefined
+              }
+            />
           ))
         ) : (
           <Card>

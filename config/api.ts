@@ -24,5 +24,5 @@ export const ENDPOINTS = {
   QUOTE: "/quote",
 
   //AllyApplications
-  APPLICATIONS: "/admin",
+  APPLICATIONS: "/admin/applications",
 } as const;
