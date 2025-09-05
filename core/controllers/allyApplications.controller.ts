@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   AllyApplication,
   AllyApplicationRequest,
+  ApplicationStatus,
+  ApplicationsFiltersDto,
   ApplicationsFiltersRequest,
   ApplicationsListResponse,
-  applicationStatus,
 } from "../types/ally.applications.types";
 import { AllyApplicationsService } from "@/core/services/ally.applications.service";
 import { ApiResponse } from "@/core/types/generic.types";
@@ -83,12 +84,17 @@ export class AllyApplicationsController {
 
       const { searchParams } = new URL(request.url);
       const applicationsFilters: ApplicationsFiltersRequest = {
-        status: searchParams.get("status") as applicationStatus | undefined,
+        status: searchParams.get("status") as ApplicationStatus | undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0,
       };
+      const applicationsFiltersDto: ApplicationsFiltersDto = {
+        status: applicationsFilters.status,
+        limit: applicationsFilters.limit!,
+        offset: applicationsFilters.offset!,
+      };
       const result: ApplicationsListResponse = await this.allyApplicationsService.getApplications(
-        applicationsFilters,
+        applicationsFiltersDto,
         userId,
         roleActiveNow
       );
