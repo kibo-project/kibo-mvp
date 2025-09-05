@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { UserRole } from "@/core/types/orders.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useOrders } from "@/hooks/orders/useOrders";
@@ -21,13 +22,14 @@ interface TopButton {
 
 const Home: NextPage = () => {
   // const { address } = useAccount();
-  const { authenticated } = usePrivy();
+  const { authenticated, ready } = usePrivy();
   const { data } = useOrders({ enabled: authenticated });
 
   const { setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const currentView = userRole === "admin" ? "ally" : userRole || "user";
+  const currentView = userRole === "admin" ? "admin" : userRole || "user";
+  const router = useRouter();
 
   // const { data: balance } = useBalance({
   //   address,
@@ -94,6 +96,11 @@ const Home: NextPage = () => {
   //   );
   // }
   useEffect(() => {
+    if (ready && authenticated && userRole == "admin") {
+      router.replace("/admin");
+    }
+  }, [ready, authenticated, router, userRole]);
+  useEffect(() => {
     setHasVisitedRoot(true);
   }, [setHasVisitedRoot]);
 
@@ -109,8 +116,7 @@ const Home: NextPage = () => {
               className="bg-white/5 text-white hover:bg-white/20 cursor-pointer transition-all duration-200 py-2 px-3 min-w-16 flex justify-center"
               onClick={() => howRoles > 1 && setShowRoleSelector(!showRoleSelector)}
             >
-              {currentView === "ally" ? "ally" : "User"}
-              {/* ROLE: Show dropdown arrow if multiple roles */}
+              {currentView === "admin" ? "admin" : currentView === "ally" ? "ally" : "user"}
               {howRoles > 1 && <span className="ml-1 text-xs">▼</span>}
             </Badge>
 
@@ -123,7 +129,7 @@ const Home: NextPage = () => {
                     onClick={() => handleRoleChange(role)}
                     className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left capitalize"
                   >
-                    {role === "admin" ? "ally" : role}
+                    {role === "admin" ? "admin" : role === "ally" ? "ally" : role}
                   </button>
                 ))}
               </div>

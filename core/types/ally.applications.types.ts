@@ -1,4 +1,4 @@
-export enum applicationStatus {
+export enum ApplicationStatus {
   PENDING = "PENDING",
   APPROVED = "APPROVED",
   REJECTED = "REJECTED",
@@ -15,7 +15,7 @@ export interface AllyApplicationDto {
   fullName: string;
   phone: string;
   address: string;
-  status: applicationStatus;
+  status: ApplicationStatus;
 }
 
 export interface AllyApplication {
@@ -24,7 +24,7 @@ export interface AllyApplication {
   fullName: string;
   phone: string;
   address: string;
-  status: applicationStatus;
+  status: ApplicationStatus;
   createdAt: Date;
   updatedAt?: Date;
   reviewedAt?: Date;
@@ -33,9 +33,9 @@ export interface AllyApplication {
 }
 
 export interface ApplicationsFiltersRequest {
-  status?: applicationStatus;
-  limit: number;
-  offset: number;
+  status?: ApplicationStatus;
+  limit?: number;
+  offset?: number;
 }
 
 export interface ApplicationsListResponse {
@@ -46,4 +46,9 @@ export interface ApplicationsListResponse {
     offset: number;
     hasMore: boolean;
   };
+}
+export interface ApplicationsFiltersDto {
+  status?: ApplicationStatus;
+  limit: number;
+  offset: number;
 }

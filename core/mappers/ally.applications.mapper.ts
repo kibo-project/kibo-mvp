@@ -1,4 +1,4 @@
-import { AllyApplication, applicationStatus } from "@/core/types/ally.applications.types";
+import { AllyApplication, ApplicationStatus } from "@/core/types/ally.applications.types";
 
 export class AllyApplicationsMapper {
   static dbToAllyApplication(dbAllyApplication: any): AllyApplication {
@@ -8,7 +8,7 @@ export class AllyApplicationsMapper {
       fullName: dbAllyApplication.full_name,
       phone: dbAllyApplication.phone,
       address: dbAllyApplication.address,
-      status: dbAllyApplication.status as applicationStatus,
+      status: dbAllyApplication.status as ApplicationStatus,
       createdAt: new Date(dbAllyApplication.created_at),
       updatedAt: dbAllyApplication.updated_at ? new Date(dbAllyApplication.updated_at) : undefined,
       reviewedAt: dbAllyApplication.reviewed_at ? new Date(dbAllyApplication.reviewed_at) : undefined,

@@ -2,8 +2,8 @@ import { AllyApplicationsMapper } from "@/core/mappers/ally.applications.mapper"
 import {
   AllyApplication,
   AllyApplicationDto,
-  ApplicationsFiltersRequest,
-  applicationStatus,
+  ApplicationStatus,
+  ApplicationsFiltersDto,
 } from "@/core/types/ally.applications.types";
 import { createClient } from "@supabase/supabase-js";
 
@@ -47,9 +47,7 @@ export class AllyApplicationsRepository {
     return AllyApplicationsMapper.dbToAllyApplication(data);
   }
 
-  async getApplications(
-    filters: ApplicationsFiltersRequest
-  ): Promise<{ applications: AllyApplication[]; total: number }> {
+  async getApplications(filters: ApplicationsFiltersDto): Promise<{ applications: AllyApplication[]; total: number }> {
     let query = this.supabase.from("ally_applications").select("*", { count: "exact" });
     if (filters.status) {
       query = query.eq("status", filters.status);
@@ -68,7 +66,7 @@ export class AllyApplicationsRepository {
 
   async updateStatus(
     id: string,
-    status: applicationStatus,
+    status: ApplicationStatus,
     reviewedBy: string,
     updates?: Partial<{
       updatedAt: string;
