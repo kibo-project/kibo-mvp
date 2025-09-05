@@ -1,89 +1,141 @@
-CREATE TABLE public.users (
-  country text,
-  wallet text NOT NULL UNIQUE,
-  privy_id text NOT NULL UNIQUE,
-  email text,
-  bank_name text,
-  account_number text,
-  account_holder text,
-  phone text,
-  last_login_at timestamp without time zone,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  available_balance numeric DEFAULT 0,
-  created_at timestamp without time zone DEFAULT now(),
-  updated_at timestamp without time zone DEFAULT now(),
-  name text,
-  CONSTRAINT users_pkey PRIMARY KEY (id)
-);
+-- Crear extensión para UUID si no está habilitada
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- ======================================
+-- 1. ROLES
+-- ======================================
 CREATE TABLE public.roles (
-  created_at date,
-  name text NOT NULL UNIQUE CHECK (name = ANY (ARRAY['user'::text, 'ally'::text, 'admin'::text])),
   id uuid NOT NULL DEFAULT gen_random_uuid(),
+  name text NOT NULL UNIQUE CHECK (name = ANY (ARRAY['user','ally','admin'])),
+  created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT roles_pkey PRIMARY KEY (id)
 );
 
+-- ======================================
+-- 2. USERS
+-- ======================================
+CREATE TABLE public.users (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  wallet text NOT NULL UNIQUE,
+  privy_id text NOT NULL UNIQUE,
+  email text,
+  phone text,
+  name text,
+  country text,
+  bank_name text,
+  account_number text,
+  account_holder text,
+  active_role_id uuid,
+  available_balance numeric(18,2) DEFAULT 0,
+  last_login_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT users_pkey PRIMARY KEY (id),
+  CONSTRAINT users_active_role_id_fkey FOREIGN KEY (active_role_id) REFERENCES public.roles(id)
+);
+
+-- ======================================
+-- 3. USERS_ROLES (relación muchos a muchos)
+-- ======================================
 CREATE TABLE public.users_roles (
   user_id uuid NOT NULL,
   role_id uuid NOT NULL,
   CONSTRAINT users_roles_pkey PRIMARY KEY (user_id, role_id),
-  CONSTRAINT user_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
-  CONSTRAINT user_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id)
+  CONSTRAINT users_roles_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT users_roles_role_id_fkey FOREIGN KEY (role_id) REFERENCES public.roles(id)
 );
 
+-- ======================================
+-- 4. USERS_SESSIONS
+-- ======================================
 CREATE TABLE public.users_sessions (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
   jwt_token text NOT NULL,
   refresh_token text,
-  user_id uuid NOT NULL,
-  last_login_at timestamp without time zone DEFAULT now(),
-  expires_at timestamp without time zone NOT NULL,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp without time zone DEFAULT now(),
+  last_login_at timestamp with time zone DEFAULT now(),
+  expires_at timestamp with time zone NOT NULL,
+  created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT users_sessions_pkey PRIMARY KEY (id),
-  CONSTRAINT user_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT users_sessions_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
 );
 
+-- ======================================
+-- 5. IMAGES
+-- ======================================
 CREATE TABLE public.images (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp without time zone DEFAULT now(),
   name text,
   extension text,
+  created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT images_pkey PRIMARY KEY (id)
 );
 
+-- ======================================
+-- 6. ORDERS
+-- ======================================
 CREATE TABLE public.orders (
-  expires_at timestamp without time zone,
-  description text,
-  recipient text,
-  taken_at timestamp without time zone,
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
   ally_id uuid,
   qr_image uuid,
-  completed_at timestamp with time zone,
-  user_id uuid NOT NULL,
-  fiat_amount numeric NOT NULL,
-  crypto_amount numeric NOT NULL,
+  fiat_amount numeric(18,2) NOT NULL,
+  fiat_currency text NOT NULL DEFAULT 'USD',
+  crypto_amount numeric(36,18) NOT NULL,
+  crypto_currency text NOT NULL DEFAULT 'USDT',
+  description text,
+  recipient text,
   tx_hash text,
   confirmation_proof text,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  fiat_currency text NOT NULL DEFAULT 'USD'::text,
-  crypto_currency text NOT NULL DEFAULT 'USDT'::text,
-  status text NOT NULL DEFAULT 'PENDING_PAYMENT'::text CHECK (status = ANY (ARRAY['PENDING_PAYMENT'::text, 'AVAILABLE'::text, 'TAKEN'::text, 'COMPLETED'::text, 'CANCELLED'::text, 'REFUNDED'::text])),
-  created_at timestamp without time zone DEFAULT now(),
-  updated_at timestamp without time zone DEFAULT now(),
-  escrow_address text,
-  qr_image_url text,
   confirmation_proof_url text,
+  qr_image_url text,
+  escrow_address text,
+  status text NOT NULL DEFAULT 'PENDING_PAYMENT' CHECK (
+    status = ANY (ARRAY['PENDING_PAYMENT','AVAILABLE','TAKEN','COMPLETED','CANCELLED','REFUNDED'])
+  ),
+  expires_at timestamp with time zone,
+  taken_at timestamp with time zone,
+  completed_at timestamp with time zone,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
   CONSTRAINT orders_pkey PRIMARY KEY (id),
-  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id)
+  CONSTRAINT orders_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT orders_ally_id_fkey FOREIGN KEY (ally_id) REFERENCES public.users(id),
+  CONSTRAINT orders_qr_image_fkey FOREIGN KEY (qr_image) REFERENCES public.images(id)
 );
 
+-- ======================================
+-- 7. ESCROW_LOGS
+-- ======================================
 CREATE TABLE public.escrow_logs (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
   order_id uuid NOT NULL,
   action text NOT NULL,
   tx_hash text,
   message text,
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp without time zone DEFAULT now(),
+  created_at timestamp with time zone DEFAULT now(),
   CONSTRAINT escrow_logs_pkey PRIMARY KEY (id),
   CONSTRAINT escrow_logs_order_id_fkey FOREIGN KEY (order_id) REFERENCES public.orders(id)
+);
+
+-- ======================================
+-- 8. ALLY_APPLICATIONS
+-- ======================================
+CREATE TABLE public.ally_applications (
+  id uuid NOT NULL DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL,
+  full_name text NOT NULL,
+  phone text,
+  address text,
+  rejection_reason text,
+  status text DEFAULT 'PENDING' CHECK (
+    status = ANY (ARRAY['PENDING','APPROVED','REJECTED'])
+  ),
+  reviewed_at timestamp with time zone,
+  reviewed_by uuid,
+  created_at timestamp with time zone DEFAULT now(),
+  updated_at timestamp with time zone DEFAULT now(),
+  CONSTRAINT ally_applications_pkey PRIMARY KEY (id),
+  CONSTRAINT ally_applications_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id),
+  CONSTRAINT ally_applications_reviewed_by_fkey FOREIGN KEY (reviewed_by) REFERENCES public.users(id)
 );
