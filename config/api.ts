@@ -25,4 +25,6 @@ export const ENDPOINTS = {
 
   //AllyApplications
   APPLICATIONS: "/admin/applications",
+  APPROVE_APPLICATION: (id: string) => `/admin/applications/${id}/approve`,
+  REJECT_APPLICATION: (id: string) => `/admin/applications/${id}/reject`,
 } as const;

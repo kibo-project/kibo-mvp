@@ -1,5 +1,9 @@
 import { ENDPOINTS } from "../../config/api";
-import { ApplicationsFiltersRequest, ApplicationsListResponse } from "@/core/types/ally.applications.types";
+import {
+  AllyApplication,
+  ApplicationsFiltersRequest,
+  ApplicationsListResponse,
+} from "@/core/types/ally.applications.types";
 import { ApiResponse } from "@/core/types/generic.types";
 
 class ApplicationsApiService {
@@ -40,6 +44,18 @@ class ApplicationsApiService {
     const endpoint = `${ENDPOINTS.APPLICATIONS}${queryString ? `?${queryString}` : ""}`;
 
     return this.request<ApiResponse<ApplicationsListResponse>>(endpoint);
+  }
+  async approveApplication(id: string): Promise<ApiResponse<AllyApplication>> {
+    return this.request<ApiResponse<AllyApplication>>(ENDPOINTS.APPROVE_APPLICATION(id), {
+      method: "POST",
+    });
+  }
+  async rejectApplication(applicationId: string, reason: string): Promise<ApiResponse<AllyApplication>> {
+    return this.request<ApiResponse<AllyApplication>>(ENDPOINTS.REJECT_APPLICATION(applicationId), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reason }),
+    });
   }
 }
 export const applicationsApiService = new ApplicationsApiService();
