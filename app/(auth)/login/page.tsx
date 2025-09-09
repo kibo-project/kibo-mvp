@@ -43,7 +43,7 @@ const Login: NextPage = () => {
 
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
-      setUserRole(backendLogin.data.data!.activeRoleName);
+      setUserRole(backendLogin.data.data!.activeRoleName!);
       if (backendLogin.data.data.howRoles! > 1) {
         setHowRoles(backendLogin.data.data.howRoles!);
         setRoleNames(backendLogin.data.data.roleNames!);
@@ -52,11 +52,6 @@ const Login: NextPage = () => {
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess]);
-
-  //useEffect(() => {
-  // console.log(" NO ENTRA POR QUE PRIMERO SE PONE HASVISITED TRUE");
-  //setHasVisitedRoot(true);
-  //}, [setHasVisitedRoot]);
 
   if (!ready || backendLogin.isPending) {
     return (

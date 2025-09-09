@@ -161,7 +161,6 @@ export class AllyApplicationsController {
 
     return { userId, roleActiveNow: roleActiveNow, applicationId };
   }
-
   private handleError(error: any): NextResponse {
     console.error("User Controller Error:", error);
 

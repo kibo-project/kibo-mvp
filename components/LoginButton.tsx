@@ -45,11 +45,12 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   });
 
   useEffect(() => {
-    if (authenticated && backendLogin.isSuccess && !userRole) {
-      setUserRole(backendLogin.data.data!.activeRoleName);
+    if (authenticated && backendLogin.isSuccess && !userRole && backendLogin.data?.data) {
+      const activeRoleName = backendLogin.data.data.activeRoleName;
+      setUserRole(activeRoleName || null);
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess]);
+  }, [authenticated, backendLogin.isSuccess, userRole, router]);
 
   const handleLogout = useCallback(() => {
     logout();
