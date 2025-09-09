@@ -72,9 +72,9 @@ export class UsersMapper {
       accountNumber: user.accountNumber,
       accountHolder: user.accountHolder,
       phone: user.phone,
+      createdAt: user.createdAt,
       availableBalance: user.availableBalance,
       lastLoginAt: user.lastLoginAt,
-      reputation: user.reputation,
     };
   }
 

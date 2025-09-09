@@ -18,11 +18,10 @@ export interface UserResponse {
   accountNumber?: string;
   accountHolder?: string;
   phone?: string;
-  createdAt?: Date;
+  createdAt: string;
   updatedAt?: Date;
   availableBalance?: string;
   lastLoginAt?: Date;
-  reputation?: number;
 }
 
 export interface User {
@@ -41,7 +40,7 @@ export interface User {
   activeRoleId?: string;
   lastLoginAt?: Date;
   reputation?: number;
-  createdAt?: string;
+  createdAt: string;
   updatedAt?: string;
   ////Delete stating here
   verified?: boolean;

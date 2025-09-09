@@ -30,7 +30,7 @@ class UsersApiService {
     return response.json();
   }
 
-  async getUsers(filters: UsersFiltersRequest): Promise<ApiResponse<UsersListResponse>> {
+  async getUsers(filters: UsersFiltersRequest = {}): Promise<ApiResponse<UsersListResponse>> {
     const params = new URLSearchParams();
 
     if (filters.role) params.append("role", filters.role);

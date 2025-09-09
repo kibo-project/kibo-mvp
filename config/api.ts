@@ -29,5 +29,5 @@ export const ENDPOINTS = {
   REJECT_APPLICATION: (id: string) => `/admin/applications/${id}/reject`,
 
   //Users
-  USERS: "admin/users",
+  USERS: "/admin/users",
 } as const;

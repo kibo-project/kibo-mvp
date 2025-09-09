@@ -1,12 +1,15 @@
 "use client";
 
+import { RoleGuard } from "@/components/RoleGuard";
 import { NextPage } from "next";
 
 const Orders: NextPage = () => {
   return (
-    <div>
-      <h1>Orders Page</h1>
-    </div>
+    <RoleGuard requiredRole="admin">
+      <div>
+        <h1>Orders Page</h1>
+      </div>
+    </RoleGuard>
   );
 };
 
