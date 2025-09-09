@@ -10,13 +10,16 @@ export interface UserResponse {
   country?: string;
   bankName?: string;
   activeRoleId?: string;
-  activeRoleName: UserRole;
+  activeRoleName?: UserRole;
   roleNames?: UserRole[];
   roleIds?: string[];
+  roles?: Role[];
   howRoles?: number;
   accountNumber?: string;
   accountHolder?: string;
   phone?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
   availableBalance?: string;
   lastLoginAt?: Date;
   reputation?: number;
@@ -26,8 +29,8 @@ export interface User {
   id?: string;
   privyId?: string;
   name?: string;
-  walletAddress?: string;
   role?: UserRole;
+  walletAddress?: string;
   email?: string;
   country?: string;
   bankName?: string;
@@ -44,4 +47,30 @@ export interface User {
   verified?: boolean;
   successfulOrders?: number;
   lastActive?: string | Date;
+}
+
+export interface Role {
+  roleId: string;
+  name: UserRole;
+}
+
+export interface UsersFiltersRequest {
+  role?: UserRole;
+  limit?: number;
+  offset?: number;
+}
+
+export interface UsersFiltersDto {
+  role?: UserRole;
+  limit: number;
+  offset: number;
+}
+export interface UsersListResponse {
+  users: UserResponse[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
+  };
 }
