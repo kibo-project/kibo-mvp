@@ -27,4 +27,7 @@ export const ENDPOINTS = {
   APPLICATIONS: "/admin/applications",
   APPROVE_APPLICATION: (id: string) => `/admin/applications/${id}/approve`,
   REJECT_APPLICATION: (id: string) => `/admin/applications/${id}/reject`,
+
+  //Users
+  USERS: "admin/users",
 } as const;
