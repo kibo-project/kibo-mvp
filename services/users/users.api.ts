@@ -48,7 +48,7 @@ class UsersApiService {
     return this.request<ApiResponse<AllyApplication>>(ENDPOINTS.USER_APPLICATION, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ application }),
+      body: JSON.stringify(application),
     });
   }
 }

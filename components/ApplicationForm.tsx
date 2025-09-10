@@ -3,17 +3,13 @@
 import React, { useState } from "react";
 import { ConfirmationModal } from "@/components/ConfimationModal";
 import { Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { FormData } from "@/core/types/generic.types";
 import { useForm } from "react-hook-form";
-
-interface FormData {
-  fullName: string;
-  phone: string;
-  address: string;
-}
 
 interface ApplicationFormProps {
   onClose: () => void;
   onSubmit: (data: FormData) => void;
+  isSubmitted: boolean;
   title?: string;
   isLoading?: boolean;
   confirmationMessage: string;
@@ -25,6 +21,7 @@ interface ApplicationFormProps {
 export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   onClose,
   onSubmit,
+  isSubmitted,
   title,
   isLoading = false,
   confirmationMessage,
@@ -32,7 +29,6 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   successMessage,
   submitButtonText,
 }) => {
-  const [isSubmitted, setIsSubmitted] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [formDataToSubmit, setFormDataToSubmit] = useState<FormData | null>(null);
 
@@ -53,8 +49,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
     setIsModalOpen(false);
 
     try {
-      await onSubmit(formDataToSubmit);
-      setIsSubmitted(true);
+      onSubmit(formDataToSubmit);
       reset();
       setFormDataToSubmit(null);
     } catch (error) {
@@ -68,7 +63,6 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
   };
 
   const handleClose = () => {
-    setIsSubmitted(false);
     reset();
     onClose();
   };
