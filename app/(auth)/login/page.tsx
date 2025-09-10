@@ -34,7 +34,6 @@ const Login: NextPage = () => {
     login();
   }, [login]);
 
-  // Redirigir si ya está autenticado
   useEffect(() => {
     if (ready && authenticated && userRole) {
       router.replace("/");
@@ -44,11 +43,10 @@ const Login: NextPage = () => {
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
       setUserRole(backendLogin.data.data!.activeRoleName!);
-      if (backendLogin.data.data.howRoles! > 1) {
-        setHowRoles(backendLogin.data.data.howRoles!);
-        setRoleNames(backendLogin.data.data.roleNames!);
-        setRoleIds(backendLogin.data.data.roleIds!);
-      }
+      setHowRoles(backendLogin.data.data.howRoles!);
+      setRoleNames(backendLogin.data.data.roleNames!);
+      setRoleIds(backendLogin.data.data.roleIds!);
+
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess]);
