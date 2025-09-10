@@ -21,6 +21,8 @@ export class AllyApplicationsController {
   async applicationToAlly(request: NextRequest) {
     try {
       const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
       if (!userId) {
         return Response.json(
           {
@@ -53,7 +55,11 @@ export class AllyApplicationsController {
         phone,
         address,
       };
-      const solicitud = await this.allyApplicationsService.applicationToAlly(userId, allyApplicationRequest);
+      const solicitud = await this.allyApplicationsService.applicationToAlly(
+        userId,
+        roleActiveNow,
+        allyApplicationRequest
+      );
       const responseData: ApiResponse<AllyApplication> = {
         success: true,
         data: solicitud,

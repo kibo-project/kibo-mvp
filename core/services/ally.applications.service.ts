@@ -18,7 +18,8 @@ export class AllyApplicationsService {
     this.usersRepository = new UsersRepository();
   }
 
-  async applicationToAlly(userId: string, allyApplicationRequest: AllyApplicationRequest) {
+  async applicationToAlly(userId: string, roleActiveNow: UserRole, allyApplicationRequest: AllyApplicationRequest) {
+    await this.validateUser(userId, "user", roleActiveNow);
     const isOne = await this.allyApplicationsRepository.verifyOneApplication(userId);
     if (!isOne) {
       throw new Error(`This Application to ally already exists`);

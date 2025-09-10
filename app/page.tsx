@@ -10,8 +10,8 @@ import type { NextPage } from "next";
 // import { mantleSepoliaTestnet } from "viem/chains";
 // import { useAccount, useBalance } from "wagmi";
 import { PromoCarousel, QuickActions, RecentActivity } from "~~/components/dashboard";
-import { ListIcon, PlaneIcon, QrCodeIcon } from "~~/components/icons/index";
-import { Badge } from "~~/components/kibo";
+import { ListIcon, PersonIcon, PlaneIcon, QrCodeIcon } from "~~/components/icons/index";
+import { Badge, Button } from "~~/components/kibo";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
 interface TopButton {
@@ -105,6 +105,9 @@ const Home: NextPage = () => {
   }, [setHasVisitedRoot]);
 
   const BalanceHeader = () => {
+    console.log("DEBUG - userRole:", userRole);
+    console.log("DEBUG - howRoles:", howRoles);
+    console.log("DEBUG - roleNames:", roleNames);
     return (
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
         <div className="flex items-center justify-between gap-2">
@@ -124,17 +127,30 @@ const Home: NextPage = () => {
             {showRoleSelector && howRoles > 1 && (
               <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-10 min-w-24">
                 {availableRoles.map(role => (
-                  <button
+                  <Button
                     key={role}
                     onClick={() => handleRoleChange(role)}
                     className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left capitalize"
                   >
                     {role === "admin" ? "admin" : role === "ally" ? "ally" : role}
-                  </button>
+                  </Button>
                 ))}
               </div>
             )}
           </div>
+          {/* ALLY: button */}
+          {userRole === "user" && howRoles === 1 && (
+            <Button
+              variant="secondary"
+              size="md"
+              className="bg-white/60 text-black hover:bg-white/80 cursor-pointer transition-all duration-200 py-2 px-3"
+              onClick={() => {
+                router.push("/application");
+              }}
+            >
+              Join as an Ally
+            </Button>
+          )}
         </div>
         <h2 className="text-base mb-2 font-medium opacity-90">USDT</h2>
         <QuickActions actions={quickActions} />

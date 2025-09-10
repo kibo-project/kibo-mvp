@@ -1,5 +1,4 @@
 // Additional shared types for the architecture
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 export interface ApiResponse<T> {
   success: boolean;
@@ -18,4 +17,10 @@ export interface ApiErrorResponse {
     message: string;
     details?: any;
   };
+}
+
+export interface FormData {
+  fullName: string;
+  phone: string;
+  address: string;
 }
