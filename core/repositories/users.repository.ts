@@ -1,6 +1,6 @@
 import { UsersMapper } from "../mappers/users.mapper";
 import { UserRole } from "../types/orders.types";
-import { User } from "../types/users.types";
+import { User, UserResponse, UsersFiltersDto } from "../types/users.types";
 import { createClient } from "@supabase/supabase-js";
 
 export class UsersRepository {
@@ -14,6 +14,65 @@ export class UsersRepository {
     const { data } = await this.supabase.from("users").select("*").eq("privy_id", privyId).single();
 
     return data ? UsersMapper.dbToUser(data) : null;
+  }
+
+  async getUsers(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
+    if (filters.role) {
+      return this.getUsersByRole(filters);
+    } else {
+      return this.getAllUsersWithRoles(filters);
+    }
+  }
+  private async getUsersByRole(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
+    const { data, error, count } = await this.supabase
+      .from("users")
+      .select(
+        `
+      *,
+      users_roles!inner(
+        roles!inner ( id,
+        name)
+      )
+    `,
+        { count: "exact" }
+      )
+      .eq("users_roles.roles.name", filters.role)
+      .range(filters.offset, filters.offset + filters.limit - 1)
+      .order("created_at", { ascending: false });
+    if (error) {
+      throw new Error(`Failed to fetch users by role: ${error.message}`);
+    }
+    const usersWithRoles: UserResponse[] = data?.map(userData => UsersMapper.dbToUserResponse(userData)) || [];
+
+    return {
+      users: usersWithRoles,
+      total: count || 0,
+    };
+  }
+
+  async getAllUsersWithRoles(filters: UsersFiltersDto) {
+    const { data, error, count } = await this.supabase
+      .from("users")
+      .select(
+        `
+    *,
+    users_roles (
+      roles (*)
+    )
+  `,
+        { count: "exact" }
+      )
+      .range(filters.offset, filters.offset + filters.limit - 1)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(`Failed to fetch users by role: ${error.message}`);
+    }
+    const users: UserResponse[] = data?.map(userData => UsersMapper.dbToUserResponse(userData)) || [];
+    return {
+      users: users,
+      total: count || 0,
+    };
   }
 
   async findUserById(userId: string): Promise<User | null> {
@@ -97,6 +156,7 @@ export class UsersRepository {
 
     return UsersMapper.dbToUser(data);
   }
+
   async getRoleIdsByUserId(userId: string): Promise<string[]> {
     const { data, error } = await this.supabase.from("users_roles").select("role_id").eq("user_id", userId);
 
@@ -117,6 +177,7 @@ export class UsersRepository {
     }
     return data.name as UserRole;
   }
+
   async verifyUser(userId: string, rolename: string) {
     const { data: roles, error: roleError } = await this.supabase
       .from("roles")

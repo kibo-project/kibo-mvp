@@ -11,24 +11,39 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
-  const { login } = useLogin();
-  const { userRole, hasVisitedRoot, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
+  const { userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
-
+  const { login } = useLogin({
+    onComplete: ({ user }) => {
+      const hasWallet = user.linkedAccounts?.some(account => account.type === "wallet");
+      if (hasWallet) {
+        if (!backendLogin.isPending && !backendLogin.isSuccess && !userRole) {
+          backendLogin.mutate();
+        }
+      } else {
+        console.warn("No wallet found after login completion");
+      }
+    },
+    onError: error => {
+      console.error("Login error:", error);
+    },
+  });
   const handlePrivyLogin = useCallback(() => {
     login();
   }, [login]);
+
+  // Redirigir si ya está autenticado
   useEffect(() => {
-    if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
-      backendLogin.mutate();
+    if (ready && authenticated && userRole) {
+      router.replace("/");
     }
-  }, [authenticated, ready]);
+  }, [ready, authenticated, userRole, router]);
 
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
-      setUserRole(backendLogin.data.data!.activeRoleName);
+      setUserRole(backendLogin.data.data!.activeRoleName!);
       if (backendLogin.data.data.howRoles! > 1) {
         setHowRoles(backendLogin.data.data.howRoles!);
         setRoleNames(backendLogin.data.data.roleNames!);
@@ -38,12 +53,16 @@ const Login: NextPage = () => {
     }
   }, [authenticated, backendLogin.isSuccess]);
 
-  //useEffect(() => {
-  // console.log(" NO ENTRA POR QUE PRIMERO SE PONE HASVISITED TRUE");
-  //setHasVisitedRoot(true);
-  //}, [setHasVisitedRoot]);
-
   if (!ready || backendLogin.isPending) {
+    return (
+      <div className="flex justify-center items-center min-h-dvh bg-primary">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
+  // Si ya está autenticado, mostrar loading mientras redirige
+  if (authenticated && userRole) {
     return (
       <div className="flex justify-center items-center min-h-dvh bg-primary">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>

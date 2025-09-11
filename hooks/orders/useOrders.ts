@@ -1,11 +1,16 @@
 import { OrdersFilters, ordersService } from "../../services/orders";
 import { useQuery } from "@tanstack/react-query";
 
-export const useOrders = (filters: OrdersFilters = {}) => {
+interface UseOrdersOptions {
+  filters?: OrdersFilters;
+  enabled?: boolean;
+}
+export const useOrders = ({ filters = {}, enabled = true }: UseOrdersOptions = {}) => {
   return useQuery({
     queryKey: ["orders", filters],
     queryFn: () => ordersService.getOrders(filters),
-    staleTime: 30 * 1000, // 30 segundos
-    refetchInterval: 10 * 1000, // Refetch cada 10 segundos para órdenes activas
+    enabled,
+    staleTime: 30 * 1000,
+    refetchInterval: enabled ? 10 * 1000 : false,
   });
 };

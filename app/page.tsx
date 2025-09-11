@@ -22,14 +22,14 @@ interface TopButton {
 
 const Home: NextPage = () => {
   // const { address } = useAccount();
-  const { ready, authenticated } = usePrivy();
-  const { data } = useOrders();
+  const { authenticated, ready } = usePrivy();
+  const { data } = useOrders({ enabled: authenticated });
 
   const { setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
-  const router = useRouter();
   const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
-  const currentView = userRole === "admin" ? "ally" : userRole || "user";
+  const currentView = userRole === "admin" ? "admin" : userRole || "user";
+  const router = useRouter();
 
   // const { data: balance } = useBalance({
   //   address,
@@ -39,11 +39,6 @@ const Home: NextPage = () => {
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
-  useEffect(() => {
-    if (ready && !authenticated) {
-      router.replace("/login");
-    }
-  }, [ready, authenticated, router]);
   const availableRoles = useMemo(() => {
     if (!roleNames || howRoles <= 1) return [];
     return roleNames.filter(role => role !== userRole);
@@ -101,15 +96,18 @@ const Home: NextPage = () => {
   //   );
   // }
   useEffect(() => {
+    if (ready && authenticated && userRole == "admin") {
+      router.replace("/admin");
+    }
+  }, [ready, authenticated, router, userRole]);
+  useEffect(() => {
     setHasVisitedRoot(true);
   }, [setHasVisitedRoot]);
 
   const BalanceHeader = () => {
     return (
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
-        <div className="flex items-center justify-between gap-2 mb-4">
-          <div className="flex-1" />
-
+        <div className="flex items-center justify-between gap-2">
           {/* ROLE: Role selector container */}
           <div className="relative">
             <Badge
@@ -118,8 +116,7 @@ const Home: NextPage = () => {
               className="bg-white/5 text-white hover:bg-white/20 cursor-pointer transition-all duration-200 py-2 px-3 min-w-16 flex justify-center"
               onClick={() => howRoles > 1 && setShowRoleSelector(!showRoleSelector)}
             >
-              {currentView === "ally" ? "ally" : "user"}
-              {/* ROLE: Show dropdown arrow if multiple roles */}
+              {currentView === "admin" ? "admin" : currentView === "ally" ? "ally" : "user"}
               {howRoles > 1 && <span className="ml-1 text-xs">▼</span>}
             </Badge>
 
@@ -132,7 +129,7 @@ const Home: NextPage = () => {
                     onClick={() => handleRoleChange(role)}
                     className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left capitalize"
                   >
-                    {role === "admin" ? "ally" : role}
+                    {role === "admin" ? "admin" : role === "ally" ? "ally" : role}
                   </button>
                 ))}
               </div>
@@ -140,12 +137,6 @@ const Home: NextPage = () => {
           </div>
         </div>
         <h2 className="text-base mb-2 font-medium opacity-90">USDT</h2>
-        {/* <div className="flex items-baseline justify-center gap-1 mb-6 md:mb-8">
-          <h1 className="text-6xl font-bold">{Math.floor(parseFloat(formattedBalance))}</h1>
-          <span className="text-2xl font-medium opacity-75">
-            ,{(parseFloat(formattedBalance) % 1).toFixed(2).slice(2)}
-          </span>
-        </div> */}
         <QuickActions actions={quickActions} />
       </div>
     );
@@ -176,7 +167,7 @@ const Home: NextPage = () => {
   );
 
   return (
-    <div className="flex bg-primary items-center flex-col grow pt-0 md:pt-10 min-dvh">
+    <div className="flex bg-primary items-center flex-col grow pt-0 md:pt-2 min-dvh">
       <BalanceHeader />
       <div className="flex-1 w-full bg-neutral-100 dark:bg-neutral-800 mb-20 md:mb-0 pt-8">
         {currentView === "ally" ? <AllyContent /> : <UserContent />}

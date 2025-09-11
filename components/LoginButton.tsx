@@ -22,39 +22,51 @@ interface LoginButtonProps {
 export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   const { authenticated, user, ready } = usePrivy();
   const { logout } = useLogout();
-  const { login } = useLogin();
   const { userRole, setUserRole, hasVisitedRoot, setHasVisitedRoot } = useAuthStore();
   const [showModal, setShowModal] = useState(false);
   const [copied, setCopied] = useState(false);
   const router = useRouter();
   const backendLogin = useAuth();
   const logoutCookie = useLogoutCookie();
+  const { login } = useLogin({
+    onComplete: ({ user }) => {
+      const hasWallet = user.linkedAccounts?.some(account => account.type === "wallet");
+      if (hasWallet) {
+        if (!backendLogin.isPending && !backendLogin.isSuccess && !userRole) {
+          backendLogin.mutate();
+        }
+      } else {
+        console.warn("No wallet found after login completion");
+      }
+    },
+    onError: error => {
+      console.error("Login error:", error);
+    },
+  });
 
   useEffect(() => {
-    if (authenticated && ready && !userRole && !backendLogin.isSuccess && !backendLogin.isPending) {
-      backendLogin.mutate();
-    }
-  }, [authenticated, ready]);
-
-  useEffect(() => {
-    if (authenticated && backendLogin.isSuccess && !userRole) {
-      setUserRole(backendLogin.data.data!.activeRoleName);
+    if (authenticated && backendLogin.isSuccess && !userRole && backendLogin.data?.data) {
+      const activeRoleName = backendLogin.data.data.activeRoleName;
+      setUserRole(activeRoleName || null);
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess]);
+  }, [authenticated, backendLogin.isSuccess, userRole, router]);
 
   const handleLogout = useCallback(() => {
     logout();
     logoutCookie.mutate();
     setShowModal(false);
     useAuthStore.getState().reset();
-    console.log("ESTADO DEL HAS VISITED", hasVisitedRoot);
     setHasVisitedRoot(false);
-  }, [logout, logoutCookie]);
-
+  }, [logout, logoutCookie, hasVisitedRoot, setHasVisitedRoot]);
   const handleLogin = useCallback(() => {
     login();
   }, [login]);
+  useEffect(() => {
+    if (ready && !authenticated) {
+      router.replace("/login");
+    }
+  }, [ready, authenticated, router]);
 
   const copyToClipboard = useCallback(async () => {
     if (user?.wallet?.address) {

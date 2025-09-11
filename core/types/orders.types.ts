@@ -1,6 +1,3 @@
-// Tipos base
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 export enum OrderStatus {
   PENDING_PAYMENT = "PENDING_PAYMENT",
   AVAILABLE = "AVAILABLE",

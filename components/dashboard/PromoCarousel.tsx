@@ -213,9 +213,8 @@ export const PromoCarousel = ({
           <button
             key={index}
             onClick={() => goToSlide(index)}
-            className={`w-2 h-2 rounded-full transition-all duration-200 ${
-              index === currentIndex ? "bg-primary" : "bg-primary/30"
-            }`}
+            className={`w-2 h-2 rounded-full transition-all duration-200 ${index === currentIndex ? "bg-primary" : "bg-primary/30"
+              }`}
             aria-label={`Go to slide ${index + 1}`}
           />
         ))}

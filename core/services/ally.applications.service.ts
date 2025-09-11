@@ -3,8 +3,9 @@ import { UsersRepository } from "../repositories/users.repository";
 import {
   AllyApplicationDto,
   AllyApplicationRequest,
+  ApplicationStatus,
+  ApplicationsFiltersDto,
   ApplicationsFiltersRequest,
-  applicationStatus,
 } from "@/core/types/ally.applications.types";
 import { UserRole } from "@/core/types/orders.types";
 
@@ -27,21 +28,21 @@ export class AllyApplicationsService {
       fullName: allyApplicationRequest.fullName,
       phone: allyApplicationRequest.phone,
       address: allyApplicationRequest.address,
-      status: applicationStatus.PENDING,
+      status: ApplicationStatus.PENDING,
     };
     return await this.allyApplicationsRepository.createApplication(allyApplicationDto);
   }
 
-  async getApplications(applicationFilers: ApplicationsFiltersRequest, userId: string, roleActiveNow: UserRole) {
+  async getApplications(applicationFiltersDto: ApplicationsFiltersDto, userId: string, roleActiveNow: UserRole) {
     await this.validateUser(userId, "admin", roleActiveNow);
-    const applications = await this.allyApplicationsRepository.getApplications(applicationFilers);
+    const applications = await this.allyApplicationsRepository.getApplications(applicationFiltersDto);
     return {
       applications: applications.applications,
       pagination: {
         total: applications.total,
-        limit: applicationFilers.limit,
-        offset: applicationFilers.offset,
-        hasMore: applicationFilers.offset! + applicationFilers.limit! < applications.total,
+        limit: applicationFiltersDto.limit,
+        offset: applicationFiltersDto.offset,
+        hasMore: applicationFiltersDto.offset! + applicationFiltersDto.limit! < applications.total,
       },
     };
   }
@@ -52,7 +53,7 @@ export class AllyApplicationsService {
     if (!existsApplication) {
       throw new Error(`Application does not exist`);
     }
-    const approved = "APPROVED" as applicationStatus;
+    const approved = "APPROVED" as ApplicationStatus;
     const application = await this.allyApplicationsRepository.updateStatus(applicationId, approved, userId, {
       updatedAt: new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
@@ -74,7 +75,7 @@ export class AllyApplicationsService {
     if (existsApplication.status != "PENDING") {
       throw new Error(`Application ${applicationId} has already been reviewed`);
     }
-    const rejected = "REJECTED" as applicationStatus;
+    const rejected = "REJECTED" as ApplicationStatus;
     return await this.allyApplicationsRepository.updateStatus(applicationId, rejected, userId, {
       updatedAt: new Date().toISOString(),
       reviewedAt: new Date().toISOString(),

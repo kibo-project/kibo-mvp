@@ -1,5 +1,5 @@
 import { UserRole } from "@/core/types/orders.types";
-import { User, UserResponse } from "@/core/types/users.types";
+import { Role, User, UserResponse } from "@/core/types/users.types";
 
 export class UsersMapper {
   static dbToUser(dbUser: any): User {
@@ -19,6 +19,33 @@ export class UsersMapper {
       lastLoginAt: dbUser.last_login_at,
       createdAt: dbUser.created_at,
       updatedAt: dbUser.updated_at,
+    };
+  }
+
+  static dbToUserResponse(dbUser: any): UserResponse {
+    return {
+      id: dbUser.id,
+      privyId: dbUser.privyId,
+      roles: dbUser.users_roles?.map((userRole: any) => this.dbToRole(userRole.roles)) || [],
+      name: dbUser.name,
+      walletAddress: dbUser.wallet,
+      email: dbUser.email,
+      activeRoleId: dbUser.active_role_id,
+      country: dbUser.country,
+      bankName: dbUser.bank_name,
+      accountNumber: dbUser.account_number,
+      accountHolder: dbUser.account_holder,
+      phone: dbUser.phone,
+      availableBalance: dbUser.available_balance,
+      lastLoginAt: dbUser.last_login_at,
+      createdAt: dbUser.created_at,
+      updatedAt: dbUser.updated_at,
+    };
+  }
+  static dbToRole(dbRole: any): Role {
+    return {
+      roleId: dbRole.id,
+      name: dbRole.name,
     };
   }
 
@@ -45,9 +72,9 @@ export class UsersMapper {
       accountNumber: user.accountNumber,
       accountHolder: user.accountHolder,
       phone: user.phone,
+      createdAt: user.createdAt,
       availableBalance: user.availableBalance,
       lastLoginAt: user.lastLoginAt,
-      reputation: user.reputation,
     };
   }
 
@@ -72,7 +99,6 @@ export class UsersMapper {
       phone: undefined,
       availableBalance: undefined,
       updatedAt: undefined,
-      role: undefined,
       reputation: undefined,
       successfulOrders: undefined,
       lastActive: undefined,
