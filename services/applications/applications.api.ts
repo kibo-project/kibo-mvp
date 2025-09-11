@@ -5,6 +5,7 @@ import {
   ApplicationsListResponse,
 } from "@/core/types/ally.applications.types";
 import { ApiResponse } from "@/core/types/generic.types";
+import { OrderDetailsResponse } from "@/core/types/orders.types";
 
 class ApplicationsApiService {
   private baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -32,6 +33,9 @@ class ApplicationsApiService {
     }
 
     return response.json();
+  }
+  async getApplication(): Promise<ApiResponse<AllyApplication>> {
+    return this.request<OrderDetailsResponse>(ENDPOINTS.USER_APPLICATION);
   }
   async getApplications(filters: ApplicationsFiltersRequest = {}): Promise<ApiResponse<ApplicationsListResponse>> {
     const params = new URLSearchParams();

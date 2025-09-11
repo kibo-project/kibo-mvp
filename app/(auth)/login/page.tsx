@@ -7,11 +7,12 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { NextPage } from "next";
+import toast from "react-hot-toast";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
-  const { userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds } = useAuthStore();
+  const { userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds, setIsUserApplicant } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -23,11 +24,11 @@ const Login: NextPage = () => {
           backendLogin.mutate();
         }
       } else {
-        console.warn("No wallet found after login completion");
+        toast.error("No wallet found after login completion");
       }
     },
     onError: error => {
-      console.error("Login error:", error);
+      toast.error(error);
     },
   });
   const handlePrivyLogin = useCallback(() => {
@@ -46,10 +47,12 @@ const Login: NextPage = () => {
       setHowRoles(backendLogin.data.data.howRoles!);
       setRoleNames(backendLogin.data.data.roleNames!);
       setRoleIds(backendLogin.data.data.roleIds!);
-
+      if (backendLogin.data.data.isAnApplicant) {
+        setIsUserApplicant(backendLogin.data.data.isAnApplicant);
+      }
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess]);
+  }, [authenticated, backendLogin.isSuccess, backendLogin.data?.data, router]);
 
   if (!ready || backendLogin.isPending) {
     return (

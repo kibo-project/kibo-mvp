@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { RecentActivity } from "@/components/dashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { Badge } from "@/components/kibo";
+import { Badge, Button } from "@/components/kibo";
 import { UserRole } from "@/core/types/orders.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useOrders } from "@/hooks/orders/useOrders";
@@ -59,13 +59,13 @@ const AdminHome: NextPage = () => {
           {showRoleSelector && howRoles > 1 && (
             <div className="absolute top-full right-0 mt-2 bg-white rounded-lg shadow-lg overflow-hidden z-10 min-w-24">
               {availableRoles.map(role => (
-                <button
+                <Button
                   key={role}
                   onClick={() => handleRoleChange(role)}
                   className="w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors text-left capitalize"
                 >
                   {role === "admin" ? "admin" : role === "ally" ? "ally" : role}
-                </button>
+                </Button>
               ))}
             </div>
           )}

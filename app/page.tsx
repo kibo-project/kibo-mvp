@@ -24,8 +24,7 @@ const Home: NextPage = () => {
   // const { address } = useAccount();
   const { authenticated, ready } = usePrivy();
   const { data } = useOrders({ enabled: authenticated });
-
-  const { setHasVisitedRoot, setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
+  const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const [showRoleSelector, setShowRoleSelector] = useState(false);
   const currentView = userRole === "admin" ? "admin" : userRole || "user";
@@ -105,9 +104,6 @@ const Home: NextPage = () => {
   }, [setHasVisitedRoot]);
 
   const BalanceHeader = () => {
-    console.log("DEBUG - userRole:", userRole);
-    console.log("DEBUG - howRoles:", howRoles);
-    console.log("DEBUG - roleNames:", roleNames);
     return (
       <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
         <div className="flex items-center justify-between gap-2">
@@ -148,7 +144,7 @@ const Home: NextPage = () => {
                 router.push("/application");
               }}
             >
-              Join as an Ally
+              {isUserApplicant ? "Review Application" : "Join as an Ally"}
             </Button>
           )}
         </div>
