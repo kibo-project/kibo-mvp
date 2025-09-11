@@ -1,11 +1,11 @@
 import { AllyApplicationsRepository } from "../repositories/ally.applications.repository";
 import { UsersRepository } from "../repositories/users.repository";
 import {
+  AllyApplication,
   AllyApplicationDto,
   AllyApplicationRequest,
   ApplicationStatus,
   ApplicationsFiltersDto,
-  ApplicationsFiltersRequest,
 } from "@/core/types/ally.applications.types";
 import { UserRole } from "@/core/types/orders.types";
 
@@ -18,7 +18,8 @@ export class AllyApplicationsService {
     this.usersRepository = new UsersRepository();
   }
 
-  async applicationToAlly(userId: string, allyApplicationRequest: AllyApplicationRequest) {
+  async applicationToAlly(userId: string, roleActiveNow: UserRole, allyApplicationRequest: AllyApplicationRequest) {
+    await this.validateUser(userId, "user", roleActiveNow);
     const isOne = await this.allyApplicationsRepository.verifyOneApplication(userId);
     if (!isOne) {
       throw new Error(`This Application to ally already exists`);
@@ -30,7 +31,16 @@ export class AllyApplicationsService {
       address: allyApplicationRequest.address,
       status: ApplicationStatus.PENDING,
     };
-    return await this.allyApplicationsRepository.createApplication(allyApplicationDto);
+    const application = await this.allyApplicationsRepository.createApplication(allyApplicationDto);
+    if (application) {
+      await this.usersRepository.updateUserToApplicant(userId, true);
+    }
+    return application;
+  }
+
+  async getApplication(userId: string, roleActiveNow: UserRole): Promise<AllyApplication> {
+    await this.validateUser(userId, "user", roleActiveNow);
+    return await this.allyApplicationsRepository.getApplicationByUserId(userId);
   }
 
   async getApplications(applicationFiltersDto: ApplicationsFiltersDto, userId: string, roleActiveNow: UserRole) {
@@ -62,6 +72,7 @@ export class AllyApplicationsService {
     if (application) {
       const roleId = await this.usersRepository.findRoleIdByName("ally");
       await this.usersRepository.createUserRole(application.userId, roleId);
+      await this.usersRepository.updateUserToApplicant(userId, false);
     }
     return application;
   }
@@ -76,11 +87,15 @@ export class AllyApplicationsService {
       throw new Error(`Application ${applicationId} has already been reviewed`);
     }
     const rejected = "REJECTED" as ApplicationStatus;
-    return await this.allyApplicationsRepository.updateStatus(applicationId, rejected, userId, {
+    const rejectedApplication = await this.allyApplicationsRepository.updateStatus(applicationId, rejected, userId, {
       updatedAt: new Date().toISOString(),
       reviewedAt: new Date().toISOString(),
       rejectionReason: reason,
     });
+    if (rejectedApplication) {
+      await this.usersRepository.updateUserToApplicant(userId, false);
+    }
+    return rejectedApplication;
   }
 
   private async validateUser(userId: string, roleAllowed: UserRole, roleActiveNow: UserRole) {

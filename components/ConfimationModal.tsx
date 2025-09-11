@@ -24,9 +24,11 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black bg-opacity-50" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-sm mx-4">
-        <Card>
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative z-10 w-full max-w-sm mx-4 animate-fadeIn">
+        {" "}
+        <Card className="shadow-2xl rounded-2xl">
+          {" "}
           <CardBody>
             <p className="text-neutral-900 dark:text-neutral-100 mb-6">{message}</p>
             {requiresReason && (

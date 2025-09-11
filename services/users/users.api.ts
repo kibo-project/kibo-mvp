@@ -1,4 +1,5 @@
 import { ENDPOINTS } from "@/config/api";
+import { AllyApplication, AllyApplicationRequest } from "@/core/types/ally.applications.types";
 import { ApiResponse } from "@/core/types/generic.types";
 import { UsersFiltersRequest, UsersListResponse } from "@/core/types/users.types";
 
@@ -41,6 +42,14 @@ class UsersApiService {
     const endpoint = `${ENDPOINTS.USERS}${queryString ? `?${queryString}` : ""}`;
 
     return this.request<ApiResponse<UsersListResponse>>(endpoint);
+  }
+
+  async createApplication(application: AllyApplicationRequest): Promise<ApiResponse<AllyApplication>> {
+    return this.request<ApiResponse<AllyApplication>>(ENDPOINTS.USER_APPLICATION, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(application),
+    });
   }
 }
 

@@ -9,9 +9,10 @@ import { Badge, Button, Card, CardBody, CardTitle } from "~~/components/kibo";
 interface ApplicationCardProps {
   application: AllyApplication;
   actionButtons?: React.ReactNode;
+  children?: React.ReactNode;
 }
 
-export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, actionButtons }) => {
+export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, actionButtons, children }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleToggleExpand = useCallback(() => {
@@ -99,6 +100,9 @@ export const ApplicationCard: React.FC<ApplicationCardProps> = ({ application, a
                 )}
               </div>
             </div>
+          )}
+          {children && ( // BOTON - Renderizar children al final
+            <div className="flex justify-center pt-4">{children}</div>
           )}
         </div>
       </CardBody>

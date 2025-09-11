@@ -47,6 +47,21 @@ export class AllyApplicationsRepository {
     return AllyApplicationsMapper.dbToAllyApplication(data);
   }
 
+  async getApplicationByUserId(userId: string): Promise<AllyApplication> {
+    const { data, error } = await this.supabase
+      .from("ally_applications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (error) {
+      throw new Error(`Error fetching application: ${error.message}`);
+    }
+    return AllyApplicationsMapper.dbToAllyApplication(data);
+  }
+
   async getApplications(filters: ApplicationsFiltersDto): Promise<{ applications: AllyApplication[]; total: number }> {
     let query = this.supabase.from("ally_applications").select("*", { count: "exact" });
     if (filters.status) {
