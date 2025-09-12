@@ -5,9 +5,8 @@ import { useRouter } from "next/navigation";
 import { ApplicationCard } from "@/components/ApplicationCard";
 import { ApplicationForm } from "@/components/ApplicationForm";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Badge, Button, Card, CardBody, CardTitle } from "@/components/kibo";
-// REUTILIZAR - Import del componente
-import { AllyApplicationRequest, ApplicationStatus } from "@/core/types/ally.applications.types";
+import { Button, CardTitle } from "@/components/kibo";
+import { AllyApplicationRequest } from "@/core/types/ally.applications.types";
 import { FormData } from "@/core/types/generic.types";
 import { useApplication } from "@/hooks/applications/useApplication";
 import { useApplyAlly } from "@/hooks/users/useApplyAlly";
@@ -31,18 +30,20 @@ const ApplicationPage: NextPage = () => {
       phone: formData.phone,
       address: formData.address,
     };
-    apply(allyApplicationRequest, {
-      onSuccess: () => {
-        setIsUserApplicant(true);
-        setIsSubmitted(true);
-        toast.success("Application submitted successfully!");
-      },
-      onError: (error: any) => {
-        const errorMessage = error?.response?.data?.error?.message || "This application already exists";
-        setIsSubmitted(false);
-        toast.error(errorMessage);
-      },
-    });
+    if (allyApplicationRequest) {
+      apply(allyApplicationRequest, {
+        onSuccess: () => {
+          setIsUserApplicant(true);
+          setIsSubmitted(true);
+          toast.success("Application submitted successfully!");
+        },
+        onError: (error: any) => {
+          const errorMessage = error?.response?.data?.error?.message || "This application already exists";
+          setIsSubmitted(false);
+          toast.error(errorMessage);
+        },
+      });
+    }
   };
   const handleClose = () => {
     router.push("/");

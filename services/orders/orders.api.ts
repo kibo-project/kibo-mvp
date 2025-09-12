@@ -55,8 +55,8 @@ class OrdersApiService {
     return this.request<ApiResponse<OrdersListResponse>>(endpoint);
   }
 
-  async getOrderById(id: string): Promise<OrderDetailsResponse> {
-    return this.request<OrderDetailsResponse>(ENDPOINTS.ORDER_BY_ID(id));
+  async getOrderById(id: string): Promise<ApiResponse<OrderResponse>> {
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDER_BY_ID(id));
   }
 
   async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 import { TakeOrderDto, UploadProofDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
@@ -8,6 +7,7 @@ import {
   AvailableOrdersFilters,
   CreateOrderRequest,
   GetOrdersResponse,
+  OrderResponse,
   OrderStatus,
   OrdersListResponse,
   TakeOrderResponse,
@@ -144,21 +144,7 @@ export class OrdersController {
         );
       }
       const order = await this.ordersService.getOrderById(orderId, userId);
-
-      if (!order) {
-        return Response.json(
-          {
-            success: false,
-            error: {
-              code: "ORDER_NOT_FOUND",
-              message: "Order not found",
-            },
-          },
-          { status: 404 }
-        );
-      }
-
-      const response: ApiResponse<typeof order> = {
+      const response: ApiResponse<OrderResponse> = {
         success: true,
         data: order,
       };

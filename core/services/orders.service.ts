@@ -8,9 +8,9 @@ import {
   GetOrdersResponse,
   ImageDataFile,
   Order,
+  OrderResponse,
   OrderStatus,
   OrdersListResponse,
-  Quote,
   UserRole,
 } from "../types/orders.types";
 import { OrderMapper } from "@/core/mappers/order.mapper";
@@ -45,13 +45,12 @@ export class OrdersService {
     };
     const order = await this.ordersRepository.create(createOrderDto);
     const qrId = await this.uploadFile(createOrderRequest.qrImage!);
-    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);
 
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
     // await this.notifyOrderCreated(order);
 
-    return updatedOrder;
+    return await this.ordersRepository.uploadQrImage(order.id, qrId);
   }
 
   async getOrdersByUser(
@@ -100,15 +99,12 @@ export class OrdersService {
     };
   }
 
-  async getOrderById(orderId: string, userId: string): Promise<Order | null> {
+  async getOrderById(orderId: string, userId: string): Promise<OrderResponse> {
     const order = await this.ordersRepository.findById(orderId);
-    if (!order) {
-      return null;
-    }
-    if (userId && !(await this.canUserAccessOrder(order, userId))) {
+    if (userId && !(await this.canUserAccessOrder(order!, userId))) {
       throw new Error("Access denied to this order");
     }
-    return order;
+    return OrderMapper.orderToOrderResponse(order!);
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId: string): Promise<AvailableOrdersResponse> {
@@ -148,7 +144,7 @@ export class OrdersService {
 
     await this.validateAllyCanTakeOrder(order, allyId);
 
-    const updatedOrder = await this.ordersRepository.updateStatus(takeOrderDto.orderId, OrderStatus.TAKEN, {
+    return await this.ordersRepository.updateStatus(takeOrderDto.orderId, OrderStatus.TAKEN, {
       allyId,
       takenAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
@@ -156,8 +152,6 @@ export class OrdersService {
 
     // Post-take tasks
     // await this.notifyOrderTaken(updatedOrder);
-
-    return updatedOrder;
   }
 
   async uploadProof(uploadProofDto: UploadProofDto, allyId: string): Promise<Order> {
@@ -177,7 +171,7 @@ export class OrdersService {
 
     const confirmationProof = await this.uploadFile(uploadProofDto.proofFile);
     const confirmationProofUrl = await this.ordersRepository.getImageUrl(confirmationProof);
-    const updatedOrder = await this.ordersRepository.updateStatus(uploadProofDto.orderId, OrderStatus.COMPLETED, {
+    return await this.ordersRepository.updateStatus(uploadProofDto.orderId, OrderStatus.COMPLETED, {
       confirmationProof,
       confirmationProofUrl,
       bankTransactionId: uploadProofDto.bankTransactionId,
@@ -188,30 +182,6 @@ export class OrdersService {
     // Post-completion tasks
     // await this.logOrderCompletion(updatedOrder);
     // await this.notifyOrderCompleted(updatedOrder);
-
-    return updatedOrder;
-  }
-
-  // Private business logic methods
-  private async validateQuote(quoteId: string): Promise<Quote | null> {
-    // This would integrate with your quote service
-    // For now, simulate validation
-    return {
-      id: quoteId,
-      amountFiat: 100,
-      amountCrypto: 100,
-      fiatCurrency: "BOB",
-      cryptoToken: "USDT",
-      network: "mantle",
-      rate: 1,
-      networkFee: 1,
-      kiboFee: 2,
-      totalAmount: 103,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      escrowAddress: "0x123...",
-      rateSource: "coingecko",
-      rateTimestamp: new Date().toISOString(),
-    };
   }
 
   private enrichOrderWithDynamicData(order: Order): Order {

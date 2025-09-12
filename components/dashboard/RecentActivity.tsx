@@ -52,7 +52,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
     return (
       <Link
-        href={`/orders/${order.id}`}
+        href={`/movements/${order.id}`}
         key={order.id}
         className="block hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
       >
@@ -80,10 +80,8 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
       <Card>
         <CardBody>
-          {/* ORDER: Cambio de items.length a orders.length */}
           {orders.length > 0 ? (
             <div className="space-y-0">
-              {/* ORDER: Cambio de items.map a orders.map */}
               {orders.map(order => (
                 <OrderItemComponent key={order.id} order={order} />
               ))}
