@@ -15,6 +15,7 @@ export interface UserResponse {
   roleIds?: string[];
   roles?: Role[];
   howRoles?: number;
+  isAnApplicant?: boolean;
   accountNumber?: string;
   accountHolder?: string;
   phone?: string;
@@ -39,6 +40,7 @@ export interface User {
   availableBalance?: string;
   activeRoleId?: string;
   lastLoginAt?: Date;
+  isAnApplicant?: boolean;
   reputation?: number;
   createdAt: string;
   updatedAt?: string;

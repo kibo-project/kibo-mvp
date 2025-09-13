@@ -6,7 +6,7 @@ export const useOrder = (id: string) => {
     queryKey: ["order", id],
     queryFn: () => ordersService.getOrderById(id),
     enabled: !!id, // Solo ejecutar si hay ID
-    staleTime: 10 * 1000, // 10 segundos
+    staleTime: 10 * 1000,
     // TODO: Determinar si es necesario un refetch automático
     // refetchInterval: (data) => {
     //   // Refetch más frecuente si la orden está activa

@@ -37,9 +37,8 @@ export class OrdersRepository {
   async findById(id: string): Promise<Order | null> {
     const { data, error } = await this.supabase.from("orders").select("*").eq("id", id).single();
 
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw new Error(`Failed to find order: ${error.message}`);
+    if (error || !data) {
+      throw new Error(`Failed to find order: ${error}`);
     }
 
     return OrderMapper.dbToOrder(data);

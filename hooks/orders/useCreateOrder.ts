@@ -7,10 +7,7 @@ export const useCreateOrder = () => {
   return useMutation({
     mutationFn: (data: CreateOrderRequest) => ordersService.createOrder(data),
     onSuccess: data => {
-      // Invalidar lista de órdenes para que se recargue
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-
-      // Opcional: agregar la nueva orden al cache optimísticamente
       if (data.success && data.data) {
         queryClient.setQueryData(["order", data.data.id], data.data);
       }

@@ -27,6 +27,7 @@ export type UserRole = "user" | "ally" | "admin";
 
 interface AuthStore {
   hasVisitedRoot: boolean;
+  isUserApplicant: boolean;
   userRole: UserRole | null;
   howRoles: number;
   roleNames: UserRole[];
@@ -35,6 +36,7 @@ interface AuthStore {
   setHasVisitedRoot: (visited: boolean) => void;
 
   /** Changes the user role (triggers re-renders and navigation) */
+  setIsUserApplicant: (isUserApplicant: boolean) => void;
   setUserRole: (role: UserRole | null) => void;
   setHowRoles: (howRoles: number | 0) => void;
   setRoleNames: (roleNames: UserRole[] | []) => void;
@@ -77,6 +79,7 @@ export const useAuthStore = create<AuthStore>()(
       hasVisitedRoot: false,
 
       /** Default role is 'user' - admin access must be explicitly granted */
+      isUserApplicant: false,
       userRole: null,
       howRoles: 0,
       roleNames: [],
@@ -89,6 +92,7 @@ export const useAuthStore = create<AuthStore>()(
        * Change user role and trigger component re-renders
        * Used by RoleSwitcher component for development/demo
        */
+      setIsUserApplicant: isApplicant => set({ isUserApplicant: isApplicant }),
       setUserRole: role => set({ userRole: role }),
       setHowRoles: howRoles => set({ howRoles }),
       setRoleNames: roleNames => set({ roleNames }),
@@ -99,12 +103,13 @@ export const useAuthStore = create<AuthStore>()(
        * @returns {boolean} true if user role is 'admin'
        */
       isAdmin: () => get().userRole === "admin",
-      reset: () => set({ userRole: null, howRoles: 0, roleNames: [], roleIds: [] }),
+      reset: () => set({ userRole: null, howRoles: 0, roleNames: [], roleIds: [], isUserApplicant: false }),
     }),
     {
       name: "kibo-auth-storage",
       /** Only persist userRole - hasVisitedRoot is session-only */
       partialize: state => ({
+        isUserApplicant: state.isUserApplicant,
         userRole: state.userRole,
         roleNames: state.roleNames,
         howRoles: state.howRoles,

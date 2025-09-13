@@ -46,7 +46,7 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
     );
   }
 
-  if (!data?.order) {
+  if (!data?.data) {
     return (
       <div className="md:mx-auto md:min-w-md px-4">
         <div className="flex items-center justify-center h-64">
@@ -55,8 +55,6 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
       </div>
     );
   }
-
-  const order = data.order;
 
   return (
     <div className="md:mx-auto md:min-w-md px-4">
@@ -78,11 +76,11 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Order ID</p>
-                <p className="text-sm font-medium">{order.id}</p>
+                <p className="text-sm font-medium">{data.data.id}</p>
               </div>
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Status</p>
-                <p className="text-sm font-medium text-yellow-600">{order.status}</p>
+                <p className="text-sm font-medium text-yellow-600">{data.data.status}</p>
               </div>
             </div>
 
@@ -90,36 +88,36 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Crypto Amount</p>
                 <p className="text-sm font-medium">
-                  {order.cryptoAmount} {order.cryptoCurrency}
+                  {data.data.cryptoAmount} {data.data.cryptoCurrency}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Fiat Amount</p>
                 <p className="text-sm font-medium">
-                  {order.fiatAmount} {order.fiatCurrency}
+                  {data.data.fiatAmount} {data.data.fiatCurrency}
                 </p>
               </div>
             </div>
 
-            {order.userId && (
+            {data.data.userId && (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">User</p>
-                  <p className="text-sm font-medium">{order.status}</p>
+                  <p className="text-sm font-medium">{data.data.status}</p>
                 </div>
-                {order.createdAt && (
+                {data.data.createdAt && (
                   <div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Date</p>
-                    <p className="text-sm font-medium">{new Date(order.createdAt).toLocaleString()}</p>
+                    <p className="text-sm font-medium">{new Date(data.data.createdAt).toLocaleString()}</p>
                   </div>
                 )}
               </div>
             )}
 
-            {order.userId && (
+            {data.data.userId && (
               <div>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Wallet Address</p>
-                <p className="text-sm font-medium break-all">{order.escrowAddress}</p>
+                <p className="text-sm font-medium break-all">{data.data.escrowAddress}</p>
               </div>
             )}
           </div>
@@ -127,14 +125,14 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
       </Card>
 
       {/* QR Code Section - Optional */}
-      {order.qrImage && (
+      {data.data.qrImageUrl && (
         <Card shadow="sm" className="mb-6">
           <CardBody>
             <CardTitle className="text-base mb-4">Payment QR Code</CardTitle>
             <div className="flex justify-center">
               <div className="w-48 h-48 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center border">
                 <img
-                  src={order.qrImage}
+                  src={data.data.qrImageUrl}
                   alt="QR Code"
                   className="w-full h-full object-cover rounded-lg"
                   width={192}

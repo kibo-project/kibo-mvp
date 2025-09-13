@@ -28,6 +28,8 @@ export class AuthService {
       if (roleIds.length > 1) {
         roleNames = await Promise.all(roleIds.map(roleId => this.usersRepository.getRoleNameByRoleId(roleId)));
         howRoles = roleIds.length;
+      } else {
+        roleNames = [role];
       }
     } else {
       role = "user";
