@@ -4,9 +4,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { QUOTE_LIMITS } from "@/config/constants";
 import { CreateOrderRequest } from "@/core/types/orders.types";
 import { QuoteRequest } from "@/core/types/quote.types";
 import { NextPage } from "next";
+import toast from "react-hot-toast";
 import { ArrowLeftIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
 import {
   Button,
@@ -23,15 +25,7 @@ import { useCreateOrder } from "~~/hooks/orders/useCreateOrder";
 import { useQuote } from "~~/hooks/quote/useQuote";
 import { usePaymentStore } from "~~/services/store/payment-store";
 
-// import { useAuth } from "~~/hooks/api/useAuth";
-
-// TODO: Replace mocks with real implementations
-// Mock de useAuth
-const useAuth = () => ({
-  userProfile: { privyId: "mock-user-id" },
-});
-
-const COUNTDOWN_DURATION = 61;
+const COUNTDOWN_DURATION = 60;
 
 /**
  * Circular countdown component with clock sweep effect
@@ -45,8 +39,6 @@ interface CircularCountdownProps {
 const CircularCountdown: React.FC<CircularCountdownProps> = ({ seconds, maxSeconds }) => {
   const progress = Math.max(0, Math.min(100, (seconds / maxSeconds) * 100));
   const sweepAngle = (progress / 100) * 360;
-
-  // Consistent emerald color for the countdown
   const COUNTDOWN_COLOR = "currentColor";
 
   const createSweepPath = (angle: number): string => {
@@ -83,21 +75,13 @@ const CircularCountdown: React.FC<CircularCountdownProps> = ({ seconds, maxSecon
   );
 };
 
-// Obtener el ID del usuario autenticado
 const ConfirmationPayment: NextPage = () => {
-  const { qrImage: qrImageStore } = usePaymentStore();
-  const { qrImageBase64: qrImageStoreBase64 } = usePaymentStore();
-
+  const { qrImage: qrImageStore, qrImageBase64: qrImageStoreBase64 } = usePaymentStore();
   const router = useRouter();
-  // Obtener el ID del usuario autenticado
-  const { userProfile } = useAuth();
-
   const createOrderMutation = useCreateOrder();
-
   const [showQrModal, setShowQrModal] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [seconds, setSeconds] = useState(COUNTDOWN_DURATION);
-
   const [recipient, setRecipient] = useState("");
   const [description, setDescription] = useState("");
   const [fiatAmount, setFiatAmount] = useState<number>(0);
@@ -118,9 +102,7 @@ const ConfirmationPayment: NextPage = () => {
     error: quoteError,
     refetch: refetchQuote,
     isFetching,
-  } = useQuote(quoteRequest, {
-    enabled: fiatAmount >= 10,
-  });
+  } = useQuote(quoteRequest);
 
   const handlePayClick = useCallback(() => {
     setShowConfirmModal(true);
@@ -142,66 +124,42 @@ const ConfirmationPayment: NextPage = () => {
 
   const handleConfirmPayment = useCallback(async () => {
     setShowConfirmModal(false);
-
-    try {
-      if (!qrImageStore) {
-        alert("Error: not found qr image");
-        return;
-      }
-
-      const createOrderRequest: CreateOrderRequest = {
-        fiatAmount: fiatAmount,
-        cryptoAmount: cryptoEquivalent,
-        recipient: recipient,
-        description: description,
-        qrImage: qrImageStore,
-      };
-      const result = await createOrderMutation.mutateAsync(createOrderRequest);
-
-      if (result.success) {
-        router.push("/order/payment-information");
-      } else {
-        alert(`Error creating order: ${result.error?.message || "Unknown error"}`);
-      }
-    } catch (error) {
-      console.error("Error creating order:", error);
+    if (!qrImageStore) {
+      toast.error("Error: not found qr image");
+      return;
     }
-  }, [
-    router,
-    fiatAmount,
-    cryptoEquivalent,
-    recipient,
-    description,
-    qrImageStore,
-    createOrderMutation,
-    userProfile.privyId,
-  ]);
+    const createOrderRequest: CreateOrderRequest = {
+      fiatAmount: fiatAmount,
+      cryptoAmount: cryptoEquivalent,
+      recipient: recipient,
+      description: description,
+      qrImage: qrImageStore,
+    };
+    const result = await createOrderMutation.mutateAsync(createOrderRequest);
+
+    if (result.success) {
+      router.push("/order/payment-information");
+    } else {
+      toast.error(`Error creating order: ${result.error?.message || "Unknown error"}`);
+    }
+  }, [router, fiatAmount, cryptoEquivalent, recipient, description, qrImageStore, createOrderMutation]);
 
   const handleCancelPayment = useCallback(() => {
     setShowConfirmModal(false);
-  }, []);
-
-  const handleFiatAmountChange = useCallback((value: string) => {
-    const numValue = parseFloat(value);
-    setFiatAmount(isNaN(numValue) || numValue < 0 ? 0 : numValue);
   }, []);
 
   const toggleQrModal = useCallback(() => {
     setShowQrModal(prev => !prev);
   }, []);
 
-  const handleManualRefetch = useCallback(async () => {
-    if (fiatAmount >= 10) {
-      await refetchQuote();
-    }
-  }, [fiatAmount, refetchQuote]);
-
   useEffect(() => {
     const timer = setInterval(() => {
       setSeconds(prev => {
         if (prev <= 1) {
           setTimeout(() => {
-            handleManualRefetch();
+            if (fiatAmount >= QUOTE_LIMITS.MIN_FIAT_AMOUNT && fiatAmount <= QUOTE_LIMITS.MAX_FIAT_AMOUNT) {
+              refetchQuote();
+            }
           }, 100);
           return COUNTDOWN_DURATION;
         }
@@ -210,25 +168,16 @@ const ConfirmationPayment: NextPage = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [handleManualRefetch]);
+  }, [refetchQuote, fiatAmount]);
 
-  useEffect(() => {
-    if (fiatAmount >= 10) {
+  const handleFiatAmountChange = useCallback((value: string) => {
+    const numValue = value === "" ? 0 : parseFloat(value);
+    const finalValue = isNaN(numValue) || numValue < 0 ? 0 : numValue;
+    setFiatAmount(finalValue);
+    if (finalValue >= QUOTE_LIMITS.MIN_FIAT_AMOUNT && finalValue <= QUOTE_LIMITS.MAX_FIAT_AMOUNT) {
       setSeconds(COUNTDOWN_DURATION);
     }
-  }, [fiatAmount]);
-
-  useEffect(() => {
-    if (createOrderMutation.error) {
-      alert(`Error: ${createOrderMutation.error.message}`);
-    }
-  }, [createOrderMutation.error]);
-
-  useEffect(() => {
-    if (quoteError) {
-      console.error("Quote error:", quoteError);
-    }
-  }, [quoteError]);
+  }, []);
 
   return (
     <div className="md:mx-auto md:min-w-md px-4">
@@ -298,10 +247,11 @@ const ConfirmationPayment: NextPage = () => {
                 </label>
                 <Input
                   type="number"
-                  value={fiatAmount}
+                  value={fiatAmount === 0 ? "" : fiatAmount}
                   onChange={e => handleFiatAmountChange(e.target.value)}
-                  placeholder="Enter amount in Bs"
-                  min="0"
+                  placeholder="0"
+                  min={QUOTE_LIMITS.MIN_FIAT_AMOUNT}
+                  max={QUOTE_LIMITS.MAX_FIAT_AMOUNT}
                   step="0.01"
                   fullWidth
                   leftIcon={<span className="text-neutral-500 font-medium">Bs</span>}
@@ -311,7 +261,7 @@ const ConfirmationPayment: NextPage = () => {
               <div className="py-3">
                 <div className="flex justify-between items-center">
                   <div className="flex items-center space-x-2">
-                    {(isLoadingQuote || isFetching) && fiatAmount > 0 ? (
+                    {isLoadingQuote || isFetching ? (
                       <div className="flex items-center space-x-2">
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-emerald-600"></div>
                         <span className="text-sm text-neutral-500">Calculating...</span>
@@ -335,10 +285,12 @@ const ConfirmationPayment: NextPage = () => {
                 <div className="text-xs text-neutral-500 dark:text-neutral-400 mt-1">
                   {exchangeRate > 0 ? (
                     <>1 USDT ≈ {exchangeRate.toFixed(2)} Bs</>
-                  ) : fiatAmount > 0 ? (
-                    <>Loading exchange rate...</>
+                  ) : fiatAmount < QUOTE_LIMITS.MIN_FIAT_AMOUNT ? (
+                    <>Fiat amount must be greater than 10</>
+                  ) : fiatAmount > QUOTE_LIMITS.MAX_FIAT_AMOUNT ? (
+                    <>Fiat amount must be less than 10000</>
                   ) : (
-                    <>Enter amount to see rate</>
+                    <>Loading exchange rate...</>
                   )}
                 </div>
               </div>
@@ -352,7 +304,8 @@ const ConfirmationPayment: NextPage = () => {
           onClick={handlePayClick}
           disabled={
             !fiatAmount ||
-            fiatAmount <= 0 ||
+            fiatAmount < QUOTE_LIMITS.MIN_FIAT_AMOUNT ||
+            fiatAmount > QUOTE_LIMITS.MAX_FIAT_AMOUNT ||
             !recipient.trim() ||
             createOrderMutation.isPending ||
             isLoadingQuote ||
@@ -378,15 +331,6 @@ const ConfirmationPayment: NextPage = () => {
         >
           {createOrderMutation.isPending ? "Creating Order..." : "Confirm Payment"}
         </Button>
-
-        {quoteError && fiatAmount > 0 && (
-          <div className="text-center text-sm text-red-600 dark:text-red-400 mt-2">
-            Unable to get current rate. Please try again.
-            <button onClick={handleManualRefetch} className="ml-2 underline hover:no-underline" disabled={isFetching}>
-              {isFetching ? "Retrying..." : "Retry"}
-            </button>
-          </div>
-        )}
 
         {/* Confirmation Modal */}
         <Modal open={showConfirmModal} onClose={handleCancelPayment}>

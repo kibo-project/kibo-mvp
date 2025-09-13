@@ -79,9 +79,11 @@ const Home: NextPage = () => {
   useEffect(() => {
     if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
       setUserRole(roleChangeMutation.data.data.activeRoleName);
-      refetch();
+      refetch()
+        .then(() => {})
+        .catch(() => {});
     }
-  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole]);
+  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole, refetch]);
 
   // if (!ready) {
   //   return (
@@ -106,9 +108,10 @@ const Home: NextPage = () => {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center">
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
-        <div className="relative z-10 bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
-          <div className="kibo-spinner w-12 h-12"></div>
-          <p className="text-gray-900 dark:text-gray-100 font-medium text-lg">Changing roles...</p>
+        <div className="flex flex-col items-center space-y-4 relative z-10">
+          {/* Spinner más grande */}
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-600 border-t-transparent"></div>
+          <span className="text-lg font-medium text-neutral-900 dark:text-neutral-100">Changing role...</span>
         </div>
       </div>
     );
