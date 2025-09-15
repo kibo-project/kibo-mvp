@@ -1,4 +1,3 @@
-// TODO: fix, avoid using 'any' type
 import { CreateOrderDto, GetOrdersDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
 import { AvailableOrdersFilters, ImageDataFile, Order, OrderStatus } from "../types/orders.types";
@@ -23,7 +22,10 @@ export class OrdersRepository {
         user_id: createOrderDto.userId,
         recipient: createOrderDto.recipient,
         description: createOrderDto.description,
+        qr_image: createOrderDto.qrImage,
+        qr_image_url: createOrderDto.qrImageUrl,
         created_at: new Date().toISOString(),
+        expires_at: createOrderDto.expiresAt,
       })
       .select("*")
       .single();
@@ -121,7 +123,7 @@ export class OrdersRepository {
 
     return data.map(OrderMapper.dbToOrder);
   }
-  async uploadDbImage(imageDataFile: ImageDataFile): Promise<{ data: any; error?: string }> {
+  async uploadDbImage(imageDataFile: ImageDataFile) {
     const { data, error } = await this.supabase
       .from("images")
       .insert({
@@ -132,35 +134,22 @@ export class OrdersRepository {
       .select()
       .single();
 
-    if (error) {
-      return { data: null, error: error.message };
+    if (error || !data) {
+      throw new Error("Failed to upload image:");
     }
     return { data };
   }
 
-  async uploadImageToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string | null> {
-    const { error } = await this.supabase.storage
-      .from(process.env.SUPABASE_BUCKET_NAME as string)
-      .upload(filename, fileBuffer, { contentType, upsert: true });
+  async uploadImageToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string> {
+    const bucket = this.supabase.storage.from(process.env.SUPABASE_BUCKET_NAME as string);
 
-    return error ? error.message : null;
+    const { error } = await bucket.upload(filename, fileBuffer, { contentType, upsert: true });
+    if (error) throw new Error(error.message);
+
+    const { data } = bucket.getPublicUrl(filename);
+    return data.publicUrl;
   }
-  async uploadQrImage(id: string, idQr: string) {
-    const qrUrl = await this.getImageUrl(idQr);
-    const { data, error } = await this.supabase
-      .from("orders")
-      .update({
-        qr_image: idQr,
-        qr_image_url: qrUrl,
-      })
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) {
-      throw new Error(`Failed to save qrId in orders: ${error.message}`);
-    }
-    return OrderMapper.dbToOrder(data);
-  }
+
   async getExtensionImage(imageId: string): Promise<string> {
     const { data, error } = await this.supabase.from("images").select("extension").eq("id", imageId).single();
 
@@ -188,7 +177,6 @@ export class OrdersRepository {
       cancelledAt: string;
       confirmationProof: string;
       confirmationProofUrl: string;
-      qrImage: string;
       bankTransactionId: string;
       txHash: string;
       expiresAt: string;
@@ -202,7 +190,6 @@ export class OrdersRepository {
     if (updates?.cancelledAt) updateData.cancelled_at = updates.cancelledAt;
     if (updates?.confirmationProof) updateData.confirmation_proof = updates.confirmationProof;
     if (updates?.confirmationProofUrl) updateData.confirmation_proof_url = updates.confirmationProofUrl;
-    if (updates?.qrImage) updateData.qr_image = updates.qrImage;
     if (updates?.bankTransactionId) updateData.bank_transaction_id = updates.bankTransactionId;
     if (updates?.txHash) updateData.tx_hash = updates.txHash;
     if (updates?.expiresAt) updateData.expires_at = updates.expiresAt;

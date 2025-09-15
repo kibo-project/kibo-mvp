@@ -33,8 +33,10 @@ export class OrdersService {
     if (activeOrders > 3) {
       throw new Error("You have more than 3 orders available");
     }
+    const { idImages, urlImage } = await this.uploadFile(createOrderRequest.qrImage!); // hasta aqui la imagen se subio 1.-Bucket --> Image
+
     const createOrderDto: CreateOrderDto = {
-      status: OrderStatus.PENDING_PAYMENT,
+      status: OrderStatus.AVAILABLE,
       fiatAmount: createOrderRequest.fiatAmount,
       cryptoAmount: createOrderRequest.cryptoAmount,
       fiatCurrency: "BOB",
@@ -42,15 +44,14 @@ export class OrdersService {
       userId: createOrderRequest.userId!,
       recipient: createOrderRequest.recipient,
       description: createOrderRequest.description,
+      qrImage: idImages,
+      qrImageUrl: urlImage,
+      expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
     };
-    const order = await this.ordersRepository.create(createOrderDto);
-    const qrId = await this.uploadFile(createOrderRequest.qrImage!);
-
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
     // await this.notifyOrderCreated(order);
-
-    return await this.ordersRepository.uploadQrImage(order.id, qrId);
+    return await this.ordersRepository.create(createOrderDto);
   }
 
   async getOrdersByUser(
@@ -142,7 +143,7 @@ export class OrdersService {
       throw new Error("Order is not available for taking");
     }
 
-    await this.validateAllyCanTakeOrder(order, allyId);
+    await this.validateAllyCanTakeOrder(order);
 
     return await this.ordersRepository.updateStatus(takeOrderDto.orderId, OrderStatus.TAKEN, {
       allyId,
@@ -169,29 +170,19 @@ export class OrdersService {
       throw new Error("Only the assigned ally can upload proof");
     }
 
-    const confirmationProof = await this.uploadFile(uploadProofDto.proofFile);
-    const confirmationProofUrl = await this.ordersRepository.getImageUrl(confirmationProof);
+    const { idImages: confirmationProof, urlImage: confirmationProofUrl } = await this.uploadFile(
+      uploadProofDto.proofFile
+    );
     return await this.ordersRepository.updateStatus(uploadProofDto.orderId, OrderStatus.COMPLETED, {
       confirmationProof,
       confirmationProofUrl,
       bankTransactionId: uploadProofDto.bankTransactionId,
       completedAt: new Date().toISOString(),
-      txHash: await this.releaseEscrow(order),
     });
 
     // Post-completion tasks
     // await this.logOrderCompletion(updatedOrder);
     // await this.notifyOrderCompleted(updatedOrder);
-  }
-
-  private enrichOrderWithDynamicData(order: Order): Order {
-    const now = new Date();
-    const expiresAt = new Date(order.expiresAt);
-
-    return {
-      ...order,
-      secondsRemaining: Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000)),
-    };
   }
 
   private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
@@ -204,7 +195,7 @@ export class OrdersService {
     return 300; // 5 minutes in seconds
   }
 
-  private async validateAllyCanTakeOrder(order: Order, allyId: string): Promise<void> {
+  private async validateAllyCanTakeOrder(order: Order): Promise<void> {
     const now = new Date();
     const expiresAt = new Date(order.expiresAt);
 
@@ -219,44 +210,31 @@ export class OrdersService {
     // - Check ally capacity
   }
 
-  private async setupOrderEscrow(order: Order): Promise<void> {
-    // Setup blockchain escrow
-  }
-
-  private async releaseEscrow(order: Order): Promise<string> {
-    // Release escrow funds
-    return `0xtx_hash_${Date.now()}`;
-  }
-
-  private async uploadFile(file: File): Promise<string> {
+  private async uploadFile(file: File) {
     const maxSizeInBytes = 5 * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
       throw new Error("File size exceeds 5MB limit");
     }
     const originalName = file.name;
     const extension = originalName.split(".").pop() || "";
+    const filename = `order-.${originalName}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = new Uint8Array(arrayBuffer);
+
+    const imagePublicUrl = await this.ordersRepository.uploadImageToStorage(filename, fileBuffer, file.type);
+
     const imageDataFile: ImageDataFile = {
       name: originalName,
       extension: extension,
       createdAt: new Date().toISOString(),
     };
-    const { data, error } = await this.ordersRepository.uploadDbImage(imageDataFile);
 
-    if (error || !data) {
-      throw new Error(error || "Error saving image");
-    }
+    const { data } = await this.ordersRepository.uploadDbImage(imageDataFile);
 
-    const filename = `order-${data.id}.${extension}`;
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = new Uint8Array(arrayBuffer);
-
-    const uploadError = await this.ordersRepository.uploadImageToStorage(filename, fileBuffer, file.type);
-
-    if (uploadError) {
-      throw new Error(uploadError);
-    }
-
-    return data.id;
+    return {
+      idImages: data.id,
+      urlImage: imagePublicUrl,
+    };
   }
 
   private async notifyOrderCreated(order: Order): Promise<void> {

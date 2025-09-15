@@ -38,6 +38,7 @@ export interface CreateOrderDto {
   network?: Network;
   confirmationProof?: string;
   qrImage?: string;
+  qrImageUrl?: string;
   expiresAt?: string;
   userId: string;
   recipient: string;
