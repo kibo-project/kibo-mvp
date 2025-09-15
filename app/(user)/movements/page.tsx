@@ -108,18 +108,17 @@ const Movements: NextPage = () => {
                           variant={
                             movement.status === OrderStatus.PENDING_PAYMENT
                               ? "gray"
-                              : movement.status === OrderStatus.COMPLETED
-                                ? "success"
-                                : movement.status === OrderStatus.CANCELLED
-                                  ? "error"
-                                  : "info"
+                              : movement.status === OrderStatus.AVAILABLE || movement.status === OrderStatus.TAKEN
+                                ? "warning"
+                                : movement.status === OrderStatus.COMPLETED
+                                  ? "success"
+                                  : movement.status === OrderStatus.CANCELLED
+                                    ? "error"
+                                    : "info"
                           }
                           size="sm"
                         >
-                          {movement.status === OrderStatus.PENDING_PAYMENT && "Pending"}
-                          {movement.status === OrderStatus.COMPLETED && "Completed"}
-                          {movement.status === OrderStatus.CANCELLED && "Canceled"}
-                          {movement.status === OrderStatus.REFUNDED && "Refunded"}
+                          {movement.status}
                         </Badge>
                       </CardTitle>
                       <div className="space-y-1">

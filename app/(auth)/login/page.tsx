@@ -62,7 +62,6 @@ const Login: NextPage = () => {
     );
   }
 
-  // Si ya está autenticado, mostrar loading mientras redirige
   if (authenticated && userRole) {
     return (
       <div className="flex justify-center items-center min-h-dvh bg-primary">

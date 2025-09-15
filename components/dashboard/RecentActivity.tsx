@@ -8,6 +8,7 @@ interface RecentActivityProps {
   title: string;
   orders: OrderResponse[];
   viewAllHref?: string;
+  viewOneHref: string;
   emptyMessage?: string;
   className?: string;
 }
@@ -16,6 +17,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
   title,
   orders,
   viewAllHref,
+  viewOneHref,
   emptyMessage = "No recent activity",
   className = "",
 }) => {
@@ -52,7 +54,7 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
     return (
       <Link
-        href={`/movements/${order.id}`}
+        href={viewOneHref + order.id}
         key={order.id}
         className="block hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
       >

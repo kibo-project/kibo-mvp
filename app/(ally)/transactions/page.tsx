@@ -9,7 +9,6 @@ import { OrderStatus } from "@/services/orders";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
-import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const AdminTransactions: NextPage = () => {
@@ -21,18 +20,11 @@ const AdminTransactions: NextPage = () => {
     // error
   } = useOrders();
 
-  const { setSelectedTransactionId } = useAdminPaymentStore();
-
   const handleTransactionAction = useCallback(
-    (id: string, status: OrderStatus) => {
-      setSelectedTransactionId(id);
-      if (status === OrderStatus.TAKEN) {
-        router.push(`/transactions/${id}`);
-      } else {
-        router.push(`/transactions/admin/review/${id}`); // esta ruta no existe
-      }
+    (id: string) => {
+      router.push(`/transactions/${id}`);
     },
-    [router, setSelectedTransactionId]
+    [router]
   );
 
   const filteredTransactions =
@@ -88,7 +80,7 @@ const AdminTransactions: NextPage = () => {
                         <span className="text-neutral-900 dark:text-neutral-100">{transaction.id}</span>
                         <Badge
                           variant={
-                            transaction.status === OrderStatus.TAKEN
+                            transaction.status === OrderStatus.TAKEN || transaction.status === OrderStatus.AVAILABLE
                               ? "warning"
                               : transaction.status === OrderStatus.COMPLETED
                                 ? "success"
@@ -117,7 +109,7 @@ const AdminTransactions: NextPage = () => {
                       variant={transaction.status === OrderStatus.TAKEN ? "primary" : "secondary"}
                       size="sm"
                       className="self-center min-w-24"
-                      onClick={() => handleTransactionAction(transaction.id, transaction.status)}
+                      onClick={() => handleTransactionAction(transaction.id)}
                     >
                       {transaction.status === OrderStatus.TAKEN ? "Pending" : "Details"}
                     </Button>

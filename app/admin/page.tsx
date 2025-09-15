@@ -88,6 +88,7 @@ const AdminHome: NextPage = () => {
         title="Applications"
         orders={data?.data?.orders || []}
         viewAllHref="/transactions"
+        viewOneHref="/transactions/"
         emptyMessage="There are not applications"
       />
     </div>

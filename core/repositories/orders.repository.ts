@@ -150,23 +150,6 @@ export class OrdersRepository {
     return data.publicUrl;
   }
 
-  async getExtensionImage(imageId: string): Promise<string> {
-    const { data, error } = await this.supabase.from("images").select("extension").eq("id", imageId).single();
-
-    if (error || !data) {
-      throw new Error(`Failed to get extension image: ${error.message}`);
-    }
-    return data.extension;
-  }
-
-  async getImageUrl(imageId: string): Promise<string> {
-    const ext = await this.getExtensionImage(imageId);
-    const { data } = this.supabase.storage
-      .from(process.env.SUPABASE_BUCKET_NAME as string)
-      .getPublicUrl(`order-${imageId}.${ext}`);
-    return data.publicUrl;
-  }
-
   async updateStatus(
     id: string,
     status: OrderStatus,

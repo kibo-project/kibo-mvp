@@ -33,7 +33,7 @@ export class OrdersService {
     if (activeOrders > 3) {
       throw new Error("You have more than 3 orders available");
     }
-    const { idImages, urlImage } = await this.uploadFile(createOrderRequest.qrImage!); // hasta aqui la imagen se subio 1.-Bucket --> Image
+    const { idImages, urlImage } = await this.uploadFile(createOrderRequest.qrImage!);
 
     const createOrderDto: CreateOrderDto = {
       status: OrderStatus.AVAILABLE,
@@ -235,17 +235,5 @@ export class OrdersService {
       idImages: data.id,
       urlImage: imagePublicUrl,
     };
-  }
-
-  private async notifyOrderCreated(order: Order): Promise<void> {
-    // Send notifications
-  }
-
-  private async notifyOrderTaken(order: Order): Promise<void> {
-    // Send notifications
-  }
-
-  private async notifyOrderCompleted(order: Order): Promise<void> {
-    // Send notifications
   }
 }

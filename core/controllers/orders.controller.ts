@@ -217,12 +217,10 @@ export class OrdersController {
         orderId: orderId,
       };
 
-      const order = await this.ordersService.takeOrder(takeOrderDto, userId);
-      const takeOrderResponse: TakeOrderResponse = {
-        order,
-      };
+      const takeOrder = await this.ordersService.takeOrder(takeOrderDto, userId);
+      const takeOrderResponse = OrderMapper.orderToOrderResponse(takeOrder);
 
-      const response: ApiResponse<typeof takeOrderResponse> = {
+      const response: ApiResponse<OrderResponse> = {
         success: true,
         data: takeOrderResponse,
       };

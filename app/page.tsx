@@ -27,7 +27,7 @@ const Home: NextPage = () => {
   const { data, refetch } = useOrders({ enabled: authenticated });
   const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const roleChangeMutation = useRoleChange();
-  const currentView = userRole === "admin" ? "admin" : userRole || "user";
+  const currentView = userRole;
   const router = useRouter();
 
   // const { data: balance } = useBalance({
@@ -160,6 +160,7 @@ const Home: NextPage = () => {
         title="Transactions"
         orders={data?.data?.orders || []}
         viewAllHref="/movements"
+        viewOneHref="/movements/"
         emptyMessage="No recent transactions"
       />
     </div>
@@ -170,6 +171,7 @@ const Home: NextPage = () => {
       <RecentActivity
         title="Recent Activity"
         orders={data?.data?.orders || []}
+        viewOneHref="/transactions/"
         viewAllHref="/transactions"
         emptyMessage="No recent activity"
       />

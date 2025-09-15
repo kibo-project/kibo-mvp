@@ -1,12 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { UploadProofRequest } from "../../../../core/types/orders.types";
+import { UploadProofRequest } from "@/core/types/orders.types";
+import { useOrder } from "@/hooks/orders/useOrder";
 import { useUploadProof } from "@/hooks/orders/useUploadProof";
 import { NextPage } from "next";
+import toast from "react-hot-toast";
 import { ArrowLeftIcon, CameraIcon, PhotoIcon } from "@heroicons/react/24/outline";
 import { Button, Card, CardBody, CardTitle } from "~~/components/kibo";
 import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
@@ -23,10 +25,10 @@ const DEFAULT_ASPECT_RATIO = 4 / 3;
 
 const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
   const router = useRouter();
-  const { selectedTransactionId, selectedTransaction, paymentProofImage, setPaymentProofImage } =
-    useAdminPaymentStore();
+  const { paymentProofImage, setPaymentProofImage } = useAdminPaymentStore();
   const { mutate: uploadProof, isPending: isUploading, error: uploadError } = useUploadProof();
   const [transactionId, setTransactionId] = useState<string | null>(null);
+  const { data, isLoading: isLoadingOrder } = useOrder(transactionId ?? "");
 
   useEffect(() => {
     params.then(resolvedParams => {
@@ -39,18 +41,10 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const heightRef = useRef(0);
-
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [streaming, setStreaming] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (transactionId && selectedTransactionId !== transactionId) {
-      router.push("/transactions");
-      return;
-    }
-  }, [selectedTransactionId, transactionId, router]);
 
   const getErrorMessage = useCallback((error: Error): string => {
     const errorMessages: Record<string, string> = {
@@ -174,11 +168,11 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
         },
         {
           onSuccess: () => {
-            alert("Payment proof submitted successfully!");
+            toast.success("Payment proof submitted successfully!");
             router.push("/availables");
           },
           onError: error => {
-            alert(`Error uploading proof: ${error.message}`);
+            toast.error(`Error uploading proof: ${error.message}`);
           },
         }
       );
@@ -190,8 +184,24 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
     setPaymentProofImage(null);
   }, [setPaymentProofImage]);
 
-  if (!transactionId || selectedTransactionId !== transactionId || !selectedTransaction) {
-    return null;
+  if (isLoadingOrder) {
+    return (
+      <div className="md:mx-auto md:min-w-md px-4">
+        <div className="flex items-center justify-center h-64">
+          <div>Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data?.data) {
+    return (
+      <div className="md:mx-auto md:min-w-md px-4">
+        <div className="flex items-center justify-center h-64">
+          <div>Order not found</div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -205,42 +215,52 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
           <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Send Payment Proof</h1>
         </div>
       </div>
-
       {/* Transaction Info */}
       <Card shadow="sm" className="mb-6">
         <CardBody>
           <CardTitle className="text-base mb-2">Transaction Details</CardTitle>
           <div className="space-y-1">
             <p className="text-sm">
-              <span className="font-medium">ID:</span> {selectedTransaction.id}
+              <span className="font-medium">ID:</span> {data.data.id}
             </p>
             <p className="text-sm">
-              <span className="font-medium">Amount:</span>{" "}
-              {`${selectedTransaction.cryptoAmount} ${selectedTransaction.cryptoCurrency}`} (
-              {`${selectedTransaction.fiatAmount} ${selectedTransaction.fiatCurrency}`})
+              <span className="font-medium">Amount:</span> {`${data.data.cryptoAmount} ${data.data.cryptoCurrency}`} (
+              {`${data.data.fiatAmount} ${data.data.fiatCurrency}`})
             </p>
             <p className="text-sm">
-              <span className="font-medium">User:</span> {selectedTransaction.id}
+              <span className="font-medium">User:</span> {data.data.userId}
             </p>
             <p className="text-sm">
-              <span className="font-medium">Date:</span> {formatDateToSpanish(selectedTransaction.createdAt)}
+              <span className="font-medium">Date:</span> {formatDateToSpanish(data.data.createdAt)}
             </p>
-            {selectedTransaction.description && (
+            {data.data.description && (
               <p className="text-sm">
-                <span className="font-medium">Description:</span> {selectedTransaction.description}
+                <span className="font-medium">Description:</span> {data.data.description}
               </p>
             )}
-            {selectedTransaction.recipient && (
+            {data.data.recipient && (
               <p className="text-sm">
-                <span className="font-medium">Recipient:</span> {selectedTransaction.recipient}
+                <span className="font-medium">Recipient:</span> {data.data.recipient}
               </p>
             )}
-            {selectedTransaction?.qrImageUrl && (
+            {data.data?.qrImageUrl && (
               <div className="flex justify-center mt-4">
                 <div className="bg-white dark:bg-neutral-800 rounded-lg border p-4 flex flex-col items-center shadow-sm">
                   <span className="font-medium mb-2">Payment QR Code</span>
                   <img
-                    src={selectedTransaction.qrImageUrl}
+                    src={data.data.qrImageUrl}
+                    alt="Transaction QR"
+                    className="w-60 h-60 object-contain rounded-lg border"
+                  />
+                </div>
+              </div>
+            )}
+            {data.data?.confirmationProofUrl && (
+              <div className="flex justify-center mt-4">
+                <div className="bg-white dark:bg-neutral-800 rounded-lg border p-4 flex flex-col items-center shadow-sm">
+                  <span className="font-medium mb-2">Confirmation Proof Image</span>
+                  <img
+                    src={data.data.confirmationProofUrl}
                     alt="Transaction QR"
                     className="w-60 h-60 object-contain rounded-lg border"
                   />
@@ -250,106 +270,109 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
           </div>
         </CardBody>
       </Card>
-
       {/* Camera/Upload Section */}
-      <Card shadow="sm" className="mb-6">
-        <CardBody>
-          {!previewImage ? (
-            <>
-              <CardTitle className="text-base mb-4">Capture Payment Proof</CardTitle>
+      {data.data.status === "TAKEN" && (
+        <Card shadow="sm" className="mb-6">
+          <CardBody>
+            {!previewImage ? (
+              <>
+                <CardTitle className="text-base mb-4">Capture Payment Proof</CardTitle>
 
-              {/* Camera Feed */}
-              {!error && (
-                <div className="relative bg-black rounded-lg overflow-hidden mb-4">
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    playsInline
-                    className={`w-full h-auto ${isLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
-                  />
-                  {isLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800">
-                      <div className="text-center">
-                        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                        <p className="text-sm text-neutral-600 dark:text-neutral-400">Starting camera...</p>
+                {/* Camera Feed */}
+                {!error && (
+                  <div className="relative bg-black rounded-lg overflow-hidden mb-4">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      className={`w-full h-auto ${isLoading ? "opacity-0" : "opacity-100"} transition-opacity duration-300`}
+                    />
+                    {isLoading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-neutral-100 dark:bg-neutral-800">
+                        <div className="text-center">
+                          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                          <p className="text-sm text-neutral-600 dark:text-neutral-400">Starting camera...</p>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Error Message */}
-              {error && (
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
-                    <CameraIcon className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    )}
                   </div>
-                  <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
-                </div>
-              )}
-
-              {/* Action Buttons */}
-              <div className="flex flex-col gap-3">
-                {!error && streaming && (
-                  <Button onClick={capturePhoto} variant="primary" fullWidth disabled={isUploading}>
-                    Capture Payment Proof
-                  </Button>
                 )}
 
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="secondary"
-                  fullWidth
-                  disabled={isUploading}
-                >
-                  <PhotoIcon className="w-5 h-5 mr-2" />
-                  Upload from Gallery
-                </Button>
+                {/* Error Message */}
+                {error && (
+                  <div className="text-center py-8">
+                    <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center">
+                      <CameraIcon className="w-8 h-8 text-red-600 dark:text-red-400" />
+                    </div>
+                    <p className="text-sm text-red-600 dark:text-red-400 mb-4">{error}</p>
+                  </div>
+                )}
 
-                <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-              </div>
-            </>
-          ) : (
-            <>
-              <CardTitle className="text-base mb-4">Payment Proof Preview</CardTitle>
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  {!error && streaming && (
+                    <Button onClick={capturePhoto} variant="primary" fullWidth disabled={isUploading}>
+                      Capture Payment Proof
+                    </Button>
+                  )}
 
-              {/* Preview Image */}
-              <div className="mb-4 flex justify-center">
-                <Image
-                  src={previewImage}
-                  alt="Payment proof preview"
-                  className="rounded-lg border"
-                  width={240}
-                  height={240}
-                  style={{ objectFit: "contain" }}
-                />
-              </div>
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="secondary"
+                    fullWidth
+                    disabled={isUploading}
+                  >
+                    <PhotoIcon className="w-5 h-5 mr-2" />
+                    Upload from Gallery
+                  </Button>
 
-              {/* Action Buttons */}
-              <div className="flex gap-3">
-                <Button onClick={retakePhoto} variant="secondary" fullWidth disabled={isUploading}>
-                  {" "}
-                  {/* PARA IMAGEN: Deshabilitar durante upload */}
-                  Retake Photo
-                </Button>
-                <Button onClick={handleSubmitProof} variant="primary" fullWidth disabled={isUploading}>
-                  {" "}
-                  {/* PARA IMAGEN: Mostrar estado de carga */}
-                  {isUploading ? "Uploading..." : "Send Proof"}
-                </Button>
-              </div>
-
-              {/* PARA IMAGEN: Mostrar error de upload si existe */}
-              {uploadError && (
-                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                  <p className="text-sm text-red-700 dark:text-red-400">Error: {uploadError.message}</p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                  />
                 </div>
-              )}
-            </>
-          )}
-        </CardBody>
-      </Card>
+              </>
+            ) : (
+              <>
+                <CardTitle className="text-base mb-4">Payment Proof Preview</CardTitle>
 
+                {/* Preview Image */}
+                <div className="mb-4 flex justify-center">
+                  <Image
+                    src={previewImage}
+                    alt="Payment proof preview"
+                    className="rounded-lg border"
+                    width={240}
+                    height={240}
+                    style={{ objectFit: "contain" }}
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3">
+                  <Button onClick={retakePhoto} variant="secondary" fullWidth disabled={isUploading}>
+                    {" "}
+                    Retake Photo
+                  </Button>
+                  <Button onClick={handleSubmitProof} variant="primary" fullWidth disabled={isUploading}>
+                    {" "}
+                    {isUploading ? "Uploading..." : "Send Proof"}
+                  </Button>
+                </div>
+
+                {uploadError && (
+                  <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                    <p className="text-sm text-red-700 dark:text-red-400">Error: {uploadError.message}</p>
+                  </div>
+                )}
+              </>
+            )}
+          </CardBody>
+        </Card>
+      )}
       {/* Hidden Canvas */}
       <canvas ref={canvasRef} className="hidden" />
     </div>
