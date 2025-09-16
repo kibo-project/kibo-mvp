@@ -10,7 +10,6 @@ import {
   OrderResponse,
   OrderStatus,
   OrdersListResponse,
-  TakeOrderResponse,
 } from "../types/orders.types";
 
 export class OrdersController {
@@ -23,7 +22,6 @@ export class OrdersController {
   async createOrder(request: NextRequest): Promise<Response> {
     try {
       const userId = request.headers.get("x-user-id");
-      console.log("USERID CREATE ORDER", userId);
       if (!userId) {
         return Response.json(
           {

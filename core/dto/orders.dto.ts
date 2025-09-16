@@ -1,13 +1,4 @@
-import { CryptoToken, Currency, Network, OrderStatus, UserRole } from "../types/orders.types";
-
-export interface CreateOrderDto {
-  userId: string;
-  fiatAmount: number;
-  cryptoAmount: number;
-  qrData?: string;
-  recipient: string;
-  description: string;
-}
+import { CryptoToken, Currency, Network, OrderStatus } from "../types/orders.types";
 
 export interface GetOrdersDto {
   userId?: string;

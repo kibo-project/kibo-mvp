@@ -60,14 +60,14 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({
       {showDropdown && hasMultipleRoles && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setShowDropdown(false)} />
-          <div className="absolute top-full right-0 mt-2 rounded-md shadow-lg overflow-hidden z-20 min-w-[80px] border border-gray-300 bg-white dark:bg-gray-800">
+          <div className="absolute top-full right-0 mt-2 rounded-md shadow-lg overflow-hidden z-20 min-w-[80px] border border-gray-300 bg-white dark:bg-gray-800 space-y-1 p-1">
             {availableRoles.map(role => (
               <Button
                 key={role}
                 onClick={() => handleRoleSelect(role)}
                 variant="secondary"
                 size="sm"
-                className="w-full text-left px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 capitalize"
+                className="w-full text-left px-3 py-1 hover:bg-gray-100 dark:hover:bg-gray-800 capitalize rounded"
               >
                 {role}
               </Button>

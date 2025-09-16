@@ -1,6 +1,6 @@
 import { OrderStatus } from "@/core/types/orders.types";
 
-export const formatDateToSpanish = (date: Date | string | number): string => {
+export const formatDateToSpanish = (date: Date | string | number, options?: { fixedTimeZone?: boolean }): string => {
   const dateObj = new Date(date);
 
   return dateObj
@@ -10,19 +10,20 @@ export const formatDateToSpanish = (date: Date | string | number): string => {
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: options?.fixedTimeZone ? "America/La_Paz" : undefined,
     })
     .replace(",", "");
 };
 
 export const getStatusColor = (status: OrderStatus): string => {
   switch (status) {
-    case "COMPLETED":
+    case OrderStatus.COMPLETED:
       return "bg-green-100 dark:bg-green-900";
-    case "PENDING_PAYMENT":
+    case OrderStatus.PENDING_PAYMENT:
       return "bg-yellow-100 dark:bg-yellow-900";
-    case "CANCELLED":
+    case OrderStatus.CANCELLED:
       return "bg-red-100 dark:bg-red-900";
-    case "TAKEN":
+    case OrderStatus.TAKEN || OrderStatus.AVAILABLE:
       return "bg-blue-100 dark:bg-blue-900";
     default:
       return "bg-neutral-100 dark:bg-neutral-800";
@@ -31,7 +32,7 @@ export const getStatusColor = (status: OrderStatus): string => {
 
 export const getStatusIcon = (status: OrderStatus): React.ReactNode => {
   switch (status) {
-    case "COMPLETED":
+    case OrderStatus.COMPLETED:
       return (
         <svg
           className="w-5 h-5 text-green-600 dark:text-green-400"
@@ -42,7 +43,7 @@ export const getStatusIcon = (status: OrderStatus): React.ReactNode => {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
         </svg>
       );
-    case "PENDING_PAYMENT":
+    case OrderStatus.PENDING_PAYMENT:
       return (
         <svg
           className="w-5 h-5 text-yellow-600 dark:text-yellow-400"
@@ -58,13 +59,13 @@ export const getStatusIcon = (status: OrderStatus): React.ReactNode => {
           />
         </svg>
       );
-    case "CANCELLED":
+    case OrderStatus.CANCELLED:
       return (
         <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
         </svg>
       );
-    case "TAKEN":
+    case OrderStatus.TAKEN || OrderStatus.AVAILABLE:
       return (
         <svg className="w-5 h-5 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path

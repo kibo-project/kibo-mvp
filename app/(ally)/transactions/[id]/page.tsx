@@ -10,7 +10,7 @@ import { useUploadProof } from "@/hooks/orders/useUploadProof";
 import { NextPage } from "next";
 import toast from "react-hot-toast";
 import { ArrowLeftIcon, CameraIcon, PhotoIcon } from "@heroicons/react/24/outline";
-import { Button, Card, CardBody, CardTitle } from "~~/components/kibo";
+import { Button, Card, CardBody, CardTitle, Modal, ModalBody, ModalFooter, ModalHeader } from "~~/components/kibo";
 import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
@@ -29,6 +29,7 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
   const { mutate: uploadProof, isPending: isUploading, error: uploadError } = useUploadProof();
   const [transactionId, setTransactionId] = useState<string | null>(null);
   const { data, isLoading: isLoadingOrder } = useOrder(transactionId ?? "");
+  const [modalImage, setModalImage] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     params.then(resolvedParams => {
@@ -108,7 +109,7 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
         video.removeEventListener("canplay", onCanPlay);
       };
     } catch (err) {
-      console.error("Error accessing camera:", err);
+      toast.error(`Error accessing camera:${err}`);
       setError(getErrorMessage(err as Error));
       setIsLoading(false);
     }
@@ -221,52 +222,58 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
           <CardTitle className="text-base mb-2">Transaction Details</CardTitle>
           <div className="space-y-1">
             <p className="text-sm">
-              <span className="font-medium">ID:</span> {data.data.id}
-            </p>
-            <p className="text-sm">
               <span className="font-medium">Amount:</span> {`${data.data.cryptoAmount} ${data.data.cryptoCurrency}`} (
               {`${data.data.fiatAmount} ${data.data.fiatCurrency}`})
             </p>
             <p className="text-sm">
-              <span className="font-medium">User:</span> {data.data.userId}
+              <span className="font-medium"> Creation date:</span> {formatDateToSpanish(data.data.createdAt)}
             </p>
-            <p className="text-sm">
-              <span className="font-medium">Date:</span> {formatDateToSpanish(data.data.createdAt)}
-            </p>
-            {data.data.description && (
-              <p className="text-sm">
-                <span className="font-medium">Description:</span> {data.data.description}
-              </p>
-            )}
             {data.data.recipient && (
               <p className="text-sm">
                 <span className="font-medium">Recipient:</span> {data.data.recipient}
               </p>
             )}
-            {data.data?.qrImageUrl && (
-              <div className="flex justify-center mt-4">
-                <div className="bg-white dark:bg-neutral-800 rounded-lg border p-4 flex flex-col items-center shadow-sm">
-                  <span className="font-medium mb-2">Payment QR Code</span>
+            {data.data.description && (
+              <p className="text-sm">
+                <span className="font-medium">Description:</span> {data.data.description}
+              </p>
+            )}
+
+            <div className="flex justify-center gap-4 mt-4">
+              <div className="bg-white dark:bg-neutral-800 rounded-lg border p-3 flex flex-col items-center shadow-sm">
+                <span className="font-medium mb-2 text-sm">Payment QR Code</span>
+                {data.data?.qrImageUrl ? (
                   <img
                     src={data.data.qrImageUrl}
                     alt="Transaction QR"
-                    className="w-60 h-60 object-contain rounded-lg border"
+                    className="w-32 h-32 object-contain rounded-lg border cursor-pointer hover:opacity-80"
+                    onClick={() => setModalImage({ url: data.data!.qrImageUrl!, title: "Payment QR Code" })}
                   />
-                </div>
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
+                    <span className="text-gray-500 text-xs">No image</span>
+                  </div>
+                )}
               </div>
-            )}
-            {data.data?.confirmationProofUrl && (
-              <div className="flex justify-center mt-4">
-                <div className="bg-white dark:bg-neutral-800 rounded-lg border p-4 flex flex-col items-center shadow-sm">
-                  <span className="font-medium mb-2">Confirmation Proof Image</span>
+
+              <div className="bg-white dark:bg-neutral-800 rounded-lg border p-3 flex flex-col items-center shadow-sm">
+                <span className="font-medium mb-2 text-sm">Confirmation Proof</span>
+                {data.data?.confirmationProofUrl ? (
                   <img
                     src={data.data.confirmationProofUrl}
-                    alt="Transaction QR"
-                    className="w-60 h-60 object-contain rounded-lg border"
+                    alt="Confirmation Proof"
+                    className="w-32 h-32 object-contain rounded-lg border cursor-pointer hover:opacity-80"
+                    onClick={() =>
+                      setModalImage({ url: data.data!.confirmationProofUrl!, title: "Confirmation Proof" })
+                    }
                   />
-                </div>
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
+                    <span className="text-gray-500 text-xs">No image</span>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </CardBody>
       </Card>
@@ -373,6 +380,32 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
           </CardBody>
         </Card>
       )}
+      {/* Image Preview Modal */}
+      {modalImage && (
+        <Modal open={!!modalImage} onClose={() => setModalImage(null)}>
+          <ModalHeader onClose={() => setModalImage(null)}>
+            <h3 className="text-lg font-semibold">{modalImage.title}</h3>
+          </ModalHeader>
+          <ModalBody>
+            <div className="text-center">
+              <Image
+                src={modalImage.url}
+                alt={modalImage.title}
+                width={400}
+                height={400}
+                className="rounded-lg max-w-full max-h-[60vh] object-contain mx-auto"
+                unoptimized
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter justify="center">
+            <Button variant="primary" onClick={() => setModalImage(null)}>
+              Close
+            </Button>
+          </ModalFooter>
+        </Modal>
+      )}
+
       {/* Hidden Canvas */}
       <canvas ref={canvasRef} className="hidden" />
     </div>

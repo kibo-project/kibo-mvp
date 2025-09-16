@@ -33,7 +33,7 @@ const Users: NextPage = () => {
         {/* Header */}
         <div className="kibo-page-header mb-6">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center">
+            <Link href="/admin" className="flex items-center">
               <ArrowLeftIcon className="w-6 h-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors" />
             </Link>
             <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Users History</h1>

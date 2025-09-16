@@ -80,7 +80,7 @@ const AllyAvailableOrders: NextPage = () => {
         `${order.cryptoAmount} ${order.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
         `${order.fiatAmount} ${order.fiatCurrency}`.toLowerCase().includes(searchLower) ||
         order.userId?.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(order.createdAt).toLowerCase().includes(searchLower)
+        formatDateToSpanish(order.createdAt, { fixedTimeZone: true }).toLowerCase().includes(searchLower)
       );
     }) ?? [];
 
@@ -168,7 +168,7 @@ const AllyAvailableOrders: NextPage = () => {
                         </p>
                         <p className="text-xs text-neutral-500">{order.userId}</p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                          {formatDateToSpanish(order.createdAt)}
+                          {formatDateToSpanish(order.createdAt, { fixedTimeZone: true })}
                         </p>
                       </div>
                     </div>
@@ -238,9 +238,15 @@ const AllyAvailableOrders: NextPage = () => {
                 </div>
 
                 <div>
-                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Date</label>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Creation Date</label>
                   <p className="text-sm text-neutral-900 dark:text-neutral-100">
-                    {formatDateToSpanish(selectedOrder.createdAt)}
+                    {formatDateToSpanish(selectedOrder.createdAt, { fixedTimeZone: true })}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Expiration Date</label>
+                  <p className="text-sm text-neutral-900 dark:text-neutral-100">
+                    {formatDateToSpanish(selectedOrder.expiresAt, { fixedTimeZone: true })}
                   </p>
                 </div>
 

@@ -24,8 +24,8 @@ export class OrdersRepository {
         description: createOrderDto.description,
         qr_image: createOrderDto.qrImage,
         qr_image_url: createOrderDto.qrImageUrl,
-        created_at: new Date().toISOString(),
         expires_at: createOrderDto.expiresAt,
+        created_at: new Date().toISOString(),
       })
       .select("*")
       .single();

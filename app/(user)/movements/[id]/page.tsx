@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useOrder } from "@/hooks/orders/useOrder";
 import { NextPage } from "next";
-import {
-  ArrowLeftIcon, // CheckIcon,
-  // XMarkIcon
-} from "@heroicons/react/24/outline";
-import { Card, CardBody, CardTitle } from "~~/components/kibo";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { Button, Card, CardBody, CardTitle, Modal, ModalBody, ModalFooter, ModalHeader } from "~~/components/kibo";
 
 interface OrderProps {
   params: Promise<{
@@ -19,6 +17,7 @@ interface OrderProps {
 const OrderDetails: NextPage<OrderProps> = ({ params }) => {
   const [orderId, setOrderId] = useState<string | null>(null);
   const { data, isLoading, error } = useOrder(orderId ?? "");
+  const [modalImage, setModalImage] = useState<{ url: string; title: string } | null>(null);
 
   useEffect(() => {
     params.then(resolvedParams => {
@@ -46,11 +45,11 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
     );
   }
 
-  if (!data?.data) {
+  if (!data || !data.data) {
     return (
       <div className="md:mx-auto md:min-w-md px-4">
         <div className="flex items-center justify-center h-64">
-          <div>Order not found</div>
+          <div>No order data found</div>
         </div>
       </div>
     );
@@ -120,40 +119,68 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
                 <p className="text-sm font-medium break-all">{data.data.escrowAddress}</p>
               </div>
             )}
+            <div className="flex justify-center gap-4 mt-4">
+              <div className="bg-white dark:bg-neutral-800 rounded-lg border p-3 flex flex-col items-center shadow-sm">
+                <span className="font-medium mb-2 text-sm">Payment QR Code</span>
+                {data.data?.qrImageUrl ? (
+                  <img
+                    src={data.data.qrImageUrl}
+                    alt="Transaction QR"
+                    className="w-32 h-32 object-contain rounded-lg border cursor-pointer hover:opacity-80"
+                    onClick={() => setModalImage({ url: data.data!.qrImageUrl!, title: "Payment QR Code" })}
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
+                    <span className="text-gray-500 text-xs">No image</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-white dark:bg-neutral-800 rounded-lg border p-3 flex flex-col items-center shadow-sm">
+                <span className="font-medium mb-2 text-sm">Confirmation Proof</span>
+                {data.data?.confirmationProofUrl ? (
+                  <img
+                    src={data.data.confirmationProofUrl}
+                    alt="Confirmation Proof"
+                    className="w-32 h-32 object-contain rounded-lg border cursor-pointer hover:opacity-80"
+                    onClick={() =>
+                      setModalImage({ url: data.data!.confirmationProofUrl!, title: "Confirmation Proof" })
+                    }
+                  />
+                ) : (
+                  <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
+                    <span className="text-gray-500 text-xs">No image</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </CardBody>
       </Card>
-
-      {/* QR Code Section - Optional */}
-      {data.data.qrImageUrl && (
-        <Card shadow="sm" className="mb-6">
-          <CardBody>
-            <CardTitle className="text-base mb-4">Payment QR Code</CardTitle>
-            <div className="flex justify-center">
-              <div className="w-48 h-48 bg-neutral-100 dark:bg-neutral-800 rounded-lg flex items-center justify-center border">
-                <img
-                  src={data.data.qrImageUrl}
-                  alt="QR Code"
-                  className="w-full h-full object-cover rounded-lg"
-                  width={192}
-                  height={192}
-                  onError={e => {
-                    const target = e.currentTarget as HTMLImageElement;
-                    target.style.display = "none";
-                    const nextSibling = target.nextElementSibling as HTMLElement;
-                    if (nextSibling) {
-                      nextSibling.style.display = "flex";
-                    }
-                  }}
-                />
-                <div className="hidden flex-col items-center text-neutral-400">
-                  <div className="w-16 h-16 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
-                  <p className="text-xs">QR Code Preview</p>
-                </div>
-              </div>
+      {/* Image Preview Modal */}
+      {modalImage && (
+        <Modal open={!!modalImage} onClose={() => setModalImage(null)}>
+          <ModalHeader onClose={() => setModalImage(null)}>
+            <h3 className="text-lg font-semibold">{modalImage.title}</h3>
+          </ModalHeader>
+          <ModalBody>
+            <div className="text-center">
+              <Image
+                src={modalImage.url}
+                alt={modalImage.title}
+                width={400}
+                height={400}
+                className="rounded-lg max-w-full max-h-[60vh] object-contain mx-auto"
+                unoptimized
+              />
             </div>
-          </CardBody>
-        </Card>
+          </ModalBody>
+          <ModalFooter justify="center">
+            <Button variant="primary" onClick={() => setModalImage(null)}>
+              Close
+            </Button>
+          </ModalFooter>
+        </Modal>
       )}
     </div>
   );

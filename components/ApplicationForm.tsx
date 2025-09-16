@@ -5,6 +5,7 @@ import { ConfirmationModal } from "@/components/ConfimationModal";
 import { Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
 import { FormData } from "@/core/types/generic.types";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
 
 interface ApplicationFormProps {
   onClose: () => void;
@@ -53,6 +54,7 @@ export const ApplicationForm: React.FC<ApplicationFormProps> = ({
       reset();
       setFormDataToSubmit(null);
     } catch (error) {
+      toast.error(`Error submitting form`);
       console.error("Error submitting form:", error);
     }
   };
