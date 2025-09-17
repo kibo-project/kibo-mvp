@@ -7,6 +7,7 @@ import { UserRole } from "@/core/types/orders.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { usePrivy } from "@privy-io/react-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import type { NextPage } from "next";
 // import { mantleSepoliaTestnet } from "viem/chains";
 // import { useAccount, useBalance } from "wagmi";
@@ -23,6 +24,7 @@ interface TopButton {
 
 const Home: NextPage = () => {
   // const { address } = useAccount();
+  const queryClient = useQueryClient();
   const { authenticated, ready } = usePrivy();
   const { data, refetch } = useOrders({ enabled: authenticated });
   const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds } = useAuthStore();
@@ -78,12 +80,18 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
-      setUserRole(roleChangeMutation.data.data.activeRoleName);
-      refetch()
-        .then(() => {})
-        .catch(() => {});
+      const newRole = roleChangeMutation.data.data.activeRoleName;
+      queryClient.removeQueries({ queryKey: ["orders"] });
+
+      setUserRole(newRole);
+      console.log("USERROLE ", newRole);
+      console.log("entra aca y hace refetch");
+
+      if (newRole === "admin") {
+        router.replace("/admin");
+      }
     }
-  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole, refetch]);
+  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole, refetch, userRole]);
 
   // if (!ready) {
   //   return (
@@ -158,7 +166,7 @@ const Home: NextPage = () => {
 
       <RecentActivity
         title="Transactions"
-        orders={data?.data?.orders || []}
+        items={data?.data?.orders || []}
         viewAllHref="/movements"
         viewOneHref="/movements/"
         emptyMessage="No recent transactions"
@@ -170,7 +178,7 @@ const Home: NextPage = () => {
     <div className="md:mx-auto md:min-w-md max-w-lg px-4">
       <RecentActivity
         title="Recent Activity"
-        orders={data?.data?.orders || []}
+        items={data?.data?.orders || []}
         viewOneHref="/transactions/"
         viewAllHref="/transactions"
         emptyMessage="No recent activity"

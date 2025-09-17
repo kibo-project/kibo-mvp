@@ -4,58 +4,66 @@ import { OrderResponse } from "@/core/types/orders.types";
 import { Card, CardBody } from "~~/components/kibo";
 import { formatDateToSpanish, getStatusColor, getStatusIcon } from "~~/utils/front.functions";
 
-interface RecentActivityProps {
+interface BaseItem {
+  id: string;
+  createdAt: string;
+}
+
+interface RecentActivityProps<T extends BaseItem = OrderResponse> {
   title: string;
-  orders: OrderResponse[];
+  items: T[];
   viewAllHref?: string;
   viewOneHref: string;
   emptyMessage?: string;
   className?: string;
+  renderItem?: (item: T) => React.ReactNode;
 }
 
-export const RecentActivity: React.FC<RecentActivityProps> = ({
+export const RecentActivity = <T extends BaseItem = OrderResponse>({
   title,
-  orders,
+  items,
   viewAllHref,
   viewOneHref,
   emptyMessage = "No recent activity",
   className = "",
-}) => {
-  const OrderItemComponent = ({ order }: { order: OrderResponse }) => {
-    const content = (
-      <div className="p-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className={`w-10 h-10 rounded-full ${getStatusColor(order.status)} flex items-center justify-center`}>
-              {getStatusIcon(order.status)}
-            </div>
-            <div>
-              <h4 className="font-medium text-sm text-base-content">
-                {order.cryptoCurrency} → {order.fiatCurrency}
-              </h4>
-              <div className="flex items-center gap-2">
-                <p className="text-xs text-base-content opacity-60">{formatDateToSpanish(order.createdAt)}</p>
-
-                <span className="text-xs text-base-content opacity-50">• {order.status}</span>
-              </div>
-            </div>
+  renderItem,
+}: RecentActivityProps<T>) => {
+  const defaultOrderRenderer = (item: OrderResponse) => (
+    <div className="p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`w-10 h-10 rounded-full ${getStatusColor(item.status)} flex items-center justify-center`}>
+            {getStatusIcon(item.status)}
           </div>
-          <div className="text-right">
-            <div className="font-semibold text-base-content">
-              {order.fiatAmount} {order.fiatCurrency}
-            </div>
-            <div className="text-xs text-base-content opacity-60">
-              {order.cryptoAmount} {order.cryptoCurrency}
+          <div>
+            <h4 className="font-medium text-sm text-base-content">
+              {item.cryptoCurrency} → {item.fiatCurrency}
+            </h4>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-base-content opacity-60">{formatDateToSpanish(item.createdAt)}</p>
+              <span className="text-xs text-base-content opacity-50">• {item.status}</span>
             </div>
           </div>
         </div>
+        <div className="text-right">
+          <div className="font-semibold text-base-content">
+            {item.fiatAmount} {item.fiatCurrency}
+          </div>
+          <div className="text-xs text-base-content opacity-60">
+            {item.cryptoAmount} {item.cryptoCurrency}
+          </div>
+        </div>
       </div>
-    );
+    </div>
+  );
+
+  const ItemComponent = ({ item }: { item: T }) => {
+    const content = renderItem ? renderItem(item) : defaultOrderRenderer(item as unknown as OrderResponse);
 
     return (
       <Link
-        href={viewOneHref + order.id}
-        key={order.id}
+        href={viewOneHref + item.id}
+        key={item.id}
         className="block hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors"
       >
         {content}
@@ -82,10 +90,10 @@ export const RecentActivity: React.FC<RecentActivityProps> = ({
 
       <Card>
         <CardBody>
-          {orders.length > 0 ? (
+          {items.length > 0 ? (
             <div className="space-y-0">
-              {orders.map(order => (
-                <OrderItemComponent key={order.id} order={order} />
+              {items.map(item => (
+                <ItemComponent key={item.id} item={item} />
               ))}
             </div>
           ) : (

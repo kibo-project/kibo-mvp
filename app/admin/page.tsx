@@ -1,22 +1,22 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import { RoleGuard } from "@/components/RoleGuard";
 import { RoleSelector } from "@/components/RoleSelector";
 import { RecentActivity } from "@/components/dashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { AllyApplication } from "@/core/types/ally.applications.types";
 import { UserRole } from "@/core/types/orders.types";
+import { useApplications } from "@/hooks/applications/useApplications";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
-import { useOrders } from "@/hooks/orders/useOrders";
 import { useAuthStore } from "@/services/store/auth-store.";
-import { usePrivy } from "@privy-io/react-auth";
+import { formatDateToSpanish, getStatusColorApplication, getStatusIconApplication } from "@/utils/front.functions";
 import { NextPage } from "next";
 
 const AdminHome: NextPage = () => {
-  const { authenticated } = usePrivy();
-  const { data } = useOrders({ enabled: authenticated });
   const { setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const roleChangeMutation = useRoleChange();
+  const { data, refetch } = useApplications();
 
   const availableRoles = useMemo(() => {
     if (!roleNames || howRoles <= 1) return [];
@@ -37,8 +37,13 @@ const AdminHome: NextPage = () => {
   useEffect(() => {
     if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
       setUserRole(roleChangeMutation.data.data.activeRoleName);
+      if (roleChangeMutation.data?.data?.activeRoleName == "admin") {
+        refetch()
+          .then(() => {})
+          .catch(() => {});
+      }
     }
-  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole]);
+  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole, refetch]);
 
   if (roleChangeMutation.isPending) {
     return (
@@ -53,7 +58,26 @@ const AdminHome: NextPage = () => {
       </RoleGuard>
     );
   }
-
+  const renderApplication = (application: AllyApplication) => (
+    <div className="p-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-full ${getStatusColorApplication(application.status)} flex items-center justify-center`}
+          >
+            {getStatusIconApplication(application.status)}
+          </div>
+          <div>
+            <h4 className="font-medium text-sm text-base-content">{application.fullName}</h4>
+            <div className="flex items-center gap-2">
+              <p className="text-xs text-base-content opacity-60">{formatDateToSpanish(application.createdAt)}</p>
+              <span className="text-xs text-base-content opacity-50">• {application.status}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
   const AdminHeader = () => (
     <div className="container flex flex-col px-5 w-full text-white text-center mb-24 md:mb-32">
       <div className="flex items-center justify-between gap-2">
@@ -84,10 +108,11 @@ const AdminHome: NextPage = () => {
     <div className="md:mx-auto md:min-w-md max-w-lg px-4">
       <RecentActivity
         title="Applications"
-        orders={data?.data?.orders || []}
+        items={data?.data?.applications || []}
         viewAllHref="/admin/applications"
         viewOneHref="/admin"
         emptyMessage="There are not applications"
+        renderItem={renderApplication}
       />
     </div>
   );

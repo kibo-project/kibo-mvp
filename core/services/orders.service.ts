@@ -84,8 +84,6 @@ export class OrdersService {
     } else if (roleNameActive === "ally") {
       getOrdersDto.allyId = userId;
     }
-    console.log("getOrdersDto", getOrdersDto);
-
     const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
