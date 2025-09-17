@@ -136,6 +136,9 @@ export class OrdersService {
     if (!order) {
       throw new Error("Order not found");
     }
+    if (allyId === order.userId) {
+      throw new Error("An ally cannot take their own order");
+    }
 
     if (order.status !== OrderStatus.AVAILABLE) {
       throw new Error("Order is not available for taking");

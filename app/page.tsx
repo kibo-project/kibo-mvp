@@ -84,9 +84,6 @@ const Home: NextPage = () => {
       queryClient.removeQueries({ queryKey: ["orders"] });
 
       setUserRole(newRole);
-      console.log("USERROLE ", newRole);
-      console.log("entra aca y hace refetch");
-
       if (newRole === "admin") {
         router.replace("/admin");
       }
