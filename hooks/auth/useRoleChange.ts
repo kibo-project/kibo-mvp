@@ -1,4 +1,4 @@
-import { authService } from "../../services/auth";
+import { authService } from "@/services/auth";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 export const useRoleChange = () => {

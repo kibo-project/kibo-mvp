@@ -100,6 +100,7 @@ const Home: NextPage = () => {
       router.replace("/admin");
     }
   }, [ready, authenticated, router, userRole]);
+
   useEffect(() => {
     setHasVisitedRoot(true);
   }, [setHasVisitedRoot]);

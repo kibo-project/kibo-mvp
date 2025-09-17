@@ -2,8 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useRoleAccess } from "@/hooks/auth/useRoleAccess";
 import { usePrivy } from "@privy-io/react-auth";
+import { useAuthStore } from "~~/services/store/auth-store.";
 
 interface RoleGuardProps {
   children: React.ReactNode;
@@ -11,26 +11,27 @@ interface RoleGuardProps {
 }
 
 export const RoleGuard = ({ children, requiredRole }: RoleGuardProps) => {
-  const { userRole, canAccess } = useRoleAccess();
+  const { userRole } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
+
   useEffect(() => {
     if (!authenticated && ready && !userRole) {
       router.push("/login");
       return;
     }
 
-    if (authenticated && userRole == "user" && !canAccess(requiredRole)) {
-      router.push("/");
+    if (authenticated && userRole === "admin" && userRole !== requiredRole) {
+      router.push("/admin");
       return;
     } else {
-      if (ready && userRole && !canAccess(requiredRole)) {
-        router.push("/404");
+      if (authenticated && userRole && userRole !== requiredRole) {
+        router.push("/");
       }
     }
-  }, [userRole, requiredRole, canAccess, router, ready, authenticated]);
+  }, [userRole, requiredRole, router, ready, authenticated]);
 
-  if (!userRole || !canAccess(requiredRole)) {
+  if (!userRole || userRole !== requiredRole) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
