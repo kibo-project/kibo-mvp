@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Badge, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
 import { UserResponse } from "@/core/types/users.types";
 import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { formatDateToSpanish } from "@/utils/front.functions";
@@ -26,6 +26,33 @@ const Users: NextPage = () => {
         formatDateToSpanish(user.createdAt).toLowerCase().includes(searchLower)
       );
     }) ?? [];
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  if (isLoading) {
+    return (
+      <RoleGuard requiredRole="admin">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex justify-center items-center py-8">
+            <p>Loading Applications...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
+  if (error) {
+    return (
+      <RoleGuard requiredRole="user">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex flex-col justify-center items-center py-8">
+            <p className="text-red-500 mb-4">Error: {error.message}</p>
+            <Button onClick={handleRefresh}>Retry</Button>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
 
   return (
     <RoleGuard requiredRole="admin">

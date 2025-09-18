@@ -14,11 +14,7 @@ import { formatDateToSpanish } from "~~/utils/front.functions";
 const AdminTransactions: NextPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    data,
-    // isLoading,
-    // error
-  } = useOrders();
+  const { data, isLoading, error, refetch } = useOrders();
 
   const handleTransactionAction = useCallback(
     (id: string) => {
@@ -42,6 +38,34 @@ const AdminTransactions: NextPage = () => {
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  if (isLoading) {
+    return (
+      <RoleGuard requiredRole="ally">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex justify-center items-center py-8">
+            <p>Loading Transactions...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
+  if (error) {
+    return (
+      <RoleGuard requiredRole="ally">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex flex-col justify-center items-center py-8">
+            <p className="text-red-500 mb-4">Error: {error.message}</p>
+            <Button onClick={handleRefresh}>Retry</Button>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
 
   return (
     <RoleGuard requiredRole="ally">
