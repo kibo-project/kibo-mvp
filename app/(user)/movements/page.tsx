@@ -40,32 +40,29 @@ const Movements: NextPage = () => {
     setSearchTerm(e.target.value);
   }, []);
 
-  // ✅ Handler para refrescar datos
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
 
-  // ✅ Mostrar loading state
   if (isLoading) {
     return (
       <RoleGuard requiredRole="user">
         <div className="md:mx-auto md:min-w-md px-4">
           <div className="flex justify-center items-center py-8">
-            <p>Cargando transacciones...</p>
+            <p>Loading Transactions...</p>
           </div>
         </div>
       </RoleGuard>
     );
   }
 
-  // ✅ Mostrar error state
   if (error) {
     return (
       <RoleGuard requiredRole="user">
         <div className="md:mx-auto md:min-w-md px-4">
           <div className="flex flex-col justify-center items-center py-8">
             <p className="text-red-500 mb-4">Error: {error.message}</p>
-            <Button onClick={handleRefresh}>Reintentar</Button>
+            <Button onClick={handleRefresh}>Retry</Button>
           </div>
         </div>
       </RoleGuard>
@@ -106,21 +103,22 @@ const Movements: NextPage = () => {
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <CardTitle className="text-base mb-1 flex items-center gap-2">
-                        {/* ✅ Mostrar tipo de operación */}
                         <span className="text-neutral-900 dark:text-neutral-100">Payment</span>
                         <Badge
                           variant={
-                            movement.status === OrderStatus.COMPLETED
-                              ? "success"
-                              : movement.status === OrderStatus.AVAILABLE
+                            movement.status === OrderStatus.PENDING_PAYMENT
+                              ? "gray"
+                              : movement.status === OrderStatus.AVAILABLE || movement.status === OrderStatus.TAKEN
                                 ? "warning"
-                                : "error"
+                                : movement.status === OrderStatus.COMPLETED
+                                  ? "success"
+                                  : movement.status === OrderStatus.CANCELLED
+                                    ? "error"
+                                    : "info"
                           }
                           size="sm"
                         >
-                          {movement.status === OrderStatus.PENDING_PAYMENT && "Pending"}
-                          {movement.status === OrderStatus.COMPLETED && "Completed"}
-                          {movement.status === OrderStatus.REFUNDED && "Failed"}
+                          {movement.status}
                         </Badge>
                       </CardTitle>
                       <div className="space-y-1">
@@ -135,20 +133,12 @@ const Movements: NextPage = () => {
                       </div>
                     </div>
                     <Button
-                      variant={
-                        movement.status === OrderStatus.COMPLETED
-                          ? "primary"
-                          : movement.status === OrderStatus.AVAILABLE
-                            ? "secondary"
-                            : "ghost"
-                      }
+                      variant="primary"
                       size="xs"
                       className="self-center min-w-20"
                       onClick={() => handleMovementAction(movement.id)}
                     >
-                      {movement.status === OrderStatus.PENDING_PAYMENT && "View"}
-                      {movement.status === OrderStatus.COMPLETED && "Receipt"}
-                      {movement.status === OrderStatus.REFUNDED && "Details"}
+                      Details
                     </Button>
                   </div>
                 </CardBody>

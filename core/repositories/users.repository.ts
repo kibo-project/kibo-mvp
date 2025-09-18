@@ -23,32 +23,6 @@ export class UsersRepository {
       return this.getAllUsersWithRoles(filters);
     }
   }
-  private async getUsersByRole(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
-    const { data, error, count } = await this.supabase
-      .from("users")
-      .select(
-        `
-      *,
-      users_roles!inner(
-        roles!inner ( id,
-        name)
-      )
-    `,
-        { count: "exact" }
-      )
-      .eq("users_roles.roles.name", filters.role)
-      .range(filters.offset, filters.offset + filters.limit - 1)
-      .order("created_at", { ascending: false });
-    if (error) {
-      throw new Error(`Failed to fetch users by role: ${error.message}`);
-    }
-    const usersWithRoles: UserResponse[] = data?.map(userData => UsersMapper.dbToUserResponse(userData)) || [];
-
-    return {
-      users: usersWithRoles,
-      total: count || 0,
-    };
-  }
 
   async getAllUsersWithRoles(filters: UsersFiltersDto) {
     const { data, error, count } = await this.supabase
@@ -139,6 +113,20 @@ export class UsersRepository {
     return data[0].id;
   }
 
+  async updateUserToApplicant(userId: string, isApplicant: boolean) {
+    const { error } = await this.supabase
+      .from("users")
+      .update({
+        is_an_applicant: isApplicant,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", userId);
+
+    if (error) {
+      throw new Error(`Error updataing user: ${error.message}`);
+    }
+  }
+
   async updateUser(userId: string, newActiveRoleId?: string): Promise<User> {
     const { data, error } = await this.supabase
       .from("users")
@@ -204,5 +192,32 @@ export class UsersRepository {
     }
 
     return true;
+  }
+
+  private async getUsersByRole(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
+    const { data, error, count } = await this.supabase
+      .from("users")
+      .select(
+        `
+      *,
+      users_roles!inner(
+        roles!inner ( id,
+        name)
+      )
+    `,
+        { count: "exact" }
+      )
+      .eq("users_roles.roles.name", filters.role)
+      .range(filters.offset, filters.offset + filters.limit - 1)
+      .order("created_at", { ascending: false });
+    if (error) {
+      throw new Error(`Failed to fetch users by role: ${error.message}`);
+    }
+    const usersWithRoles: UserResponse[] = data?.map(userData => UsersMapper.dbToUserResponse(userData)) || [];
+
+    return {
+      users: usersWithRoles,
+      total: count || 0,
+    };
   }
 }

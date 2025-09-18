@@ -55,8 +55,8 @@ class OrdersApiService {
     return this.request<ApiResponse<OrdersListResponse>>(endpoint);
   }
 
-  async getOrderById(id: string): Promise<OrderDetailsResponse> {
-    return this.request<OrderDetailsResponse>(ENDPOINTS.ORDER_BY_ID(id));
+  async getOrderById(id: string): Promise<ApiResponse<OrderResponse>> {
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDER_BY_ID(id));
   }
 
   async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {
@@ -95,8 +95,8 @@ class OrdersApiService {
     return this.request<ApiResponse<AvailableOrdersResponse>>(endpoint);
   }
 
-  async takeOrder(id: string): Promise<ApiResponse<TakeOrderResponse>> {
-    return this.request<ApiResponse<TakeOrderResponse>>(ENDPOINTS.TAKE_ORDER(id), {
+  async takeOrder(id: string): Promise<ApiResponse<OrderResponse>> {
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.TAKE_ORDER(id), {
       method: "PATCH",
     });
   }

@@ -25,7 +25,7 @@ export interface AllyApplication {
   phone: string;
   address: string;
   status: ApplicationStatus;
-  createdAt: Date;
+  createdAt: string;
   updatedAt?: Date;
   reviewedAt?: Date;
   reviewedBy?: string;

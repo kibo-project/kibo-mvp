@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 import { TakeOrderDto, UploadProofDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
@@ -8,9 +7,9 @@ import {
   AvailableOrdersFilters,
   CreateOrderRequest,
   GetOrdersResponse,
+  OrderResponse,
   OrderStatus,
   OrdersListResponse,
-  TakeOrderResponse,
 } from "../types/orders.types";
 
 export class OrdersController {
@@ -23,7 +22,6 @@ export class OrdersController {
   async createOrder(request: NextRequest): Promise<Response> {
     try {
       const userId = request.headers.get("x-user-id");
-      console.log("USERID CREATE ORDER", userId);
       if (!userId) {
         return Response.json(
           {
@@ -144,21 +142,7 @@ export class OrdersController {
         );
       }
       const order = await this.ordersService.getOrderById(orderId, userId);
-
-      if (!order) {
-        return Response.json(
-          {
-            success: false,
-            error: {
-              code: "ORDER_NOT_FOUND",
-              message: "Order not found",
-            },
-          },
-          { status: 404 }
-        );
-      }
-
-      const response: ApiResponse<typeof order> = {
+      const response: ApiResponse<OrderResponse> = {
         success: true,
         data: order,
       };
@@ -231,12 +215,10 @@ export class OrdersController {
         orderId: orderId,
       };
 
-      const order = await this.ordersService.takeOrder(takeOrderDto, userId);
-      const takeOrderResponse: TakeOrderResponse = {
-        order,
-      };
+      const takeOrder = await this.ordersService.takeOrder(takeOrderDto, userId);
+      const takeOrderResponse = OrderMapper.orderToOrderResponse(takeOrder);
 
-      const response: ApiResponse<typeof takeOrderResponse> = {
+      const response: ApiResponse<OrderResponse> = {
         success: true,
         data: takeOrderResponse,
       };
