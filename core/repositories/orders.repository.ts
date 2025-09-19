@@ -93,6 +93,82 @@ export class OrdersRepository {
     };
   }
 
+  async subscribeToChanges(filterCondition: string, callback: (data: any) => void): Promise<any> {
+    console.log("RLS deshabilitado :", filterCondition);
+
+    const match = filterCondition.match(/^(.+)=eq\.(.+)$/);
+    if (!match) {
+      throw new Error("Invalid filter condition format");
+    }
+
+    const [, field, value] = match;
+    console.log(`filtro  - campo: ${field}, Valor: ${value}`);
+
+    const channel = this.supabase
+      .channel(`orders_${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        (payload: any) => {
+          console.log("recibido ", payload.eventType);
+
+          let shouldTrigger = false;
+
+          switch (payload.eventType) {
+            case "INSERT":
+              console.log("INSERT PAYLOAD", payload);
+              shouldTrigger = this.matchesFilter(payload.new, field, value);
+              break;
+            case "UPDATE":
+              const matchesNew = this.matchesFilter(payload.new, field, value);
+              const matchesOld = this.matchesFilter(payload.old, field, value);
+              shouldTrigger = matchesNew || matchesOld;
+              break;
+            case "DELETE":
+              console.log("DELETE PAYLOAD", payload);
+
+              shouldTrigger = this.matchesFilter(payload.old, field, value);
+              break;
+          }
+
+          console.log(`filtro ${field}=${value} `, shouldTrigger);
+
+          if (shouldTrigger) {
+            try {
+              callback({
+                eventType: payload.eventType,
+                old: payload.old ? OrderMapper.dbToOrder(payload.old) : null,
+                new: payload.new ? OrderMapper.dbToOrder(payload.new) : null,
+              });
+            } catch (error) {
+              console.error("error en callbac ", error);
+            }
+          }
+        }
+      )
+      .subscribe(status => {
+        console.log("Estado suscricion ", status);
+      });
+
+    return {
+      channel,
+      unsubscribe: () => this.supabase.removeChannel(channel),
+    };
+  }
+
+  private matchesFilter(record: any, field: string, value: string): boolean {
+    if (!record) return false;
+
+    const recordValue = record[field]?.toString();
+    const matches = recordValue === value;
+
+    return matches;
+  }
+
   async findAvailable(filters: AvailableOrdersFilters): Promise<Order[]> {
     let query = this.supabase
       .from("orders")

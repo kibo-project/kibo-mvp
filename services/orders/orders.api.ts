@@ -55,6 +55,40 @@ class OrdersApiService {
     return this.request<ApiResponse<OrdersListResponse>>(endpoint);
   }
 
+  async getOrdersRealtime(
+    filters: OrdersFilters = {},
+    onData: (data: any) => void,
+    onError?: (error: Error) => void
+  ): Promise<() => void> {
+    const params = new URLSearchParams();
+
+    if (filters.status) params.append("status", filters.status);
+    if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.offset) params.append("offset", filters.offset.toString());
+
+    const queryString = params.toString();
+    const url = `${this.baseUrl}/orders/realtime${queryString ? `?${queryString}` : ""}`;
+
+    const eventSource = new EventSource(url, {
+      withCredentials: true,
+    });
+
+    eventSource.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+        onData(data);
+      } catch (error) {
+        onError?.(new Error("Failed to parse SSE data"));
+      }
+    };
+
+    eventSource.onerror = error => {
+      onError?.(new Error("SSE connection error"));
+    };
+
+    return () => eventSource.close();
+  }
+
   async getOrderById(id: string): Promise<ApiResponse<OrderResponse>> {
     return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDER_BY_ID(id));
   }

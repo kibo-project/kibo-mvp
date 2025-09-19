@@ -98,6 +98,35 @@ export class OrdersService {
     };
   }
 
+  async subscribeToOrderChanges(userId: string, roleActiveNow: string, callback: (data: any) => void): Promise<any> {
+    const activeRoleId = await this.usersRepository.getActiveRoleIdByUserId(userId);
+    if (!activeRoleId) {
+      throw new Error("User does not have an active role");
+    }
+
+    const roleNameActive = (await this.usersRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
+
+    if (roleNameActive !== roleActiveNow) {
+      throw new Error(
+        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
+      );
+    }
+
+    let filterCondition: string;
+
+    if (roleNameActive === "user") {
+      filterCondition = `user_id=eq.${userId}`;
+    } else if (roleNameActive === "ally") {
+      filterCondition = `ally_id=eq.${userId}`;
+    } else {
+      throw new Error("Invalid role");
+    }
+
+    const subscription = await this.ordersRepository.subscribeToChanges(filterCondition, callback);
+
+    return subscription;
+  }
+
   async getOrderById(orderId: string, userId: string): Promise<OrderResponse> {
     const order = await this.ordersRepository.findById(orderId);
     if (userId && !(await this.canUserAccessOrder(order!, userId))) {
