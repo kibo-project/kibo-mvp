@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { RoleSelector } from "@/components/RoleSelector";
 import { UserRole } from "@/core/types/orders.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
-//import { useOrders } from "@/hooks/orders/useOrders";
-import { useOrdersRealtime } from "@/hooks/orders/useOrdersRealtime";
+import { useOrders } from "@/hooks/orders/useOrders";
+//import { useOrdersRealtime } from "@/hooks/orders/useOrdersRealtime";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import type { NextPage } from "next";
@@ -27,25 +27,25 @@ const Home: NextPage = () => {
   // const { address } = useAccount();
   const queryClient = useQueryClient();
   const { authenticated, ready } = usePrivy();
-  // const { data, refetch } = useOrders({ enabled: authenticated });
+  const { data, refetch } = useOrders({ enabled: authenticated });
 
   const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const currentView = userRole;
   const router = useRouter();
-  const {
-    data: realtimeData,
-    loading: realtimeLoading,
-    error: realtimeError,
-    connected,
-  } = useOrdersRealtime({ enabled: authenticated });
+  // const {
+  //   data: realtimeData,
+  //   loading: realtimeLoading,
+  //   error: realtimeError,
+  //   connected,
+  // } = useOrdersRealtime({ enabled: authenticated });
 
   // const { data: fallbackData, refetch } = useOrders({
   //   enabled: authenticated && (!!realtimeError || !connected),
   // });
 
-  const data = realtimeData;
-  const isLoading = realtimeLoading;
+  // const data = realtimeData;
+  // const isLoading = realtimeLoading;
 
   // const { data: balance } = useBalance({
   //   address,
@@ -189,19 +189,19 @@ const Home: NextPage = () => {
     <div className="md:mx-auto md:min-w-md max-w-lg px-4">
       <PromoCarousel className="-mt-24" />
 
-      {/* REAL TIME: Mostrar indicador de conexión si está desconectado */}
-      {authenticated && realtimeError && (
-        <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">
-          <p className="text-sm">
-            Connection issues detected. Using cached data.
-            {!connected && " Reconnecting..."}
-          </p>
-        </div>
-      )}
+      {/*/!* REAL TIME: Mostrar indicador de conexión si está desconectado *!/*/}
+      {/*{authenticated && realtimeError && (*/}
+      {/*  <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">*/}
+      {/*    <p className="text-sm">*/}
+      {/*      Connection issues detected. Using cached data.*/}
+      {/*      {!connected && " Reconnecting..."}*/}
+      {/*    </p>*/}
+      {/*  </div>*/}
+      {/*)}*/}
 
       <RecentActivity
         title="Transactions"
-        items={data?.orders || []}
+        items={data?.data?.orders || []}
         viewAllHref="/movements"
         viewOneHref="/movements/"
         emptyMessage="No recent transactions"
@@ -224,18 +224,18 @@ const Home: NextPage = () => {
   const AllyContent = () => (
     <div className="md:mx-auto md:min-w-md max-w-lg px-4">
       {/* REAL TIME: Indicador de estado de conexión */}
-      {authenticated && (
-        <div className="mb-2 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />
-            <span className="text-xs text-gray-600">{connected ? "Live updates" : "Offline mode"}</span>
-          </div>
-        </div>
-      )}
+      {/*{authenticated && (*/}
+      {/*  <div className="mb-2 flex items-center justify-between">*/}
+      {/*    <div className="flex items-center space-x-2">*/}
+      {/*      <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />*/}
+      {/*      <span className="text-xs text-gray-600">{connected ? "Live updates" : "Offline mode"}</span>*/}
+      {/*    </div>*/}
+      {/*  </div>*/}
+      {/*)}*/}
 
       <RecentActivity
         title="Recent Activity"
-        items={data?.orders || []}
+        items={data?.data?.orders || []}
         viewOneHref="/transactions/"
         viewAllHref="/transactions"
         emptyMessage="No recent activity"

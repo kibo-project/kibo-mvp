@@ -70,7 +70,7 @@ export class OrdersService {
       );
     }
 
-    const limit = getOrdersResponse.limit ?? 10;
+    const limit = getOrdersResponse.limit ?? 2;
     const offset = getOrdersResponse.offset ?? 0;
 
     const getOrdersDto: GetOrdersDto = {
@@ -140,17 +140,24 @@ export class OrdersService {
     if (!isAlly) {
       throw new Error("Access denied for users are not allies");
     }
-    const orders = await this.ordersRepository.findAvailable(filters);
+
+    const limit = filters.limit ?? 2;
+    const offset = filters.offset ?? 0;
+
+    const { orders, total } = await this.ordersRepository.findAvailable(filters);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
     return {
       orders: ordersResponse,
       metadata: {
-        totalAvailable: ordersResponse.length,
-        avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
+        avgWaitTime: this.calculateAverageWaitTime(),
         yourActiveOrders: ordersResponse.length,
-        // verificar este atributo sirve? En este nivel deberiamos verificar
-        // que si el Ally tiene ya otra orden en curso entonces no puede tomar la orden aniadir mas adelante
+      },
+      pagination: {
+        total,
+        filters,
+        offset,
+        hasMore: offset + limit < total,
       },
     };
   }

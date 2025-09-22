@@ -3,21 +3,26 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
-import { OrderResponse } from "@/core/types/orders.types";
+import { StatusFilter } from "@/components/StatusFilter";
+import { OrderResponse, OrdersFilters } from "@/core/types/orders.types";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { OrderStatus } from "@/services/orders";
-// import { OrderStatus } from "./OrderStatus";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const Movements: NextPage = () => {
-  const { data, isLoading, error, refetch } = useOrders();
-  const router = useRouter();
-
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [pagination, setPagination] = useState<OrdersFilters>();
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
+  const { data, isLoading, error, refetch } = useOrders({
+    filters: { ...pagination, status: statusFilter || undefined },
+  });
+
+  const router = useRouter();
 
   const handleMovementAction = useCallback(
     (id: string) => {
@@ -38,6 +43,10 @@ const Movements: NextPage = () => {
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  }, []);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
 
   const handleRefresh = useCallback(() => {
@@ -93,6 +102,13 @@ const Movements: NextPage = () => {
             fullWidth
           />
         </div>
+        <StatusFilter
+          currentStatus={statusFilter}
+          onStatusChange={status => {
+            setStatusFilter(status);
+            setPagination(prev => ({ ...prev, offset: 0 }));
+          }}
+        />
 
         {/* Movements List */}
         <div className="kibo-section-spacing mb-32">
@@ -164,6 +180,19 @@ const Movements: NextPage = () => {
             </Card>
           )}
         </div>
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

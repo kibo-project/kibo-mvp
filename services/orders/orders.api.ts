@@ -122,6 +122,7 @@ class OrdersApiService {
     if (filters.maxAmount) params.append("maxAmount", filters.maxAmount.toString());
     if (filters.sortBy) params.append("sortBy", filters.sortBy);
     if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.offset) params.append("offset", filters.offset.toString());
 
     const queryString = params.toString();
     const endpoint = `${ENDPOINTS.AVAILABLE_ORDERS}${queryString ? `?${queryString}` : ""}`;

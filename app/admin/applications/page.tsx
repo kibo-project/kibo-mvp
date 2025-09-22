@@ -4,9 +4,10 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { ApplicationCard } from "@/components/ApplicationCard";
 import { ConfirmationModal } from "@/components/ConfimationModal";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Button, Card, CardBody, Input } from "@/components/kibo";
-import { AllyApplication, ApplicationStatus } from "@/core/types/ally.applications.types";
+import { AllyApplication, ApplicationStatus, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
 import { useApplicationApprove } from "@/hooks/applications/useApplicationApprove";
 import { useApplicationReject } from "@/hooks/applications/useApplicationReject";
 import { useApplications } from "@/hooks/applications/useApplications";
@@ -15,7 +16,8 @@ import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Applications: NextPage = () => {
-  const { data, isLoading, error, refetch } = useApplications();
+  const [pagination, setPagination] = useState<ApplicationsFiltersRequest>();
+  const { data, isLoading, error, refetch } = useApplications({ ...pagination });
   const { mutate: approveApplication, isPending: isApproving } = useApplicationApprove();
   const { mutate: rejectApplication, isPending: isRejecting } = useApplicationReject();
 
@@ -89,6 +91,10 @@ const Applications: NextPage = () => {
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
 
   if (isLoading) {
     return (
@@ -196,6 +202,20 @@ const Applications: NextPage = () => {
           isLoading={isApproving || isRejecting}
           requiresReason={modal.requiresReason}
         />
+
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

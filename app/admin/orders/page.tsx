@@ -2,17 +2,23 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
+import { StatusFilter } from "@/components/StatusFilter";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
-import { OrderStatus } from "@/core/types/orders.types";
+import { OrderStatus, OrdersFilters } from "@/core/types/orders.types";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { formatDateToSpanish } from "@/utils/front.functions";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Orders: NextPage = () => {
-  const { data, isLoading, error, refetch } = useOrders();
   const [searchTerm, setSearchTerm] = useState("");
+  const [pagination, setPagination] = useState<OrdersFilters>();
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
+  const { data, isLoading, error, refetch } = useOrders({
+    filters: { ...pagination, status: statusFilter || undefined },
+  });
 
   const filteredOrders =
     data?.data?.orders?.filter(order => {
@@ -33,6 +39,10 @@ const Orders: NextPage = () => {
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
 
   if (isLoading) {
     return (
@@ -83,6 +93,14 @@ const Orders: NextPage = () => {
             fullWidth
           />
         </div>
+
+        <StatusFilter
+          currentStatus={statusFilter}
+          onStatusChange={status => {
+            setStatusFilter(status);
+            setPagination(prev => ({ ...prev, offset: 0 }));
+          }}
+        />
 
         {/* Transactions List */}
         <div className="kibo-section-spacing mb-32">
@@ -151,6 +169,19 @@ const Orders: NextPage = () => {
             </Card>
           )}
         </div>
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

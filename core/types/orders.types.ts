@@ -145,9 +145,14 @@ export interface OrderDetailsResponse {
 export interface AvailableOrdersResponse {
   orders: OrderResponse[];
   metadata: {
-    totalAvailable: number;
     avgWaitTime: number;
     yourActiveOrders: number;
+  };
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+    hasMore: boolean;
   };
 }
 export interface GetOrdersResponse {
@@ -196,6 +201,7 @@ export interface AvailableOrdersFilters {
   maxAmount?: number;
   sortBy?: "createdAt" | "expiresAt" | "amount";
   limit?: number;
+  offset?: number;
 }
 
 // Error types

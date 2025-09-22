@@ -169,7 +169,7 @@ export class OrdersRepository {
     return matches;
   }
 
-  async findAvailable(filters: AvailableOrdersFilters): Promise<Order[]> {
+  async findAvailable(filters: AvailableOrdersFilters): Promise<{ orders: Order[]; total: number }> {
     let query = this.supabase
       .from("orders")
       .select("*")
@@ -187,17 +187,22 @@ export class OrdersRepository {
     const sortColumn = filters.sortBy === "amount" ? "fiat_amount" : filters.sortBy || "created_at";
     query = query.order(sortColumn, { ascending: false });
 
-    if (filters.limit) {
+    if (filters.offset !== undefined && filters.limit !== undefined) {
+      query = query.range(filters.offset, filters.offset + filters.limit - 1);
+    } else if (filters.limit !== undefined) {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await query;
-
+    query = query.order("created_at", { ascending: false });
+    const { data, error, count } = await query;
     if (error) {
       throw new Error(`Failed to fetch available orders: ${error.message}`);
     }
 
-    return data.map(OrderMapper.dbToOrder);
+    return {
+      orders: data.map(OrderMapper.dbToOrder),
+      total: count || 0,
+    };
   }
   async uploadDbImage(imageDataFile: ImageDataFile) {
     const { data, error } = await this.supabase

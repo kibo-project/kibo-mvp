@@ -2,16 +2,20 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
-import { UserResponse } from "@/core/types/users.types";
+import { UserResponse, UsersFiltersRequest } from "@/core/types/users.types";
 import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { formatDateToSpanish } from "@/utils/front.functions";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Users: NextPage = () => {
-  const { data, isLoading, error, refetch } = useGetUsers();
+  const [pagination, setPagination] = useState<UsersFiltersRequest>();
+  const { data, isLoading, error, refetch } = useGetUsers({
+    ...pagination,
+  });
   const [searchTerm, setSearchTerm] = useState<string>("");
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -29,6 +33,10 @@ const Users: NextPage = () => {
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
 
   if (isLoading) {
     return (
@@ -133,6 +141,20 @@ const Users: NextPage = () => {
             </Card>
           )}
         </div>
+
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

@@ -268,6 +268,7 @@ export class OrdersController {
         maxAmount: searchParams.get("maxAmount") ? parseFloat(searchParams.get("maxAmount")!) : undefined,
         sortBy: this.isValidSortBy(sortByParam) ? sortByParam : undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
+        offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined,
       };
 
       const result = await this.ordersService.getAvailableOrders(filters, userId);

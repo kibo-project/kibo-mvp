@@ -4,6 +4,7 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ConfimationModal";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { OrderResponse } from "@/core/types/orders.types";
 import { useAvailableOrders } from "@/hooks/orders/useAvailableOrders";
