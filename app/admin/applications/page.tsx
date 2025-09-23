@@ -143,6 +143,21 @@ const Applications: NextPage = () => {
             fullWidth
           />
         </div>
+        <div className="mb-6">
+          <select
+            value={pagination?.status ?? ""}
+            onChange={e => {
+              const value = e.target.value as ApplicationStatus | "";
+              setPagination(prev => ({ ...prev, offset: 0, status: value || undefined }));
+            }}
+            className="border rounded p-2 w-40 md:w-60 text-sm"
+          >
+            <option value="">All</option>
+            <option value={ApplicationStatus.PENDING}>Pending</option>
+            <option value={ApplicationStatus.APPROVED}>Approved</option>
+            <option value={ApplicationStatus.REJECTED}>Rejected</option>
+          </select>
+        </div>
         {/* Applications List */}
         <div className="kibo-section-spacing mb-32">
           {filteredApplications.length > 0 ? (

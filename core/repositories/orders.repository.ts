@@ -172,7 +172,7 @@ export class OrdersRepository {
   async findAvailable(filters: AvailableOrdersFilters): Promise<{ orders: Order[]; total: number }> {
     let query = this.supabase
       .from("orders")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("status", OrderStatus.AVAILABLE)
       .gt("expires_at", new Date().toISOString());
 

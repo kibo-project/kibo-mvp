@@ -145,10 +145,11 @@ export interface OrderDetailsResponse {
 export interface AvailableOrdersResponse {
   orders: OrderResponse[];
   metadata: {
+    totalAvailable?: number;
     avgWaitTime: number;
     yourActiveOrders: number;
   };
-  pagination: {
+  pagination?: {
     total: number;
     limit: number;
     offset: number;

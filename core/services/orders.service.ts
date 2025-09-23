@@ -144,7 +144,16 @@ export class OrdersService {
     const limit = filters.limit ?? 2;
     const offset = filters.offset ?? 0;
 
-    const { orders, total } = await this.ordersRepository.findAvailable(filters);
+    const availableFilters: AvailableOrdersFilters = {
+      country: filters.country,
+      minAmount: filters.minAmount,
+      maxAmount: filters.maxAmount,
+      sortBy: filters.sortBy,
+      limit,
+      offset,
+    };
+
+    const { orders, total } = await this.ordersRepository.findAvailable(availableFilters);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
     return {
@@ -155,7 +164,7 @@ export class OrdersService {
       },
       pagination: {
         total,
-        filters,
+        limit,
         offset,
         hasMore: offset + limit < total,
       },

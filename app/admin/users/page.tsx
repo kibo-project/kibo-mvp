@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { UserRole } from "@/core/types/orders.types";
 import { UserResponse, UsersFiltersRequest } from "@/core/types/users.types";
 import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { formatDateToSpanish } from "@/utils/front.functions";
@@ -84,6 +85,21 @@ const Users: NextPage = () => {
             leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
             fullWidth
           />
+        </div>
+        <div className="mb-6">
+          <select
+            value={pagination?.role ?? ""}
+            onChange={e => {
+              const value = e.target.value as UserRole | "";
+              setPagination(prev => ({ ...prev, offset: 0, role: value || undefined }));
+            }}
+            className="border rounded p-2 w-40 md:w-60 text-sm"
+          >
+            <option value="">All</option>
+            <option value="user">User</option>
+            <option value="ally">Ally</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
         {/* Users List */}
         <div className="kibo-section-spacing mb-32">
