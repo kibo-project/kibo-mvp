@@ -4,8 +4,9 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ConfimationModal";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
-import { OrderResponse } from "@/core/types/orders.types";
+import { AvailableOrdersFilters, OrderResponse } from "@/core/types/orders.types";
 import { useAvailableOrders } from "@/hooks/orders/useAvailableOrders";
 import { useTakeOrder } from "@/hooks/orders/useTakeOrder";
 import { NextPage } from "next";
@@ -31,9 +32,8 @@ const AllyAvailableOrders: NextPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [showTakeOrderModal, setShowTakeOrderModal] = useState(false);
-
-  const { data, isLoading, error } = useAvailableOrders();
-
+  const [pagination, setPagination] = useState<AvailableOrdersFilters>();
+  const { data, isLoading, error } = useAvailableOrders({ ...pagination });
   const takeOrder = useTakeOrder();
 
   const handleViewOrderDetails = useCallback((order: OrderResponse) => {
@@ -86,6 +86,10 @@ const AllyAvailableOrders: NextPage = () => {
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  }, []);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
 
   if (isLoading) {
@@ -284,7 +288,7 @@ const AllyAvailableOrders: NextPage = () => {
           </Modal>
         )}
 
-        {/* Modal de confirmación para tomar la orden */}
+        {/* Confirmation modal */}
         {showTakeOrderModal && selectedOrder && (
           <ConfirmationModal
             isOpen={showTakeOrderModal}
@@ -295,6 +299,19 @@ const AllyAvailableOrders: NextPage = () => {
             requiresReason={false}
           />
         )}
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

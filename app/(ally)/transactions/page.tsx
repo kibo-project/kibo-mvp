@@ -3,9 +3,11 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
+import { StatusFilter } from "@/components/StatusFilter";
 import { useOrders } from "@/hooks/orders/useOrders";
-import { OrderStatus } from "@/services/orders";
+import { OrderStatus, OrdersFilters } from "@/services/orders";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
@@ -14,11 +16,11 @@ import { formatDateToSpanish } from "~~/utils/front.functions";
 const AdminTransactions: NextPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    data,
-    // isLoading,
-    // error
-  } = useOrders();
+  const [pagination, setPagination] = useState<OrdersFilters>();
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
+  const { data, isLoading, error, refetch } = useOrders({
+    filters: { ...pagination, status: statusFilter || undefined },
+  });
 
   const handleTransactionAction = useCallback(
     (id: string) => {
@@ -42,6 +44,38 @@ const AdminTransactions: NextPage = () => {
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   }, []);
+
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <RoleGuard requiredRole="ally">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex justify-center items-center py-8">
+            <p>Loading Transactions...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
+  if (error) {
+    return (
+      <RoleGuard requiredRole="ally">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex flex-col justify-center items-center py-8">
+            <p className="text-red-500 mb-4">Error: {error.message}</p>
+            <Button onClick={handleRefresh}>Retry</Button>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
 
   return (
     <RoleGuard requiredRole="ally">
@@ -67,6 +101,13 @@ const AdminTransactions: NextPage = () => {
             fullWidth
           />
         </div>
+        <StatusFilter
+          currentStatus={statusFilter}
+          onStatusChange={status => {
+            setStatusFilter(status);
+            setPagination(prev => ({ ...prev, offset: 0 }));
+          }}
+        />
 
         {/* Transactions List */}
         <div className="kibo-section-spacing mb-32">
@@ -135,6 +176,19 @@ const AdminTransactions: NextPage = () => {
             </Card>
           )}
         </div>
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

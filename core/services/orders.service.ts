@@ -70,7 +70,7 @@ export class OrdersService {
       );
     }
 
-    const limit = getOrdersResponse.limit ?? 10;
+    const limit = getOrdersResponse.limit ?? 2;
     const offset = getOrdersResponse.offset ?? 0;
 
     const getOrdersDto: GetOrdersDto = {
@@ -98,6 +98,35 @@ export class OrdersService {
     };
   }
 
+  async subscribeToOrderChanges(userId: string, roleActiveNow: string, callback: (data: any) => void): Promise<any> {
+    const activeRoleId = await this.usersRepository.getActiveRoleIdByUserId(userId);
+    if (!activeRoleId) {
+      throw new Error("User does not have an active role");
+    }
+
+    const roleNameActive = (await this.usersRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
+
+    if (roleNameActive !== roleActiveNow) {
+      throw new Error(
+        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
+      );
+    }
+
+    let filterCondition: string;
+
+    if (roleNameActive === "user") {
+      filterCondition = `user_id=eq.${userId}`;
+    } else if (roleNameActive === "ally") {
+      filterCondition = `ally_id=eq.${userId}`;
+    } else {
+      throw new Error("Invalid role");
+    }
+
+    const subscription = await this.ordersRepository.subscribeToChanges(filterCondition, callback);
+
+    return subscription;
+  }
+
   async getOrderById(orderId: string, userId: string): Promise<OrderResponse> {
     const order = await this.ordersRepository.findById(orderId);
     if (userId && !(await this.canUserAccessOrder(order!, userId))) {
@@ -111,17 +140,33 @@ export class OrdersService {
     if (!isAlly) {
       throw new Error("Access denied for users are not allies");
     }
-    const orders = await this.ordersRepository.findAvailable(filters);
+
+    const limit = filters.limit ?? 2;
+    const offset = filters.offset ?? 0;
+
+    const availableFilters: AvailableOrdersFilters = {
+      country: filters.country,
+      minAmount: filters.minAmount,
+      maxAmount: filters.maxAmount,
+      sortBy: filters.sortBy,
+      limit,
+      offset,
+    };
+
+    const { orders, total } = await this.ordersRepository.findAvailable(availableFilters);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
     return {
       orders: ordersResponse,
       metadata: {
-        totalAvailable: ordersResponse.length,
-        avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
+        avgWaitTime: this.calculateAverageWaitTime(),
         yourActiveOrders: ordersResponse.length,
-        // verificar este atributo sirve? En este nivel deberiamos verificar
-        // que si el Ally tiene ya otra orden en curso entonces no puede tomar la orden aniadir mas adelante
+      },
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
       },
     };
   }

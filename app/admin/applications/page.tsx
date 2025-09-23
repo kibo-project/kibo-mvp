@@ -4,9 +4,10 @@ import { useCallback, useState } from "react";
 import Link from "next/link";
 import { ApplicationCard } from "@/components/ApplicationCard";
 import { ConfirmationModal } from "@/components/ConfimationModal";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Button, Card, CardBody, Input } from "@/components/kibo";
-import { AllyApplication, ApplicationStatus } from "@/core/types/ally.applications.types";
+import { AllyApplication, ApplicationStatus, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
 import { useApplicationApprove } from "@/hooks/applications/useApplicationApprove";
 import { useApplicationReject } from "@/hooks/applications/useApplicationReject";
 import { useApplications } from "@/hooks/applications/useApplications";
@@ -15,7 +16,8 @@ import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Applications: NextPage = () => {
-  const { data, isLoading, error, refetch } = useApplications();
+  const [pagination, setPagination] = useState<ApplicationsFiltersRequest>();
+  const { data, isLoading, error, refetch } = useApplications({ ...pagination });
   const { mutate: approveApplication, isPending: isApproving } = useApplicationApprove();
   const { mutate: rejectApplication, isPending: isRejecting } = useApplicationReject();
 
@@ -86,6 +88,37 @@ const Applications: NextPage = () => {
   const closeModal = () => {
     setModal({ isOpen: false, type: "", applicationId: "", message: "", requiresReason: false });
   };
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <RoleGuard requiredRole="admin">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex justify-center items-center py-8">
+            <p>Loading Applications...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
+  if (error) {
+    return (
+      <RoleGuard requiredRole="user">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex flex-col justify-center items-center py-8">
+            <p className="text-red-500 mb-4">Error: {error.message}</p>
+            <Button onClick={handleRefresh}>Retry</Button>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
 
   return (
     <RoleGuard requiredRole="admin">
@@ -109,6 +142,21 @@ const Applications: NextPage = () => {
             leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
             fullWidth
           />
+        </div>
+        <div className="mb-6">
+          <select
+            value={pagination?.status ?? ""}
+            onChange={e => {
+              const value = e.target.value as ApplicationStatus | "";
+              setPagination(prev => ({ ...prev, offset: 0, status: value || undefined }));
+            }}
+            className="border rounded p-2 w-40 md:w-60 text-sm"
+          >
+            <option value="">All</option>
+            <option value={ApplicationStatus.PENDING}>Pending</option>
+            <option value={ApplicationStatus.APPROVED}>Approved</option>
+            <option value={ApplicationStatus.REJECTED}>Rejected</option>
+          </select>
         </div>
         {/* Applications List */}
         <div className="kibo-section-spacing mb-32">
@@ -169,6 +217,20 @@ const Applications: NextPage = () => {
           isLoading={isApproving || isRejecting}
           requiresReason={modal.requiresReason}
         />
+
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

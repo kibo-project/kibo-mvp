@@ -93,10 +93,86 @@ export class OrdersRepository {
     };
   }
 
-  async findAvailable(filters: AvailableOrdersFilters): Promise<Order[]> {
+  async subscribeToChanges(filterCondition: string, callback: (data: any) => void): Promise<any> {
+    console.log("RLS deshabilitado :", filterCondition);
+
+    const match = filterCondition.match(/^(.+)=eq\.(.+)$/);
+    if (!match) {
+      throw new Error("Invalid filter condition format");
+    }
+
+    const [, field, value] = match;
+    console.log(`filtro  - campo: ${field}, Valor: ${value}`);
+
+    const channel = this.supabase
+      .channel(`orders_${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        (payload: any) => {
+          console.log("recibido ", payload.eventType);
+
+          let shouldTrigger = false;
+
+          switch (payload.eventType) {
+            case "INSERT":
+              console.log("INSERT PAYLOAD", payload);
+              shouldTrigger = this.matchesFilter(payload.new, field, value);
+              break;
+            case "UPDATE":
+              const matchesNew = this.matchesFilter(payload.new, field, value);
+              const matchesOld = this.matchesFilter(payload.old, field, value);
+              shouldTrigger = matchesNew || matchesOld;
+              break;
+            case "DELETE":
+              console.log("DELETE PAYLOAD", payload);
+
+              shouldTrigger = this.matchesFilter(payload.old, field, value);
+              break;
+          }
+
+          console.log(`filtro ${field}=${value} `, shouldTrigger);
+
+          if (shouldTrigger) {
+            try {
+              callback({
+                eventType: payload.eventType,
+                old: payload.old ? OrderMapper.dbToOrder(payload.old) : null,
+                new: payload.new ? OrderMapper.dbToOrder(payload.new) : null,
+              });
+            } catch (error) {
+              console.error("error en callbac ", error);
+            }
+          }
+        }
+      )
+      .subscribe(status => {
+        console.log("Estado suscricion ", status);
+      });
+
+    return {
+      channel,
+      unsubscribe: () => this.supabase.removeChannel(channel),
+    };
+  }
+
+  private matchesFilter(record: any, field: string, value: string): boolean {
+    if (!record) return false;
+
+    const recordValue = record[field]?.toString();
+    const matches = recordValue === value;
+
+    return matches;
+  }
+
+  async findAvailable(filters: AvailableOrdersFilters): Promise<{ orders: Order[]; total: number }> {
     let query = this.supabase
       .from("orders")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("status", OrderStatus.AVAILABLE)
       .gt("expires_at", new Date().toISOString());
 
@@ -111,17 +187,22 @@ export class OrdersRepository {
     const sortColumn = filters.sortBy === "amount" ? "fiat_amount" : filters.sortBy || "created_at";
     query = query.order(sortColumn, { ascending: false });
 
-    if (filters.limit) {
+    if (filters.offset !== undefined && filters.limit !== undefined) {
+      query = query.range(filters.offset, filters.offset + filters.limit - 1);
+    } else if (filters.limit !== undefined) {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await query;
-
+    query = query.order("created_at", { ascending: false });
+    const { data, error, count } = await query;
     if (error) {
       throw new Error(`Failed to fetch available orders: ${error.message}`);
     }
 
-    return data.map(OrderMapper.dbToOrder);
+    return {
+      orders: data.map(OrderMapper.dbToOrder),
+      total: count || 0,
+    };
   }
   async uploadDbImage(imageDataFile: ImageDataFile) {
     const { data, error } = await this.supabase
