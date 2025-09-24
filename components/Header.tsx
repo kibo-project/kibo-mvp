@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -12,6 +13,8 @@ import { ListIcon, ScanIcon, WalletIcon } from "~~/components/icons/index";
 // import { FaucetButton } from "~~/components/scaffold-eth";
 // import { useOutsideClick, useTargetNetwork } from "~~/hooks/scaffold-eth";
 import { useAuthStore } from "~~/services/store/auth-store.";
+
+// COLOR: Agregar useMemo
 
 type HeaderMenuLink = {
   label: string;
@@ -85,6 +88,19 @@ export const HeaderMenuLinks = () => {
  * Site header
  */
 export const Header = () => {
+  const { userRole } = useAuthStore(); // COLOR: Obtener el rol del usuario
+  // COLOR: Determinar la clase de fondo según el rol
+  const headerBackgroundClass = useMemo(() => {
+    switch (userRole) {
+      case "admin":
+        return "bg-admin";
+      case "ally":
+        return "bg-ally";
+      default:
+        return "bg-primary"; // Mantener bg-primary como fallback
+    }
+  }, [userRole]);
+
   // const { targetNetwork } = useTargetNetwork();
   // const isLocalNetwork = targetNetwork.id === hardhat.id;
 
@@ -94,11 +110,13 @@ export const Header = () => {
   // });
 
   return (
-    <header className="sticky bg-primary top-0 min-h-0 shrink-0 z-20 header-scroll-shadow">
+    <header className={`sticky ${headerBackgroundClass} top-0 min-h-0 shrink-0 z-20 header-scroll-shadow`}>
       <div className="navbar justify-between px-4 sm:px-6 max-w-7xl mx-auto">
         <div className="navbar-start w-auto lg:w-1/2">
           <Link href="/" className="flex items-center gap-3 mr-6 shrink-0 group">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+            <div
+              className={`w-10 h-10 ${headerBackgroundClass} rounded-lg flex items-center justify-center group-hover:scale-105 transition-transform duration-200`}
+            >
               <Image alt="Kibo logo" className="cursor-pointer" width={24} height={24} src="/logo.svg" />
             </div>
             <div className="flex flex-col">

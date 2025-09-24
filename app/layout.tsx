@@ -1,4 +1,5 @@
 import "./globals.css";
+import { useAuthStore } from "@/services/store/auth-store.";
 import "@rainbow-me/rainbowkit/styles.css";
 import { ScaffoldEthAppWithProviders } from "~~/components/ScaffoldEthAppWithProviders";
 import { ThemeProvider } from "~~/components/ThemeProvider";

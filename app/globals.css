@@ -18,6 +18,8 @@
   name: "light";
 
   --color-primary: #10317c;
+  --color-admin: #3E285C;
+  --color-ally: #00416A;
   --color-background: #fafafa;
   --color-primary-content: #10317c;
   --color-secondary: #323f61;
@@ -44,6 +46,8 @@
   name: "dark";
 
   --color-primary: #10317c;
+  --color-admin: #3E285C;
+  --color-ally: #00416A;
   --color-background: #111;
   --color-primary-content: #1d58dd;
   --color-secondary: #323f61;
@@ -116,4 +120,30 @@
 
 .link:hover {
   opacity: 80%;
+}
+/* Clase personalizada para bg-admin */
+.bg-admin {
+  background-color: var(--color-admin);
+}
+
+/* También puedes crear variantes para texto y bordes si las necesitas */
+.text-admin {
+  color: var(--color-admin);
+}
+
+.border-admin {
+  border-color: var(--color-admin);
+}
+
+.bg-ally {
+  background-color: var(--color-ally);
+}
+
+/* También puedes crear variantes para texto y bordes si las necesitas */
+.text-ally {
+  color: var(--color-ally);
+}
+
+.border-ally {
+  border-color: var(--color-ally);
 }

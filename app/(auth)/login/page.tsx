@@ -78,9 +78,7 @@ const Login: NextPage = () => {
             <Image src="/logo.svg" alt="Kibo Logo" width={80} height={80} className="w-20 h-20" />
           </div>
           <h1 className="text-2xl font-bold mb-2">Welcome to Kibo</h1>
-          <p className="text-gray-600 dark:text-gray-400">
-            Log in or try Guest mode to continue using the application.
-          </p>
+          <p className="text-gray-600 dark:text-gray-400">Log in to continue using the application.</p>
         </div>
         <div className="space-y-4">
           <button
@@ -90,19 +88,7 @@ const Login: NextPage = () => {
           >
             Login with Privy
           </button>
-
-          <Link
-            href="/"
-            className="w-full bg-primary text-white py-3 rounded-lg hover:bg-primary/90 transition-colors duration-200 flex gap-2 justify-center items-center font-medium"
-          >
-            <span>Continue as Guest</span>
-            <ArrowLeftIcon className="size-4 rotate-180" />
-          </Link>
         </div>
-
-        <p className="text-xs text-center text-gray-500 dark:text-gray-400 mt-6">
-          Guest mode is for demo purposes only.
-        </p>
       </div>
     </div>
   );
