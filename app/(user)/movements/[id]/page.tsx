@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { RoleGuard } from "@/components/RoleGuard";
 import { useOrder } from "@/hooks/orders/useOrder";
+import { useOrderRealtime } from "@/hooks/orders/useOrderRealtime";
+// ← NUEVO HOOK
 import { NextPage } from "next";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { Button, Card, CardBody, CardTitle, Modal, ModalBody, ModalFooter, ModalHeader } from "~~/components/kibo";
@@ -17,14 +19,18 @@ interface OrderProps {
 
 const OrderDetails: NextPage<OrderProps> = ({ params }) => {
   const [orderId, setOrderId] = useState<string | null>(null);
-  const { data, isLoading, error } = useOrder(orderId ?? "");
   const [modalImage, setModalImage] = useState<{ url: string; title: string } | null>(null);
+  const { data: initialData, isLoading, error: initialError } = useOrder(orderId ?? "");
+  // Hook SSE para actualizaciones en tiempo real
+  const { data: realtimeData, isConnected, error: sseError } = useOrderRealtime(orderId ?? "", initialData?.data);
 
   useEffect(() => {
     params.then(resolvedParams => {
       setOrderId(resolvedParams.id);
     });
   }, [params]);
+  const data = realtimeData || initialData?.data;
+  const error = sseError || initialError;
 
   if (isLoading) {
     return (
@@ -43,14 +49,14 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
       <RoleGuard requiredRole="user">
         <div className="md:mx-auto md:min-w-md px-4">
           <div className="flex items-center justify-center h-64">
-            <div className="text-red-600">Error: {error.message}</div>
+            <div className="text-red-600"> {"error"}</div>
           </div>
         </div>
       </RoleGuard>
     );
   }
 
-  if (!data || !data.data) {
+  if (!data) {
     return (
       <RoleGuard requiredRole="user">
         <div className="md:mx-auto md:min-w-md px-4">
@@ -83,11 +89,11 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Order ID</p>
-                  <p className="text-sm font-medium">{data.data.id}</p>
+                  <p className="text-sm font-medium">{data.id}</p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Status</p>
-                  <p className="text-sm font-medium text-yellow-600">{data.data.status}</p>
+                  <p className="text-sm font-medium text-yellow-600">{data.status}</p>
                 </div>
               </div>
 
@@ -95,47 +101,47 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
                 <div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Crypto Amount</p>
                   <p className="text-sm font-medium">
-                    {data.data.cryptoAmount} {data.data.cryptoCurrency}
+                    {data.cryptoAmount} {data.cryptoCurrency}
                   </p>
                 </div>
                 <div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Fiat Amount</p>
                   <p className="text-sm font-medium">
-                    {data.data.fiatAmount} {data.data.fiatCurrency}
+                    {data.fiatAmount} {data.fiatCurrency}
                   </p>
                 </div>
               </div>
 
-              {data.data.userId && (
+              {data.userId && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">User</p>
-                    <p className="text-sm font-medium">{data.data.status}</p>
+                    <p className="text-sm font-medium">{data.status}</p>
                   </div>
-                  {data.data.createdAt && (
+                  {data.createdAt && (
                     <div>
                       <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Date</p>
-                      <p className="text-sm font-medium">{new Date(data.data.createdAt).toLocaleString()}</p>
+                      <p className="text-sm font-medium">{new Date(data.createdAt).toLocaleString()}</p>
                     </div>
                   )}
                 </div>
               )}
 
-              {data.data.userId && (
+              {data.userId && (
                 <div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-1">Wallet Address</p>
-                  <p className="text-sm font-medium break-all">{data.data.escrowAddress}</p>
+                  <p className="text-sm font-medium break-all">{data.escrowAddress}</p>
                 </div>
               )}
               <div className="flex justify-center gap-4 mt-4">
                 <div className="bg-white dark:bg-neutral-800 rounded-lg border p-3 flex flex-col items-center shadow-sm">
                   <span className="font-medium mb-2 text-sm">Payment QR Code</span>
-                  {data.data?.qrImageUrl ? (
+                  {data?.qrImageUrl ? (
                     <img
-                      src={data.data.qrImageUrl}
+                      src={data.qrImageUrl}
                       alt="Transaction QR"
                       className="w-32 h-32 object-contain rounded-lg border cursor-pointer hover:opacity-80"
-                      onClick={() => setModalImage({ url: data.data!.qrImageUrl!, title: "Payment QR Code" })}
+                      onClick={() => setModalImage({ url: data!.qrImageUrl!, title: "Payment QR Code" })}
                     />
                   ) : (
                     <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
@@ -146,14 +152,12 @@ const OrderDetails: NextPage<OrderProps> = ({ params }) => {
 
                 <div className="bg-white dark:bg-neutral-800 rounded-lg border p-3 flex flex-col items-center shadow-sm">
                   <span className="font-medium mb-2 text-sm">Confirmation Proof</span>
-                  {data.data?.confirmationProofUrl ? (
+                  {data?.confirmationProofUrl ? (
                     <img
-                      src={data.data.confirmationProofUrl}
+                      src={data.confirmationProofUrl}
                       alt="Confirmation Proof"
                       className="w-32 h-32 object-contain rounded-lg border cursor-pointer hover:opacity-80"
-                      onClick={() =>
-                        setModalImage({ url: data.data!.confirmationProofUrl!, title: "Confirmation Proof" })
-                      }
+                      onClick={() => setModalImage({ url: data!.confirmationProofUrl!, title: "Confirmation Proof" })}
                     />
                   ) : (
                     <div className="w-32 h-32 bg-gray-100 dark:bg-gray-700 rounded-lg border flex items-center justify-center">
