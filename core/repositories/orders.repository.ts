@@ -2,6 +2,7 @@ import { CreateOrderDto, GetOrdersDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
 import { AvailableOrdersFilters, ImageDataFile, Order, OrderStatus } from "../types/orders.types";
 import { createClient } from "@supabase/supabase-js";
+import { update } from "idb-keyval";
 
 export class OrdersRepository {
   private supabase;
@@ -91,6 +92,19 @@ export class OrdersRepository {
       orders: data.map(OrderMapper.dbToOrder),
       total: count || 0,
     };
+  }
+
+  async updateAvailableToCancelled(userId: string) {
+    const { error } = await this.supabase
+      .from("orders")
+      .update({ status: OrderStatus.CANCELLED })
+      .eq("user_id", userId)
+      .eq("status", OrderStatus.AVAILABLE)
+      .lt("expires_at", new Date().toISOString());
+
+    if (error) {
+      console.error(`Failed to update available to: ${error.message}`);
+    }
   }
 
   async subscribeToChanges(filterCondition: string, callback: (data: any) => void): Promise<any> {
