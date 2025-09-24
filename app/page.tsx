@@ -93,6 +93,15 @@ const Home: NextPage = () => {
     []
   );
 
+  const headerBackgroundClass = useMemo(() => {
+    switch (userRole) {
+      case "ally":
+        return "bg-ally";
+      default:
+        return "bg-primary"; // Mantener bg-primary como fallback
+    }
+  }, [userRole]);
+
   useEffect(() => {
     if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
       const newRole = roleChangeMutation.data.data.activeRoleName;
@@ -244,7 +253,7 @@ const Home: NextPage = () => {
   );
 
   return (
-    <div className="flex bg-primary items-center flex-col grow pt-0 md:pt-2 min-dvh">
+    <div className={`flex ${headerBackgroundClass} items-center flex-col grow pt-0 md:pt-2 min-dvh`}>
       <BalanceHeader />
       <div className="flex-1 w-full bg-neutral-100 dark:bg-neutral-800 mb-20 md:mb-0 pt-8">
         {currentView === "ally" ? <AllyContent /> : <UserContent />}
