@@ -119,7 +119,7 @@ const AdminHome: NextPage = () => {
 
   return (
     <RoleGuard requiredRole="admin">
-      <div className="flex bg-primary items-center flex-col grow pt-0 md:pt-2 min-dvh">
+      <div className="flex bg-admin items-center flex-col grow pt-0 md:pt-2 min-dvh">
         <AdminHeader />
         <div className="flex-1 w-full bg-neutral-100 dark:bg-neutral-800 mb-20 md:mb-0 pt-8">{<AdminContent />}</div>
       </div>
