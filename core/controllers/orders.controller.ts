@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest } from "next/server";
 import { TakeOrderDto, UploadProofDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
@@ -8,9 +7,9 @@ import {
   AvailableOrdersFilters,
   CreateOrderRequest,
   GetOrdersResponse,
+  OrderResponse,
   OrderStatus,
   OrdersListResponse,
-  TakeOrderResponse,
 } from "../types/orders.types";
 
 export class OrdersController {
@@ -23,7 +22,6 @@ export class OrdersController {
   async createOrder(request: NextRequest): Promise<Response> {
     try {
       const userId = request.headers.get("x-user-id");
-      console.log("USERID CREATE ORDER", userId);
       if (!userId) {
         return Response.json(
           {
@@ -126,6 +124,97 @@ export class OrdersController {
     }
   }
 
+  async getOrdersRealtime(request: NextRequest): Promise<Response> {
+    try {
+      const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role");
+
+      if (!userId || !roleActiveNow) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "User authentication required",
+            },
+          },
+          { status: 401 }
+        );
+      }
+      let subscription: any = null;
+
+      const stream = new ReadableStream({
+        start: async controller => {
+          try {
+            await this.sendInitialData(controller, userId, roleActiveNow, request);
+
+            subscription = await this.setupRealtimeSubscription(controller, userId, roleActiveNow);
+          } catch (error) {
+            controller.error(error);
+          }
+        },
+        cancel: () => {
+          if (subscription) {
+            subscription.unsubscribe();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Cache-Control",
+        },
+      });
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  private async sendInitialData(
+    controller: ReadableStreamDefaultController,
+    userId: string,
+    roleActiveNow: string,
+    request: NextRequest
+  ) {
+    const { searchParams } = new URL(request.url);
+    const statusParam = searchParams.get("status");
+
+    const filters: GetOrdersResponse = {
+      status: this.isValidOrderStatus(statusParam) ? statusParam : undefined,
+      limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
+      offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined,
+    };
+
+    const result = await this.ordersService.getOrdersByUser(filters, userId, roleActiveNow);
+
+    const message = `data: ${JSON.stringify({
+      type: "initial_data",
+      payload: result,
+    })}\n\n`;
+
+    controller.enqueue(new TextEncoder().encode(message));
+  }
+
+  private async setupRealtimeSubscription(
+    controller: ReadableStreamDefaultController,
+    userId: string,
+    roleActiveNow: string
+  ): Promise<any> {
+    const subscription = await this.ordersService.subscribeToOrderChanges(userId, roleActiveNow, data => {
+      const message = `data: ${JSON.stringify({
+        type: "update",
+        payload: data,
+      })}\n\n`;
+      console.log("CONTROOLLER SI LLEGA UPDATE", message);
+      controller.enqueue(new TextEncoder().encode(message));
+    });
+
+    return subscription;
+  }
   async getOrderById(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
     try {
       const resolvedParams = await params;
@@ -144,21 +233,7 @@ export class OrdersController {
         );
       }
       const order = await this.ordersService.getOrderById(orderId, userId);
-
-      if (!order) {
-        return Response.json(
-          {
-            success: false,
-            error: {
-              code: "ORDER_NOT_FOUND",
-              message: "Order not found",
-            },
-          },
-          { status: 404 }
-        );
-      }
-
-      const response: ApiResponse<typeof order> = {
+      const response: ApiResponse<OrderResponse> = {
         success: true,
         data: order,
       };
@@ -193,6 +268,7 @@ export class OrdersController {
         maxAmount: searchParams.get("maxAmount") ? parseFloat(searchParams.get("maxAmount")!) : undefined,
         sortBy: this.isValidSortBy(sortByParam) ? sortByParam : undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
+        offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined,
       };
 
       const result = await this.ordersService.getAvailableOrders(filters, userId);
@@ -231,12 +307,10 @@ export class OrdersController {
         orderId: orderId,
       };
 
-      const order = await this.ordersService.takeOrder(takeOrderDto, userId);
-      const takeOrderResponse: TakeOrderResponse = {
-        order,
-      };
+      const takeOrder = await this.ordersService.takeOrder(takeOrderDto, userId);
+      const takeOrderResponse = OrderMapper.orderToOrderResponse(takeOrder);
 
-      const response: ApiResponse<typeof takeOrderResponse> = {
+      const response: ApiResponse<OrderResponse> = {
         success: true,
         data: takeOrderResponse,
       };

@@ -21,6 +21,8 @@ export class AllyApplicationsController {
   async applicationToAlly(request: NextRequest) {
     try {
       const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
       if (!userId) {
         return Response.json(
           {
@@ -53,12 +55,43 @@ export class AllyApplicationsController {
         phone,
         address,
       };
-      const solicitud = await this.allyApplicationsService.applicationToAlly(userId, allyApplicationRequest);
+      const solicitud = await this.allyApplicationsService.applicationToAlly(
+        userId,
+        roleActiveNow,
+        allyApplicationRequest
+      );
       const responseData: ApiResponse<AllyApplication> = {
         success: true,
         data: solicitud,
       };
       return Response.json(responseData, { status: 201 });
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+  async getApplication(request: NextRequest) {
+    try {
+      const userId = request.headers.get("x-user-id");
+      const roleActiveNow = request.headers.get("x-user-role") as UserRole;
+
+      if (!userId || !roleActiveNow) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "User authentication is required",
+            },
+          },
+          { status: 401 }
+        );
+      }
+      const application = await this.allyApplicationsService.getApplication(userId, roleActiveNow);
+      const response: ApiResponse<AllyApplication> = {
+        success: true,
+        data: application,
+      };
+      return Response.json(response);
     } catch (error) {
       return this.handleError(error);
     }
@@ -85,7 +118,7 @@ export class AllyApplicationsController {
       const { searchParams } = new URL(request.url);
       const applicationsFilters: ApplicationsFiltersRequest = {
         status: searchParams.get("status") as ApplicationStatus | undefined,
-        limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10,
+        limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 1,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0,
       };
       const applicationsFiltersDto: ApplicationsFiltersDto = {

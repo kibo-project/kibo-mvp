@@ -3,14 +3,27 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ConfirmationModal } from "@/components/ConfimationModal";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
-import { OrderResponse } from "@/core/types/orders.types";
+import { AvailableOrdersFilters, OrderResponse } from "@/core/types/orders.types";
 import { useAvailableOrders } from "@/hooks/orders/useAvailableOrders";
 import { useTakeOrder } from "@/hooks/orders/useTakeOrder";
 import { NextPage } from "next";
-import { ArrowLeftIcon, MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
-import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
+import toast from "react-hot-toast";
+import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardTitle,
+  Input,
+  Modal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
+} from "~~/components/kibo";
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const AllyAvailableOrders: NextPage = () => {
@@ -19,12 +32,9 @@ const AllyAvailableOrders: NextPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [showTakeOrderModal, setShowTakeOrderModal] = useState(false);
-
-  const { data, isLoading, error } = useAvailableOrders();
-
-  const { mutate: takeOrder, isPending: isTakingOrder, error: takeOrderError } = useTakeOrder();
-
-  const { setSelectedTransactionId, setSelectedTransaction } = useAdminPaymentStore();
+  const [pagination, setPagination] = useState<AvailableOrdersFilters>();
+  const { data, isLoading, error } = useAvailableOrders({ ...pagination });
+  const takeOrder = useTakeOrder();
 
   const handleViewOrderDetails = useCallback((order: OrderResponse) => {
     setSelectedOrder(order);
@@ -43,34 +53,19 @@ const AllyAvailableOrders: NextPage = () => {
     }
   }, [selectedOrder]);
 
-  const handleConfirmTakeOrder = useCallback(() => {
+  const handleConfirmTakeOrder = useCallback(async () => {
     if (selectedOrder) {
-      setSelectedTransactionId(selectedOrder.id);
-      setSelectedTransaction(selectedOrder);
-      takeOrder(selectedOrder.id, {
-        onSuccess: response => {
-          setShowTakeOrderModal(false);
-          setSelectedOrder(null);
-          if (response?.data?.order.status === "TAKEN" || response?.success) {
-            router.push(`/transactions/${selectedOrder.id}`);
-          } else {
-            router.push("/transactions");
-          }
-        },
-        onError: error => {
-          console.error("Error details:", {
-            message: error.message,
-            name: error.name,
-            stack: error.stack,
-          });
-
-          setShowTakeOrderModal(false);
-          setSelectedOrder(null);
-          router.push("/transactions");
-        },
-      });
+      setShowTakeOrderModal(false);
+      const result = await takeOrder.mutateAsync(selectedOrder.id);
+      if (result.success) {
+        toast.success("order taken successfully");
+        router.push(`/transactions/${result.data?.id}`);
+      } else {
+        toast.error(`Error creating order: ${result.error?.message}`);
+      }
+      setSelectedOrder(null);
     }
-  }, [selectedOrder, takeOrder, router, setSelectedTransactionId, setSelectedTransaction]);
+  }, [selectedOrder, takeOrder, router]);
 
   const handleCancelTakeOrder = useCallback(() => {
     setShowTakeOrderModal(false);
@@ -85,12 +80,16 @@ const AllyAvailableOrders: NextPage = () => {
         `${order.cryptoAmount} ${order.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
         `${order.fiatAmount} ${order.fiatCurrency}`.toLowerCase().includes(searchLower) ||
         order.userId?.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(order.createdAt).toLowerCase().includes(searchLower)
+        formatDateToSpanish(order.createdAt, { fixedTimeZone: true }).toLowerCase().includes(searchLower)
       );
     }) ?? [];
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+  }, []);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
 
   if (isLoading) {
@@ -173,7 +172,7 @@ const AllyAvailableOrders: NextPage = () => {
                         </p>
                         <p className="text-xs text-neutral-500">{order.userId}</p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-500">
-                          {formatDateToSpanish(order.createdAt)}
+                          {formatDateToSpanish(order.createdAt, { fixedTimeZone: true })}
                         </p>
                       </div>
                     </div>
@@ -210,124 +209,109 @@ const AllyAvailableOrders: NextPage = () => {
 
         {/* Modal de detalles de la orden */}
         {showModal && selectedOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-md w-full max-h-[80vh] overflow-y-auto">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Order Details</h3>
-                  <Button variant="ghost" size="sm" onClick={handleCloseModal} className="p-1 w-8 h-8">
-                    <XMarkIcon className="w-4 h-4" />
-                  </Button>
+          <Modal open={showModal} onClose={handleCloseModal} className="max-w-md">
+            <ModalHeader onClose={handleCloseModal}>
+              <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Order Details</h3>
+            </ModalHeader>
+
+            <ModalBody>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Order ID</label>
+                  <p className="text-sm text-neutral-900 dark:text-neutral-100 font-mono">{selectedOrder.id}</p>
                 </div>
 
-                <div className="space-y-4 mb-6">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Order ID</label>
-                    <p className="text-sm text-neutral-900 dark:text-neutral-100 font-mono">{selectedOrder.id}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                        Crypto Amount
-                      </label>
-                      <p className="text-sm text-neutral-900 dark:text-neutral-100">
-                        {selectedOrder.cryptoAmount} {selectedOrder.cryptoCurrency}
-                      </p>
-                    </div>
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Fiat Amount</label>
-                      <p className="text-sm text-neutral-900 dark:text-neutral-100">
-                        {selectedOrder.fiatAmount} {selectedOrder.fiatCurrency}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">User</label>
-                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.userId}</p>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Date</label>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Crypto Amount</label>
                     <p className="text-sm text-neutral-900 dark:text-neutral-100">
-                      {formatDateToSpanish(selectedOrder.createdAt)}
+                      {selectedOrder.cryptoAmount} {selectedOrder.cryptoCurrency}
                     </p>
                   </div>
-
-                  {selectedOrder.description && (
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Description</label>
-                      <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.description}</p>
-                    </div>
-                  )}
-
-                  {selectedOrder.recipient && (
-                    <div>
-                      <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Recipient</label>
-                      <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.recipient}</p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Fiat Amount</label>
+                    <p className="text-sm text-neutral-900 dark:text-neutral-100">
+                      {selectedOrder.fiatAmount} {selectedOrder.fiatCurrency}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex gap-3">
-                  <Button
-                    variant="ghost"
-                    onClick={handleCloseModal}
-                    fullWidth
-                    className="border border-neutral-300 dark:border-neutral-600"
-                  >
-                    Close
-                  </Button>
-                  <Button variant="primary" onClick={handleTakeOrderFromModal} fullWidth>
-                    Take Order
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Modal de confirmación para tomar la orden */}
-        {showTakeOrderModal && selectedOrder && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white dark:bg-neutral-900 rounded-lg shadow-xl max-w-sm w-full">
-              <div className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">Take Order</h3>
-                  <Button variant="ghost" size="sm" onClick={handleCancelTakeOrder} className="p-1 w-8 h-8">
-                    <XMarkIcon className="w-4 h-4" />
-                  </Button>
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">User</label>
+                  <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.userId}</p>
                 </div>
 
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-6">
-                  Are you sure you want to take this order?
-                </p>
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Creation Date</label>
+                  <p className="text-sm text-neutral-900 dark:text-neutral-100">
+                    {formatDateToSpanish(selectedOrder.createdAt, { fixedTimeZone: true })}
+                  </p>
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Expiration Date</label>
+                  <p className="text-sm text-neutral-900 dark:text-neutral-100">
+                    {formatDateToSpanish(selectedOrder.expiresAt, { fixedTimeZone: true })}
+                  </p>
+                </div>
 
-                {takeOrderError && (
-                  <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-700 dark:text-red-400">{takeOrderError.message}</p>
+                {selectedOrder.description && (
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Description</label>
+                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.description}</p>
                   </div>
                 )}
 
-                <div className="flex gap-3">
-                  <Button
-                    variant="ghost"
-                    onClick={handleCancelTakeOrder}
-                    fullWidth
-                    disabled={isTakingOrder}
-                    className="border border-neutral-300 dark:border-neutral-600"
-                  >
-                    No
-                  </Button>
-                  <Button variant="primary" onClick={handleConfirmTakeOrder} fullWidth disabled={isTakingOrder}>
-                    {isTakingOrder ? "Taking..." : "Take"}
-                  </Button>
-                </div>
+                {selectedOrder.recipient && (
+                  <div>
+                    <label className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Recipient</label>
+                    <p className="text-sm text-neutral-900 dark:text-neutral-100">{selectedOrder.recipient}</p>
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            </ModalBody>
+
+            <ModalFooter>
+              <div className="flex gap-3 w-full">
+                <Button
+                  variant="ghost"
+                  onClick={handleCloseModal}
+                  fullWidth
+                  className="border border-neutral-300 dark:border-neutral-600"
+                >
+                  Close
+                </Button>
+                <Button variant="primary" onClick={handleTakeOrderFromModal} fullWidth>
+                  Take Order
+                </Button>
+              </div>
+            </ModalFooter>
+          </Modal>
         )}
+
+        {/* Confirmation modal */}
+        {showTakeOrderModal && selectedOrder && (
+          <ConfirmationModal
+            isOpen={showTakeOrderModal}
+            onClose={handleCancelTakeOrder}
+            onConfirm={handleConfirmTakeOrder}
+            message="Are you sure you want to take this order?"
+            isLoading={takeOrder.isPending}
+            requiresReason={false}
+          />
+        )}
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

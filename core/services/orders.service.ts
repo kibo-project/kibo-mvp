@@ -8,9 +8,9 @@ import {
   GetOrdersResponse,
   ImageDataFile,
   Order,
+  OrderResponse,
   OrderStatus,
   OrdersListResponse,
-  Quote,
   UserRole,
 } from "../types/orders.types";
 import { OrderMapper } from "@/core/mappers/order.mapper";
@@ -33,8 +33,10 @@ export class OrdersService {
     if (activeOrders > 3) {
       throw new Error("You have more than 3 orders available");
     }
+    const { idImages, urlImage } = await this.uploadFile(createOrderRequest.qrImage!);
+
     const createOrderDto: CreateOrderDto = {
-      status: OrderStatus.PENDING_PAYMENT,
+      status: OrderStatus.AVAILABLE,
       fiatAmount: createOrderRequest.fiatAmount,
       cryptoAmount: createOrderRequest.cryptoAmount,
       fiatCurrency: "BOB",
@@ -42,16 +44,14 @@ export class OrdersService {
       userId: createOrderRequest.userId!,
       recipient: createOrderRequest.recipient,
       description: createOrderRequest.description,
+      qrImage: idImages,
+      qrImageUrl: urlImage,
+      expiresAt: new Date(Date.now() + 3 * 60 * 1000).toISOString(),
     };
-    const order = await this.ordersRepository.create(createOrderDto);
-    const qrId = await this.uploadFile(createOrderRequest.qrImage!);
-    const updatedOrder = await this.ordersRepository.uploadQrImage(order.id, qrId);
-
     // 5. Post-creation tasks (logs, notifications)
     // await this.logOrderCreation(order);
     // await this.notifyOrderCreated(order);
-
-    return updatedOrder;
+    return await this.ordersRepository.create(createOrderDto);
   }
 
   async getOrdersByUser(
@@ -70,7 +70,7 @@ export class OrdersService {
       );
     }
 
-    const limit = getOrdersResponse.limit ?? 10;
+    const limit = getOrdersResponse.limit ?? 2;
     const offset = getOrdersResponse.offset ?? 0;
 
     const getOrdersDto: GetOrdersDto = {
@@ -84,8 +84,6 @@ export class OrdersService {
     } else if (roleNameActive === "ally") {
       getOrdersDto.allyId = userId;
     }
-    console.log("getOrdersDto", getOrdersDto);
-
     const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
@@ -100,15 +98,41 @@ export class OrdersService {
     };
   }
 
-  async getOrderById(orderId: string, userId: string): Promise<Order | null> {
-    const order = await this.ordersRepository.findById(orderId);
-    if (!order) {
-      return null;
+  async subscribeToOrderChanges(userId: string, roleActiveNow: string, callback: (data: any) => void): Promise<any> {
+    const activeRoleId = await this.usersRepository.getActiveRoleIdByUserId(userId);
+    if (!activeRoleId) {
+      throw new Error("User does not have an active role");
     }
-    if (userId && !(await this.canUserAccessOrder(order, userId))) {
+
+    const roleNameActive = (await this.usersRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
+
+    if (roleNameActive !== roleActiveNow) {
+      throw new Error(
+        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
+      );
+    }
+
+    let filterCondition: string;
+
+    if (roleNameActive === "user") {
+      filterCondition = `user_id=eq.${userId}`;
+    } else if (roleNameActive === "ally") {
+      filterCondition = `ally_id=eq.${userId}`;
+    } else {
+      throw new Error("Invalid role");
+    }
+
+    const subscription = await this.ordersRepository.subscribeToChanges(filterCondition, callback);
+
+    return subscription;
+  }
+
+  async getOrderById(orderId: string, userId: string): Promise<OrderResponse> {
+    const order = await this.ordersRepository.findById(orderId);
+    if (userId && !(await this.canUserAccessOrder(order!, userId))) {
       throw new Error("Access denied to this order");
     }
-    return order;
+    return OrderMapper.orderToOrderResponse(order!);
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId: string): Promise<AvailableOrdersResponse> {
@@ -116,17 +140,33 @@ export class OrdersService {
     if (!isAlly) {
       throw new Error("Access denied for users are not allies");
     }
-    const orders = await this.ordersRepository.findAvailable(filters);
+
+    const limit = filters.limit ?? 2;
+    const offset = filters.offset ?? 0;
+
+    const availableFilters: AvailableOrdersFilters = {
+      country: filters.country,
+      minAmount: filters.minAmount,
+      maxAmount: filters.maxAmount,
+      sortBy: filters.sortBy,
+      limit,
+      offset,
+    };
+
+    const { orders, total } = await this.ordersRepository.findAvailable(availableFilters);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
     return {
       orders: ordersResponse,
       metadata: {
-        totalAvailable: ordersResponse.length,
-        avgWaitTime: this.calculateAverageWaitTime(), // este sirve?
+        avgWaitTime: this.calculateAverageWaitTime(),
         yourActiveOrders: ordersResponse.length,
-        // verificar este atributo sirve? En este nivel deberiamos verificar
-        // que si el Ally tiene ya otra orden en curso entonces no puede tomar la orden aniadir mas adelante
+      },
+      pagination: {
+        total,
+        limit,
+        offset,
+        hasMore: offset + limit < total,
       },
     };
   }
@@ -141,14 +181,17 @@ export class OrdersService {
     if (!order) {
       throw new Error("Order not found");
     }
+    if (allyId === order.userId) {
+      throw new Error("An ally cannot take their own order");
+    }
 
     if (order.status !== OrderStatus.AVAILABLE) {
       throw new Error("Order is not available for taking");
     }
 
-    await this.validateAllyCanTakeOrder(order, allyId);
+    await this.validateAllyCanTakeOrder(order);
 
-    const updatedOrder = await this.ordersRepository.updateStatus(takeOrderDto.orderId, OrderStatus.TAKEN, {
+    return await this.ordersRepository.updateStatus(takeOrderDto.orderId, OrderStatus.TAKEN, {
       allyId,
       takenAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
@@ -156,8 +199,6 @@ export class OrdersService {
 
     // Post-take tasks
     // await this.notifyOrderTaken(updatedOrder);
-
-    return updatedOrder;
   }
 
   async uploadProof(uploadProofDto: UploadProofDto, allyId: string): Promise<Order> {
@@ -175,53 +216,19 @@ export class OrdersService {
       throw new Error("Only the assigned ally can upload proof");
     }
 
-    const confirmationProof = await this.uploadFile(uploadProofDto.proofFile);
-    const confirmationProofUrl = await this.ordersRepository.getImageUrl(confirmationProof);
-    const updatedOrder = await this.ordersRepository.updateStatus(uploadProofDto.orderId, OrderStatus.COMPLETED, {
+    const { idImages: confirmationProof, urlImage: confirmationProofUrl } = await this.uploadFile(
+      uploadProofDto.proofFile
+    );
+    return await this.ordersRepository.updateStatus(uploadProofDto.orderId, OrderStatus.COMPLETED, {
       confirmationProof,
       confirmationProofUrl,
       bankTransactionId: uploadProofDto.bankTransactionId,
       completedAt: new Date().toISOString(),
-      txHash: await this.releaseEscrow(order),
     });
 
     // Post-completion tasks
     // await this.logOrderCompletion(updatedOrder);
     // await this.notifyOrderCompleted(updatedOrder);
-
-    return updatedOrder;
-  }
-
-  // Private business logic methods
-  private async validateQuote(quoteId: string): Promise<Quote | null> {
-    // This would integrate with your quote service
-    // For now, simulate validation
-    return {
-      id: quoteId,
-      amountFiat: 100,
-      amountCrypto: 100,
-      fiatCurrency: "BOB",
-      cryptoToken: "USDT",
-      network: "mantle",
-      rate: 1,
-      networkFee: 1,
-      kiboFee: 2,
-      totalAmount: 103,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      escrowAddress: "0x123...",
-      rateSource: "coingecko",
-      rateTimestamp: new Date().toISOString(),
-    };
-  }
-
-  private enrichOrderWithDynamicData(order: Order): Order {
-    const now = new Date();
-    const expiresAt = new Date(order.expiresAt);
-
-    return {
-      ...order,
-      secondsRemaining: Math.max(0, Math.floor((expiresAt.getTime() - now.getTime()) / 1000)),
-    };
   }
 
   private async canUserAccessOrder(order: Order, userId: string): Promise<boolean> {
@@ -234,7 +241,7 @@ export class OrdersService {
     return 300; // 5 minutes in seconds
   }
 
-  private async validateAllyCanTakeOrder(order: Order, allyId: string): Promise<void> {
+  private async validateAllyCanTakeOrder(order: Order): Promise<void> {
     const now = new Date();
     const expiresAt = new Date(order.expiresAt);
 
@@ -249,55 +256,30 @@ export class OrdersService {
     // - Check ally capacity
   }
 
-  private async setupOrderEscrow(order: Order): Promise<void> {
-    // Setup blockchain escrow
-  }
-
-  private async releaseEscrow(order: Order): Promise<string> {
-    // Release escrow funds
-    return `0xtx_hash_${Date.now()}`;
-  }
-
-  private async uploadFile(file: File): Promise<string> {
+  private async uploadFile(file: File) {
     const maxSizeInBytes = 5 * 1024 * 1024;
     if (file.size > maxSizeInBytes) {
       throw new Error("File size exceeds 5MB limit");
     }
     const originalName = file.name;
     const extension = originalName.split(".").pop() || "";
+    const filename = `order-.${originalName}`;
+    const arrayBuffer = await file.arrayBuffer();
+    const fileBuffer = new Uint8Array(arrayBuffer);
+
+    const imagePublicUrl = await this.ordersRepository.uploadImageToStorage(filename, fileBuffer, file.type);
+
     const imageDataFile: ImageDataFile = {
       name: originalName,
       extension: extension,
       createdAt: new Date().toISOString(),
     };
-    const { data, error } = await this.ordersRepository.uploadDbImage(imageDataFile);
 
-    if (error || !data) {
-      throw new Error(error || "Error saving image");
-    }
+    const { data } = await this.ordersRepository.uploadDbImage(imageDataFile);
 
-    const filename = `order-${data.id}.${extension}`;
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = new Uint8Array(arrayBuffer);
-
-    const uploadError = await this.ordersRepository.uploadImageToStorage(filename, fileBuffer, file.type);
-
-    if (uploadError) {
-      throw new Error(uploadError);
-    }
-
-    return data.id;
-  }
-
-  private async notifyOrderCreated(order: Order): Promise<void> {
-    // Send notifications
-  }
-
-  private async notifyOrderTaken(order: Order): Promise<void> {
-    // Send notifications
-  }
-
-  private async notifyOrderCompleted(order: Order): Promise<void> {
-    // Send notifications
+    return {
+      idImages: data.id,
+      urlImage: imagePublicUrl,
+    };
   }
 }

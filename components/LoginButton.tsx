@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLogoutCookie } from "@/hooks/auth/useLogoutCookie";
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
+import toast from "react-hot-toast";
 import {
   ArrowRightOnRectangleIcon,
   CheckIcon,
@@ -36,11 +37,11 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
           backendLogin.mutate();
         }
       } else {
-        console.warn("No wallet found after login completion");
+        toast.error("No wallet found after login completion");
       }
     },
     onError: error => {
-      console.error("Login error:", error);
+      toast.error(`Login error: ${error}`);
     },
   });
 
@@ -73,9 +74,9 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
       try {
         await navigator.clipboard.writeText(user.wallet.address);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+        setTimeout(() => setCopied(false), 2000);
       } catch (err) {
-        console.error("Failed to copy address:", err);
+        toast.error(`Failed to copy address: ${err}`);
       }
     }
   }, [user?.wallet?.address]);

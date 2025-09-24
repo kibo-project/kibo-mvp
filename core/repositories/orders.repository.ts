@@ -1,4 +1,3 @@
-// TODO: fix, avoid using 'any' type
 import { CreateOrderDto, GetOrdersDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
 import { AvailableOrdersFilters, ImageDataFile, Order, OrderStatus } from "../types/orders.types";
@@ -23,6 +22,9 @@ export class OrdersRepository {
         user_id: createOrderDto.userId,
         recipient: createOrderDto.recipient,
         description: createOrderDto.description,
+        qr_image: createOrderDto.qrImage,
+        qr_image_url: createOrderDto.qrImageUrl,
+        expires_at: createOrderDto.expiresAt,
         created_at: new Date().toISOString(),
       })
       .select("*")
@@ -37,9 +39,8 @@ export class OrdersRepository {
   async findById(id: string): Promise<Order | null> {
     const { data, error } = await this.supabase.from("orders").select("*").eq("id", id).single();
 
-    if (error) {
-      if (error.code === "PGRST116") return null;
-      throw new Error(`Failed to find order: ${error.message}`);
+    if (error || !data) {
+      throw new Error(`Failed to find order: ${error}`);
     }
 
     return OrderMapper.dbToOrder(data);
@@ -92,10 +93,86 @@ export class OrdersRepository {
     };
   }
 
-  async findAvailable(filters: AvailableOrdersFilters): Promise<Order[]> {
+  async subscribeToChanges(filterCondition: string, callback: (data: any) => void): Promise<any> {
+    console.log("RLS deshabilitado :", filterCondition);
+
+    const match = filterCondition.match(/^(.+)=eq\.(.+)$/);
+    if (!match) {
+      throw new Error("Invalid filter condition format");
+    }
+
+    const [, field, value] = match;
+    console.log(`filtro  - campo: ${field}, Valor: ${value}`);
+
+    const channel = this.supabase
+      .channel(`orders_${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+        },
+        (payload: any) => {
+          console.log("recibido ", payload.eventType);
+
+          let shouldTrigger = false;
+
+          switch (payload.eventType) {
+            case "INSERT":
+              console.log("INSERT PAYLOAD", payload);
+              shouldTrigger = this.matchesFilter(payload.new, field, value);
+              break;
+            case "UPDATE":
+              const matchesNew = this.matchesFilter(payload.new, field, value);
+              const matchesOld = this.matchesFilter(payload.old, field, value);
+              shouldTrigger = matchesNew || matchesOld;
+              break;
+            case "DELETE":
+              console.log("DELETE PAYLOAD", payload);
+
+              shouldTrigger = this.matchesFilter(payload.old, field, value);
+              break;
+          }
+
+          console.log(`filtro ${field}=${value} `, shouldTrigger);
+
+          if (shouldTrigger) {
+            try {
+              callback({
+                eventType: payload.eventType,
+                old: payload.old ? OrderMapper.dbToOrder(payload.old) : null,
+                new: payload.new ? OrderMapper.dbToOrder(payload.new) : null,
+              });
+            } catch (error) {
+              console.error("error en callbac ", error);
+            }
+          }
+        }
+      )
+      .subscribe(status => {
+        console.log("Estado suscricion ", status);
+      });
+
+    return {
+      channel,
+      unsubscribe: () => this.supabase.removeChannel(channel),
+    };
+  }
+
+  private matchesFilter(record: any, field: string, value: string): boolean {
+    if (!record) return false;
+
+    const recordValue = record[field]?.toString();
+    const matches = recordValue === value;
+
+    return matches;
+  }
+
+  async findAvailable(filters: AvailableOrdersFilters): Promise<{ orders: Order[]; total: number }> {
     let query = this.supabase
       .from("orders")
-      .select("*")
+      .select("*", { count: "exact" })
       .eq("status", OrderStatus.AVAILABLE)
       .gt("expires_at", new Date().toISOString());
 
@@ -110,19 +187,24 @@ export class OrdersRepository {
     const sortColumn = filters.sortBy === "amount" ? "fiat_amount" : filters.sortBy || "created_at";
     query = query.order(sortColumn, { ascending: false });
 
-    if (filters.limit) {
+    if (filters.offset !== undefined && filters.limit !== undefined) {
+      query = query.range(filters.offset, filters.offset + filters.limit - 1);
+    } else if (filters.limit !== undefined) {
       query = query.limit(filters.limit);
     }
 
-    const { data, error } = await query;
-
+    query = query.order("created_at", { ascending: false });
+    const { data, error, count } = await query;
     if (error) {
       throw new Error(`Failed to fetch available orders: ${error.message}`);
     }
 
-    return data.map(OrderMapper.dbToOrder);
+    return {
+      orders: data.map(OrderMapper.dbToOrder),
+      total: count || 0,
+    };
   }
-  async uploadDbImage(imageDataFile: ImageDataFile): Promise<{ data: any; error?: string }> {
+  async uploadDbImage(imageDataFile: ImageDataFile) {
     const { data, error } = await this.supabase
       .from("images")
       .insert({
@@ -133,49 +215,19 @@ export class OrdersRepository {
       .select()
       .single();
 
-    if (error) {
-      return { data: null, error: error.message };
+    if (error || !data) {
+      throw new Error("Failed to upload image:");
     }
     return { data };
   }
 
-  async uploadImageToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string | null> {
-    const { error } = await this.supabase.storage
-      .from(process.env.SUPABASE_BUCKET_NAME as string)
-      .upload(filename, fileBuffer, { contentType, upsert: true });
+  async uploadImageToStorage(filename: string, fileBuffer: Uint8Array, contentType: string): Promise<string> {
+    const bucket = this.supabase.storage.from(process.env.SUPABASE_BUCKET_NAME as string);
 
-    return error ? error.message : null;
-  }
-  async uploadQrImage(id: string, idQr: string) {
-    const qrUrl = await this.getImageUrl(idQr);
-    const { data, error } = await this.supabase
-      .from("orders")
-      .update({
-        qr_image: idQr,
-        qr_image_url: qrUrl,
-      })
-      .eq("id", id)
-      .select("*")
-      .single();
-    if (error) {
-      throw new Error(`Failed to save qrId in orders: ${error.message}`);
-    }
-    return OrderMapper.dbToOrder(data);
-  }
-  async getExtensionImage(imageId: string): Promise<string> {
-    const { data, error } = await this.supabase.from("images").select("extension").eq("id", imageId).single();
+    const { error } = await bucket.upload(filename, fileBuffer, { contentType, upsert: true });
+    if (error) throw new Error(error.message);
 
-    if (error || !data) {
-      throw new Error(`Failed to get extension image: ${error.message}`);
-    }
-    return data.extension;
-  }
-
-  async getImageUrl(imageId: string): Promise<string> {
-    const ext = await this.getExtensionImage(imageId);
-    const { data } = this.supabase.storage
-      .from(process.env.SUPABASE_BUCKET_NAME as string)
-      .getPublicUrl(`order-${imageId}.${ext}`);
+    const { data } = bucket.getPublicUrl(filename);
     return data.publicUrl;
   }
 
@@ -189,7 +241,6 @@ export class OrdersRepository {
       cancelledAt: string;
       confirmationProof: string;
       confirmationProofUrl: string;
-      qrImage: string;
       bankTransactionId: string;
       txHash: string;
       expiresAt: string;
@@ -203,7 +254,6 @@ export class OrdersRepository {
     if (updates?.cancelledAt) updateData.cancelled_at = updates.cancelledAt;
     if (updates?.confirmationProof) updateData.confirmation_proof = updates.confirmationProof;
     if (updates?.confirmationProofUrl) updateData.confirmation_proof_url = updates.confirmationProofUrl;
-    if (updates?.qrImage) updateData.qr_image = updates.qrImage;
     if (updates?.bankTransactionId) updateData.bank_transaction_id = updates.bankTransactionId;
     if (updates?.txHash) updateData.tx_hash = updates.txHash;
     if (updates?.expiresAt) updateData.expires_at = updates.expiresAt;

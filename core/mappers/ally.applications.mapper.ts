@@ -9,7 +9,7 @@ export class AllyApplicationsMapper {
       phone: dbAllyApplication.phone,
       address: dbAllyApplication.address,
       status: dbAllyApplication.status as ApplicationStatus,
-      createdAt: new Date(dbAllyApplication.created_at),
+      createdAt: dbAllyApplication.created_at,
       updatedAt: dbAllyApplication.updated_at ? new Date(dbAllyApplication.updated_at) : undefined,
       reviewedAt: dbAllyApplication.reviewed_at ? new Date(dbAllyApplication.reviewed_at) : undefined,
       reviewedBy: dbAllyApplication.reviewed_by ?? undefined,

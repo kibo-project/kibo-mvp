@@ -3,47 +3,30 @@
 import { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { adminStatusButtonLabels } from "../../(user)/movements/MovementStatus";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
+import { StatusFilter } from "@/components/StatusFilter";
 import { useOrders } from "@/hooks/orders/useOrders";
-import { OrderStatus } from "@/services/orders";
+import { OrderStatus, OrdersFilters } from "@/services/orders";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-//import { AdminProtected } from "~~/components/AdminProtected";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/kibo";
-import { useAdminPaymentStore } from "~~/services/store/admin-payment-store";
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const AdminTransactions: NextPage = () => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    data,
-    // isLoading,
-    // error
-  } = useOrders();
-
-  const { setSelectedTransactionId } = useAdminPaymentStore();
+  const [pagination, setPagination] = useState<OrdersFilters>();
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
+  const { data, isLoading, error, refetch } = useOrders({
+    filters: { ...pagination, status: statusFilter || undefined },
+  });
 
   const handleTransactionAction = useCallback(
-    (id: string, status: OrderStatus) => {
-      setSelectedTransactionId(id);
-
-      switch (status) {
-        case OrderStatus.TAKEN:
-          router.push(`/transactions/${id}`);
-          break;
-        case OrderStatus.COMPLETED:
-          router.push(`/transactions/admin/review/${id}`);
-          break;
-        case OrderStatus.REFUNDED:
-          router.push(`/transactions/admin/review/${id}`);
-          break;
-        default:
-          break;
-      }
+    (id: string) => {
+      router.push(`/transactions/${id}`);
     },
-    [router, setSelectedTransactionId]
+    [router]
   );
 
   const filteredTransactions =
@@ -62,31 +45,37 @@ const AdminTransactions: NextPage = () => {
     setSearchTerm(e.target.value);
   }, []);
 
-  const getStatusBadgeVariant = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.COMPLETED:
-        return "success";
-      case OrderStatus.AVAILABLE:
-        return "warning";
-      case OrderStatus.REFUNDED:
-        return "error";
-      default:
-        return "gray";
-    }
-  };
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
-  const getStatusLabel = (status: OrderStatus) => {
-    switch (status) {
-      case OrderStatus.AVAILABLE:
-        return "Needs Review";
-      case OrderStatus.COMPLETED:
-        return "Completed";
-      case OrderStatus.REFUNDED:
-        return "Failed";
-      default:
-        return status;
-    }
-  };
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <RoleGuard requiredRole="ally">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex justify-center items-center py-8">
+            <p>Loading Transactions...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
+  if (error) {
+    return (
+      <RoleGuard requiredRole="ally">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex flex-col justify-center items-center py-8">
+            <p className="text-red-500 mb-4">Error: {error.message}</p>
+            <Button onClick={handleRefresh}>Retry</Button>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
 
   return (
     <RoleGuard requiredRole="ally">
@@ -112,6 +101,13 @@ const AdminTransactions: NextPage = () => {
             fullWidth
           />
         </div>
+        <StatusFilter
+          currentStatus={statusFilter}
+          onStatusChange={status => {
+            setStatusFilter(status);
+            setPagination(prev => ({ ...prev, offset: 0 }));
+          }}
+        />
 
         {/* Transactions List */}
         <div className="kibo-section-spacing mb-32">
@@ -123,8 +119,19 @@ const AdminTransactions: NextPage = () => {
                     <div className="flex-1">
                       <CardTitle className="text-base mb-1 flex items-center gap-2">
                         <span className="text-neutral-900 dark:text-neutral-100">{transaction.id}</span>
-                        <Badge variant={getStatusBadgeVariant(transaction.status)} size="sm">
-                          {getStatusLabel(transaction.status)}
+                        <Badge
+                          variant={
+                            transaction.status === OrderStatus.TAKEN || transaction.status === OrderStatus.AVAILABLE
+                              ? "warning"
+                              : transaction.status === OrderStatus.COMPLETED
+                                ? "success"
+                                : transaction.status === OrderStatus.CANCELLED
+                                  ? "error"
+                                  : "info"
+                          }
+                          size="sm"
+                        >
+                          {transaction.status}
                         </Badge>
                       </CardTitle>
                       <div className="space-y-1">
@@ -140,18 +147,12 @@ const AdminTransactions: NextPage = () => {
                       </div>
                     </div>
                     <Button
-                      variant={
-                        transaction.status === OrderStatus.COMPLETED
-                          ? "primary"
-                          : transaction.status === OrderStatus.AVAILABLE
-                            ? "secondary"
-                            : "ghost"
-                      }
+                      variant={transaction.status === OrderStatus.TAKEN ? "primary" : "secondary"}
                       size="sm"
                       className="self-center min-w-24"
-                      onClick={() => handleTransactionAction(transaction.id, transaction.status)}
+                      onClick={() => handleTransactionAction(transaction.id)}
                     >
-                      {adminStatusButtonLabels[transaction.status]}
+                      {transaction.status === OrderStatus.TAKEN ? "Pending" : "Details"}
                     </Button>
                   </div>
                 </CardBody>
@@ -175,6 +176,19 @@ const AdminTransactions: NextPage = () => {
             </Card>
           )}
         </div>
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

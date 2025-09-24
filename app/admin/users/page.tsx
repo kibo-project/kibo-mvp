@@ -2,16 +2,21 @@
 
 import { useCallback, useState } from "react";
 import Link from "next/link";
+import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
-import { Badge, Card, CardBody, CardTitle, Input } from "@/components/kibo";
-import { UserResponse } from "@/core/types/users.types";
+import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { UserRole } from "@/core/types/orders.types";
+import { UserResponse, UsersFiltersRequest } from "@/core/types/users.types";
 import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { formatDateToSpanish } from "@/utils/front.functions";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Users: NextPage = () => {
-  const { data, isLoading, error, refetch } = useGetUsers();
+  const [pagination, setPagination] = useState<UsersFiltersRequest>();
+  const { data, isLoading, error, refetch } = useGetUsers({
+    ...pagination,
+  });
   const [searchTerm, setSearchTerm] = useState<string>("");
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -26,6 +31,37 @@ const Users: NextPage = () => {
         formatDateToSpanish(user.createdAt).toLowerCase().includes(searchLower)
       );
     }) ?? [];
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
+
+  const handlePageChange = useCallback((newOffset: number) => {
+    setPagination(prev => ({ ...prev, offset: newOffset }));
+  }, []);
+
+  if (isLoading) {
+    return (
+      <RoleGuard requiredRole="admin">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex justify-center items-center py-8">
+            <p>Loading Applications...</p>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
+  if (error) {
+    return (
+      <RoleGuard requiredRole="user">
+        <div className="md:mx-auto md:min-w-md px-4">
+          <div className="flex flex-col justify-center items-center py-8">
+            <p className="text-red-500 mb-4">Error: {error.message}</p>
+            <Button onClick={handleRefresh}>Retry</Button>
+          </div>
+        </div>
+      </RoleGuard>
+    );
+  }
 
   return (
     <RoleGuard requiredRole="admin">
@@ -33,7 +69,7 @@ const Users: NextPage = () => {
         {/* Header */}
         <div className="kibo-page-header mb-6">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center">
+            <Link href="/admin" className="flex items-center">
               <ArrowLeftIcon className="w-6 h-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors" />
             </Link>
             <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Users History</h1>
@@ -49,6 +85,21 @@ const Users: NextPage = () => {
             leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
             fullWidth
           />
+        </div>
+        <div className="mb-6">
+          <select
+            value={pagination?.role ?? ""}
+            onChange={e => {
+              const value = e.target.value as UserRole | "";
+              setPagination(prev => ({ ...prev, offset: 0, role: value || undefined }));
+            }}
+            className="border rounded p-2 w-40 md:w-60 text-sm"
+          >
+            <option value="">All</option>
+            <option value="user">User</option>
+            <option value="ally">Ally</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
         {/* Users List */}
         <div className="kibo-section-spacing mb-32">
@@ -106,6 +157,20 @@ const Users: NextPage = () => {
             </Card>
           )}
         </div>
+
+        {/* Paginación */}
+        {data?.data?.pagination && (
+          <Pagination
+            total={data.data.pagination.total}
+            limit={data.data.pagination.limit}
+            offset={data.data.pagination.offset}
+            hasMore={data.data.pagination.hasMore}
+            onPageChange={handlePageChange}
+            isLoading={isLoading}
+          />
+        )}
+
+        <div className="mb-32"></div>
       </div>
     </RoleGuard>
   );

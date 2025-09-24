@@ -55,8 +55,42 @@ class OrdersApiService {
     return this.request<ApiResponse<OrdersListResponse>>(endpoint);
   }
 
-  async getOrderById(id: string): Promise<OrderDetailsResponse> {
-    return this.request<OrderDetailsResponse>(ENDPOINTS.ORDER_BY_ID(id));
+  async getOrdersRealtime(
+    filters: OrdersFilters = {},
+    onData: (data: any) => void,
+    onError?: (error: Error) => void
+  ): Promise<() => void> {
+    const params = new URLSearchParams();
+
+    if (filters.status) params.append("status", filters.status);
+    if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.offset) params.append("offset", filters.offset.toString());
+
+    const queryString = params.toString();
+    const url = `${this.baseUrl}/orders/realtime${queryString ? `?${queryString}` : ""}`;
+
+    const eventSource = new EventSource(url, {
+      withCredentials: true,
+    });
+
+    eventSource.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+        onData(data);
+      } catch (error) {
+        onError?.(new Error("Failed to parse SSE data"));
+      }
+    };
+
+    eventSource.onerror = error => {
+      onError?.(new Error("SSE connection error"));
+    };
+
+    return () => eventSource.close();
+  }
+
+  async getOrderById(id: string): Promise<ApiResponse<OrderResponse>> {
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDER_BY_ID(id));
   }
 
   async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {
@@ -88,6 +122,7 @@ class OrdersApiService {
     if (filters.maxAmount) params.append("maxAmount", filters.maxAmount.toString());
     if (filters.sortBy) params.append("sortBy", filters.sortBy);
     if (filters.limit) params.append("limit", filters.limit.toString());
+    if (filters.offset) params.append("offset", filters.offset.toString());
 
     const queryString = params.toString();
     const endpoint = `${ENDPOINTS.AVAILABLE_ORDERS}${queryString ? `?${queryString}` : ""}`;
@@ -95,8 +130,8 @@ class OrdersApiService {
     return this.request<ApiResponse<AvailableOrdersResponse>>(endpoint);
   }
 
-  async takeOrder(id: string): Promise<ApiResponse<TakeOrderResponse>> {
-    return this.request<ApiResponse<TakeOrderResponse>>(ENDPOINTS.TAKE_ORDER(id), {
+  async takeOrder(id: string): Promise<ApiResponse<OrderResponse>> {
+    return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.TAKE_ORDER(id), {
       method: "PATCH",
     });
   }
