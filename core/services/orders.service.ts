@@ -84,6 +84,7 @@ export class OrdersService {
     } else if (roleNameActive === "ally") {
       getOrdersDto.allyId = userId;
     }
+    //await this.ordersRepository.updateAvailableToCancelled(userId);
     const { orders, total } = await this.ordersRepository.findMany(getOrdersDto);
     const ordersResponse = orders.map(OrderMapper.orderToOrderResponse);
 
@@ -133,6 +134,23 @@ export class OrdersService {
       throw new Error("Access denied to this order");
     }
     return OrderMapper.orderToOrderResponse(order!);
+  }
+
+  async subscribeToOrderChangesById(userId: string, orderId: string, callback: (data: any) => void): Promise<any> {
+    // Primero verificar que el usuario tenga acceso a esta orden
+    const order = await this.ordersRepository.findById(orderId);
+    if (!order) {
+      throw new Error("Order not found");
+    }
+
+    if (!(await this.canUserAccessOrder(order, userId))) {
+      throw new Error("Access denied to this order");
+    }
+
+    // Suscribirse a cambios específicos de esta orden
+    const subscription = await this.ordersRepository.subscribeToOrderChangesById(orderId, callback);
+
+    return subscription;
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId: string): Promise<AvailableOrdersResponse> {
