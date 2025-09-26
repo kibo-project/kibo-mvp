@@ -1,7 +1,7 @@
 import { ENDPOINTS } from "@/config/api";
 import { AllyApplication, AllyApplicationRequest } from "@/core/types/ally.applications.types";
 import { ApiResponse } from "@/core/types/generic.types";
-import { UsersFiltersRequest, UsersListResponse } from "@/core/types/users.types";
+import { UserProfileRequest, UserResponse, UsersFiltersRequest, UsersListResponse } from "@/core/types/users.types";
 
 class UsersApiService {
   private baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -49,6 +49,16 @@ class UsersApiService {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(application),
+    });
+  }
+
+  async getProfile(): Promise<ApiResponse<UserResponse>> {
+    return this.request<ApiResponse<UserResponse>>(ENDPOINTS.PROFILE);
+  }
+  async editProfile(profile: UserProfileRequest): Promise<ApiResponse<UserResponse>> {
+    return this.request<ApiResponse<UserResponse>>(ENDPOINTS.USER_EDIT_PROFILE, {
+      method: "PATCH",
+      body: JSON.stringify(profile),
     });
   }
 }

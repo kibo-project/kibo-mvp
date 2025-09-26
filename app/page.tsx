@@ -5,8 +5,8 @@ import { useRouter } from "next/navigation";
 import { RoleSelector } from "@/components/RoleSelector";
 import { UserRole } from "@/core/types/orders.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
-import { useOrders } from "@/hooks/orders/useOrders";
-//import { useOrdersRealtime } from "@/hooks/orders/useOrdersRealtime";
+//import { useOrders } from "@/hooks/orders/useOrders";
+import { useOrdersRealtime } from "@/hooks/orders/useOrdersRealtime";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import type { NextPage } from "next";
@@ -27,18 +27,13 @@ const Home: NextPage = () => {
   // const { address } = useAccount();
   const queryClient = useQueryClient();
   const { authenticated, ready } = usePrivy();
-  const { data, refetch } = useOrders({ enabled: authenticated });
+  //const { data, refetch } = useOrders({ enabled: authenticated });
 
   const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const currentView = userRole;
   const router = useRouter();
-  // const {
-  //   data: realtimeData,
-  //   loading: realtimeLoading,
-  //   error: realtimeError,
-  //   connected,
-  // } = useOrdersRealtime({ enabled: authenticated });
+  const { data, error: realtimeError, connected } = useOrdersRealtime({ enabled: authenticated });
 
   // const { data: fallbackData, refetch } = useOrders({
   //   enabled: authenticated && (!!realtimeError || !connected),
@@ -210,7 +205,7 @@ const Home: NextPage = () => {
 
       <RecentActivity
         title="Transactions"
-        items={data?.data?.orders || []}
+        items={data?.orders || []}
         viewAllHref="/movements"
         viewOneHref="/movements/"
         emptyMessage="No recent transactions"
@@ -244,7 +239,7 @@ const Home: NextPage = () => {
 
       <RecentActivity
         title="Recent Activity"
-        items={data?.data?.orders || []}
+        items={data?.orders || []}
         viewOneHref="/transactions/"
         viewAllHref="/transactions"
         emptyMessage="No recent activity"

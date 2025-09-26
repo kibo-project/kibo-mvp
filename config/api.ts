@@ -32,4 +32,5 @@ export const ENDPOINTS = {
   USERS: "/admin/users",
   //Users
   USER_APPLICATION: "/user/apply",
+  USER_EDIT_PROFILE: "/user/profile",
 } as const;

@@ -2,6 +2,7 @@ import { CreateOrderDto, GetOrdersDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
 import { AvailableOrdersFilters, ImageDataFile, Order, OrderStatus } from "../types/orders.types";
 import { createClient } from "@supabase/supabase-js";
+import { update } from "idb-keyval";
 
 export class OrdersRepository {
   private supabase;
@@ -93,6 +94,19 @@ export class OrdersRepository {
     };
   }
 
+  async updateAvailableToCancelled(userId: string) {
+    const { error } = await this.supabase
+      .from("orders")
+      .update({ status: OrderStatus.CANCELLED })
+      .eq("user_id", userId)
+      .eq("status", OrderStatus.AVAILABLE)
+      .lt("expires_at", new Date().toISOString());
+
+    if (error) {
+      console.error(`Failed to update available to: ${error.message}`);
+    }
+  }
+
   async subscribeToChanges(filterCondition: string, callback: (data: any) => void): Promise<any> {
     console.log("RLS deshabilitado :", filterCondition);
 
@@ -167,6 +181,42 @@ export class OrdersRepository {
     const matches = recordValue === value;
 
     return matches;
+  }
+  async subscribeToOrderChangesById(orderId: string, callback: (data: any) => void): Promise<any> {
+    console.log("Suscribiéndose a cambios para orden ID:", orderId);
+
+    const channel = this.supabase
+      .channel(`order_${orderId}_${Date.now()}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "orders",
+          filter: `id=eq.${orderId}`, // Filtrar por ID específico
+        },
+        (payload: any) => {
+          console.log("Cambio recibido para orden", orderId, ":", payload.eventType);
+
+          try {
+            callback({
+              eventType: payload.eventType,
+              old: payload.old ? OrderMapper.dbToOrder(payload.old) : null,
+              new: payload.new ? OrderMapper.dbToOrder(payload.new) : null,
+            });
+          } catch (error) {
+            console.error("Error en callback para orden", orderId, ":", error);
+          }
+        }
+      )
+      .subscribe(status => {
+        console.log("Estado de suscripción para orden", orderId, ":", status);
+      });
+
+    return {
+      channel,
+      unsubscribe: () => this.supabase.removeChannel(channel),
+    };
   }
 
   async findAvailable(filters: AvailableOrdersFilters): Promise<{ orders: Order[]; total: number }> {

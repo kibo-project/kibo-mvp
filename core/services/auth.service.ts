@@ -1,9 +1,8 @@
-import { generateToken } from "../../utils/auth/jwt";
 import { UsersMapper } from "../mappers/users.mapper";
 import { AuthRepository } from "../repositories/auth.repository";
 import { UsersRepository } from "../repositories/users.repository";
 import { UserRole } from "../types/orders.types";
-import { User } from "../types/users.types";
+import { generateToken } from "@/utils/auth/jwt";
 
 export class AuthService {
   private authRepository: AuthRepository;
@@ -49,6 +48,7 @@ export class AuthService {
       token: jwtToken,
     };
   }
+
   async changeUserRole(userId: string, roleId: string) {
     const roleName = await this.usersRepository.getRoleNameByRoleId(roleId);
     const isValid = await this.usersRepository.verifyUser(userId, roleName);
@@ -63,8 +63,11 @@ export class AuthService {
     };
   }
 
-  async getProfile(userId: string): Promise<User | null> {
+  async getProfile(userId: string) {
     const user = await this.usersRepository.findUserById(userId);
-    return user;
+    if (!user) {
+      return null;
+    }
+    return UsersMapper.userToUserResponse(user);
   }
 }

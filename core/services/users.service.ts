@@ -1,6 +1,7 @@
+import { UsersMapper } from "@/core/mappers/users.mapper";
 import { UsersRepository } from "@/core/repositories/users.repository";
 import { UserRole } from "@/core/types/orders.types";
-import { UsersFiltersDto } from "@/core/types/users.types";
+import { UserProfileRequest, UsersFiltersDto } from "@/core/types/users.types";
 
 export class UsersService {
   private usersRepository: UsersRepository;
@@ -31,5 +32,9 @@ export class UsersService {
     if (roleActiveNow !== roleAllowed) {
       throw new Error(`Role active now is ${roleActiveNow}, ${roleAllowed} role is required active now`);
     }
+  }
+  async editProfile(userId: string, userProfileRequest: UserProfileRequest) {
+    const user = await this.usersRepository.editUserProfile(userId, userProfileRequest);
+    return UsersMapper.userToUserResponse(user!);
   }
 }

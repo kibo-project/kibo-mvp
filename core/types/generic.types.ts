@@ -22,5 +22,6 @@ export interface ApiErrorResponse {
 export interface FormData {
   fullName: string;
   phone: string;
+  email?: string;
   address: string;
 }

@@ -1,17 +1,15 @@
-import { ENDPOINTS } from "../../config/api";
-import { ApiResponse } from "../../core/types/generic.types";
+import { ENDPOINTS } from "@/config/api";
+import { ApiResponse } from "@/core/types/generic.types";
 import {
   AvailableOrdersFilters,
   AvailableOrdersResponse,
   CancelOrderResponse,
   CreateOrderRequest,
-  OrderDetailsResponse,
   OrderResponse,
   OrdersFilters,
   OrdersListResponse,
-  TakeOrderResponse,
   UploadProofRequest,
-} from "../../core/types/orders.types";
+} from "@/core/types/orders.types";
 
 class OrdersApiService {
   private baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
@@ -25,7 +23,7 @@ class OrdersApiService {
     }
 
     const response = await fetch(url, {
-      credentials: "include", // Esto envía las cookies automáticamente
+      credentials: "include",
       headers: {
         ...defaultHeaders,
         ...options.headers,
@@ -55,11 +53,7 @@ class OrdersApiService {
     return this.request<ApiResponse<OrdersListResponse>>(endpoint);
   }
 
-  async getOrdersRealtime(
-    filters: OrdersFilters = {},
-    onData: (data: any) => void,
-    onError?: (error: Error) => void
-  ): Promise<() => void> {
+  getOrdersRealtime(filters: OrdersFilters = {}, onData: (data: any) => void): () => void {
     const params = new URLSearchParams();
 
     if (filters.status) params.append("status", filters.status);
@@ -69,28 +63,48 @@ class OrdersApiService {
     const queryString = params.toString();
     const url = `${this.baseUrl}/orders/realtime${queryString ? `?${queryString}` : ""}`;
 
-    const eventSource = new EventSource(url, {
-      withCredentials: true,
-    });
+    const eventSource = new EventSource(url, {});
 
     eventSource.onmessage = event => {
       try {
         const data = JSON.parse(event.data);
         onData(data);
       } catch (error) {
-        onError?.(new Error("Failed to parse SSE data"));
+        console.error("Error parsing SSE data:", error);
       }
     };
 
     eventSource.onerror = error => {
-      onError?.(new Error("SSE connection error"));
+      console.error("SSE connection error:", error);
     };
 
-    return () => eventSource.close();
+    return () => {
+      eventSource.close();
+    };
   }
 
   async getOrderById(id: string): Promise<ApiResponse<OrderResponse>> {
     return this.request<ApiResponse<OrderResponse>>(ENDPOINTS.ORDER_BY_ID(id));
+  }
+  subscribeToOrderChanges(id: string, onUpdate: (data: any) => void): () => void {
+    const eventSource = new EventSource(`${this.baseUrl}/orders/${id}/realtime`, {});
+
+    eventSource.onmessage = event => {
+      try {
+        const data = JSON.parse(event.data);
+        onUpdate(data);
+      } catch (error) {
+        console.error("Error parsing SSE data:", error);
+      }
+    };
+
+    eventSource.onerror = error => {
+      console.error("SSE connection error:", error);
+    };
+
+    return () => {
+      eventSource.close();
+    };
   }
 
   async createOrder(data: CreateOrderRequest): Promise<ApiResponse<OrderResponse>> {

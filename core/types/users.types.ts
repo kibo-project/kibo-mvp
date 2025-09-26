@@ -61,6 +61,12 @@ export interface UsersFiltersRequest {
   offset?: number;
 }
 
+export interface UserProfileRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
+}
+
 export interface UsersFiltersDto {
   role?: UserRole;
   limit: number;
