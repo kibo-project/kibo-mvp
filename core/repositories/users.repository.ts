@@ -1,6 +1,6 @@
 import { UsersMapper } from "../mappers/users.mapper";
 import { UserRole } from "../types/orders.types";
-import { User, UserResponse, UsersFiltersDto } from "../types/users.types";
+import { User, UserProfileRequest, UserResponse, UsersFiltersDto } from "../types/users.types";
 import { createClient } from "@supabase/supabase-js";
 
 export class UsersRepository {
@@ -140,6 +140,36 @@ export class UsersRepository {
 
     if (error || !data) {
       throw new Error(`Error updating user`);
+    }
+
+    return UsersMapper.dbToUser(data);
+  }
+
+  async editUserProfile(userId: string, userProfileRequest: UserProfileRequest): Promise<User | null> {
+    const updateFields: any = {
+      updated_at: new Date().toISOString(),
+    };
+
+    if (userProfileRequest.name !== undefined) {
+      updateFields.name = userProfileRequest.name;
+    }
+
+    if (userProfileRequest.email !== undefined) {
+      updateFields.email = userProfileRequest.email;
+    }
+
+    if (userProfileRequest.phone !== undefined) {
+      updateFields.phone = userProfileRequest.phone;
+    }
+
+    const { data, error } = await this.supabase.from("users").update(updateFields).eq("id", userId).select().single();
+
+    if (error) {
+      return null;
+    }
+
+    if (!data) {
+      throw new Error(`User with id ${userId} not found`);
     }
 
     return UsersMapper.dbToUser(data);

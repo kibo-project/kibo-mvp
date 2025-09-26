@@ -53,7 +53,7 @@ export class UsersMapper {
 
   static userToUserResponse(
     user: User,
-    activeRoleName: UserRole,
+    activeRoleName?: UserRole,
     rolesNames?: UserRole[],
     roleIds?: string[],
     howRoles?: number
