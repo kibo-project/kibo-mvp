@@ -16,6 +16,12 @@ export class UsersRepository {
     return data ? UsersMapper.dbToUser(data) : null;
   }
 
+  async findUserIdByWallet(wallet: string): Promise<string | null> {
+    const { data, error } = await this.supabase.from("users").select("id").eq("wallet", wallet).maybeSingle();
+
+    return data && !error ? data.id : null;
+  }
+
   async getUsers(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
     if (filters.role) {
       return this.getUsersByRole(filters);
@@ -64,7 +70,7 @@ export class UsersRepository {
     return data!.active_role_id;
   }
 
-  async createUser(user: User, roleName: UserRole): Promise<User> {
+  async createUser(user: User): Promise<User> {
     const { data, error } = await this.supabase
       .from("users")
       .insert({
@@ -81,25 +87,24 @@ export class UsersRepository {
     if (error) {
       throw new Error(`Error creating user: ${error.message}`);
     }
-
-    const roleId = await this.findRoleIdByName(roleName);
-
-    await this.createUserRole(data.id, roleId);
+    const roleId = await this.findRoleIdByName("user");
+    await this.createUserRole(data.id, roleId, true);
 
     return UsersMapper.dbToUser(data);
   }
 
-  async createUserRole(userId: string, roleId: string) {
+  async createUserRole(userId: string, roleId: string, isActive: boolean) {
     const { error } = await this.supabase.from("users_roles").insert({
       user_id: userId,
       role_id: roleId,
+      is_active: isActive,
     });
     if (error) {
       throw new Error(`Error creating this user with this role: ${error.message}`);
     }
   }
 
-  async findRoleIdByName(name: string): Promise<string> {
+  async findRoleIdByName(name: UserRole): Promise<string> {
     const { data, error } = await this.supabase.from("roles").select("id").eq("name", name).limit(1);
 
     if (error) {
@@ -143,6 +148,16 @@ export class UsersRepository {
     }
 
     return UsersMapper.dbToUser(data);
+  }
+
+  async updateUserRole(userId: string, newActiveRoleId: string): Promise<void> {
+    await this.supabase.from("users_roles").update({ is_active: false }).eq("user_id", userId);
+
+    await this.supabase
+      .from("users_roles")
+      .update({ is_active: true })
+      .eq("user_id", userId)
+      .eq("role_id", newActiveRoleId);
   }
 
   async editUserProfile(userId: string, userProfileRequest: UserProfileRequest): Promise<User | null> {
@@ -224,6 +239,20 @@ export class UsersRepository {
     return true;
   }
 
+  async verifyUser2(userId: string, roleId: string) {
+    const { data: userRole, error: userRoleError } = await this.supabase
+      .from("users_roles")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("role_id", roleId)
+      .limit(1);
+    if (!userRole || userRole.length === 0 || userRoleError) {
+      return false;
+    }
+
+    return true;
+  }
+
   private async getUsersByRole(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
     const { data, error, count } = await this.supabase
       .from("users")
@@ -249,5 +278,32 @@ export class UsersRepository {
       users: usersWithRoles,
       total: count || 0,
     };
+  }
+
+  async getUserRolesByWallet(wallet: string): Promise<UserResponse> {
+    const { data, error } = await this.supabase
+      .from("users")
+      .select(`*,  users_roles (roles (*))`)
+      .eq("wallet", wallet)
+      .order("is_active", { ascending: true, referencedTable: "users_roles" })
+      .maybeSingle();
+
+    if (error || !data) {
+      throw new Error(`User not found: ${error}`);
+    }
+    return UsersMapper.dbToUserResponse2(data);
+  }
+  async getUserRolesByUserId(userId: string): Promise<UserResponse> {
+    const { data, error } = await this.supabase
+      .from("users")
+      .select(`*,  users_roles (roles (*))`)
+      .eq("id", userId)
+      .order("is_active", { ascending: true, referencedTable: "users_roles" })
+      .maybeSingle();
+
+    if (error || !data) {
+      throw new Error(`User not found: ${error}`);
+    }
+    return UsersMapper.dbToUserResponse2(data);
   }
 }

@@ -7,6 +7,7 @@ import { RecentActivity } from "@/components/dashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AllyApplication } from "@/core/types/ally.applications.types";
 import { UserRole } from "@/core/types/orders.types";
+import { RoleResponse } from "@/core/types/users.types";
 import { useApplications } from "@/hooks/applications/useApplications";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useAuthStore } from "@/services/store/auth-store.";
@@ -14,30 +15,32 @@ import { formatDateToSpanish, getStatusColorApplication, getStatusIconApplicatio
 import { NextPage } from "next";
 
 const AdminHome: NextPage = () => {
-  const { setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
+  const { setUserRole, userRole, howRoles, roleNames, roleIds, roles } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const { data, refetch } = useApplications();
 
-  const availableRoles = useMemo(() => {
-    if (!roleNames || howRoles <= 1) return [];
-    return roleNames.filter(role => role !== userRole);
-  }, [roleNames, userRole, howRoles]);
+  // CAMBIO: ahora devolvemos RoleResponse[] en vez de strings
+  const availableRoles: RoleResponse[] = useMemo(() => {
+    if (roles.length <= 1) return [];
+    return roles.filter(role => role.name !== userRole?.name);
+    // asumiendo que cada RoleResponse tiene .id y .name
+  }, [roles, userRole]);
 
+  // CAMBIO: ajustar handleRoleChange para usar RoleResponse en vez de string
   const handleRoleChange = useCallback(
-    (newRole: UserRole) => {
-      const roleIndex = roleNames.indexOf(newRole);
-      const roleId = roleIds[roleIndex];
-
+    (newRole: RoleResponse) => {
+      const roleId = newRole.roleId; // usamos id directamente
       if (roleId) {
         roleChangeMutation.mutate(roleId);
       }
     },
-    [roleNames, roleIds, roleChangeMutation]
+    [roleChangeMutation]
   );
+
   useEffect(() => {
-    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
-      setUserRole(roleChangeMutation.data.data.activeRoleName);
-      if (roleChangeMutation.data?.data?.activeRoleName == "admin") {
+    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data) {
+      setUserRole(roleChangeMutation.data.data.roles![0]);
+      if (roleChangeMutation.data.data.roles![0].name == "admin") {
         refetch()
           .then(() => {})
           .catch(() => {});

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { RoleSelector } from "@/components/RoleSelector";
 import { UserRole } from "@/core/types/orders.types";
+import { RoleResponse } from "@/core/types/users.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 //import { useOrders } from "@/hooks/orders/useOrders";
 import { useOrdersRealtime } from "@/hooks/orders/useOrdersRealtime";
@@ -29,7 +30,8 @@ const Home: NextPage = () => {
   const { authenticated, ready } = usePrivy();
   //const { data, refetch } = useOrders({ enabled: authenticated });
 
-  const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds } = useAuthStore();
+  const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds, roles } =
+    useAuthStore();
   const roleChangeMutation = useRoleChange();
   const currentView = userRole;
   const router = useRouter();
@@ -50,11 +52,15 @@ const Home: NextPage = () => {
   // const formattedBalance = useMemo(() => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
-  const availableRoles = useMemo(() => {
-    if (!roleNames || howRoles <= 1) return [];
-    return roleNames.filter(role => role !== userRole);
-  }, [roleNames, userRole, howRoles]);
 
+  // CAMBIO: ahora devolvemos RoleResponse[] en vez de strings
+  const availableRoles: RoleResponse[] = useMemo(() => {
+    if (roles.length <= 1) return [];
+    return roles.filter(role => role.name !== userRole?.name);
+    // asumiendo que cada RoleResponse tiene .id y .name
+  }, [roles]);
+
+  /*
   const handleRoleChange = useCallback(
     (newRole: UserRole) => {
       const roleIndex = roleNames.indexOf(newRole);
@@ -65,6 +71,17 @@ const Home: NextPage = () => {
       }
     },
     [roleNames, roleIds, roleChangeMutation]
+  );
+*/
+  // CAMBIO: ajustar handleRoleChange para usar RoleResponse en vez de string
+  const handleRoleChange = useCallback(
+    (newRole: RoleResponse) => {
+      const roleId = newRole.roleId; // usamos id directamente
+      if (roleId) {
+        roleChangeMutation.mutate(roleId);
+      }
+    },
+    [roleChangeMutation]
   );
 
   const quickActions: TopButton[] = useMemo(
@@ -89,21 +106,21 @@ const Home: NextPage = () => {
   );
 
   const headerBackgroundClass = useMemo(() => {
-    switch (userRole) {
+    switch (userRole?.name) {
       case "ally":
         return "bg-ally";
       default:
-        return "bg-primary"; // Mantener bg-primary como fallback
+        return "bg-primary";
     }
   }, [userRole]);
 
   useEffect(() => {
-    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
-      const newRole = roleChangeMutation.data.data.activeRoleName;
+    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data) {
+      const newRole = roleChangeMutation.data.data.roles![0];
       queryClient.removeQueries({ queryKey: ["orders"] });
 
       setUserRole(newRole);
-      if (newRole === "admin") {
+      if (newRole.name === "admin") {
         router.replace("/admin");
       }
     }
@@ -120,7 +137,7 @@ const Home: NextPage = () => {
   //   );
   // }
   useEffect(() => {
-    if (ready && authenticated && userRole == "admin") {
+    if (ready && authenticated && userRole?.name == "admin") {
       router.replace("/admin");
     }
   }, [ready, authenticated, router, userRole]);
@@ -147,9 +164,9 @@ const Home: NextPage = () => {
         <div className="flex items-center justify-between gap-2">
           {/*Role selector container */}
           <div className="relative">
-            {howRoles > 1 && (
+            {roles.length > 1 && (
               <RoleSelector
-                currentRole={userRole!}
+                currentRole={roles[0]}
                 availableRoles={availableRoles}
                 onRoleChange={handleRoleChange}
                 className=""
@@ -157,7 +174,7 @@ const Home: NextPage = () => {
             )}
           </div>
           {/* ALLY: button */}
-          {userRole === "user" && howRoles === 1 && (
+          {userRole?.name === "user" && howRoles === 1 && (
             <Button
               variant="secondary"
               size="md"
@@ -171,7 +188,7 @@ const Home: NextPage = () => {
           )}
         </div>
         <h2 className="text-base mb-2 font-medium opacity-90">USDT</h2>
-        {userRole === "user" && <QuickActions actions={quickActions} />}
+        {userRole?.name === "user" && <QuickActions actions={quickActions} />}
       </div>
     );
   };
@@ -251,7 +268,7 @@ const Home: NextPage = () => {
     <div className={`flex ${headerBackgroundClass} items-center flex-col grow pt-0 md:pt-2 min-dvh`}>
       <BalanceHeader />
       <div className="flex-1 w-full bg-neutral-100 dark:bg-neutral-800 mb-20 md:mb-0 pt-8">
-        {currentView === "ally" ? <AllyContent /> : <UserContent />}
+        {currentView?.name === "ally" ? <AllyContent /> : <UserContent />}
       </div>
     </div>
   );

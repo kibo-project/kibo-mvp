@@ -1,5 +1,5 @@
 import { UserRole } from "@/core/types/orders.types";
-import { Role, User, UserResponse } from "@/core/types/users.types";
+import { Role, RoleResponse, User, UserResponse } from "@/core/types/users.types";
 
 export class UsersMapper {
   static dbToUser(dbUser: any): User {
@@ -48,6 +48,35 @@ export class UsersMapper {
     return {
       roleId: dbRole.id,
       name: dbRole.name,
+    };
+  }
+
+  static dbToUserResponse2(dbUser: any): UserResponse {
+    return {
+      id: dbUser.id,
+      privyId: dbUser.privyId,
+      roles:
+        dbUser.users_roles?.map((userRole: any) => this.dbToRoleResponse(userRole.roles, userRole.is_active)) || [],
+      name: dbUser.name,
+      walletAddress: dbUser.wallet,
+      email: dbUser.email,
+      isAnApplicant: dbUser.is_an_applicant,
+      country: dbUser.country,
+      bankName: dbUser.bank_name,
+      accountNumber: dbUser.account_number,
+      accountHolder: dbUser.account_holder,
+      phone: dbUser.phone,
+      availableBalance: dbUser.available_balance,
+      lastLoginAt: dbUser.last_login_at,
+      createdAt: dbUser.created_at,
+      updatedAt: dbUser.updated_at,
+    };
+  }
+  static dbToRoleResponse(dbRole: any, isActive: boolean): RoleResponse {
+    return {
+      roleId: dbRole.id,
+      name: dbRole.name,
+      isActive: isActive, // ← Nuevo campo
     };
   }
 

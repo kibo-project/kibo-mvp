@@ -23,7 +23,6 @@ export async function middleware(request: NextRequest) {
     const response = NextResponse.next();
     response.headers.set("x-user-id", payload.userId);
     response.headers.set("x-user-role", payload.role);
-    response.headers.set("x-user-privyId", payload.privyId);
 
     return response;
   } catch (error) {

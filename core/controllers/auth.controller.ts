@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clearAuthCookie, setAuthCookie } from "../../utils/auth/jwt";
 import { AuthService } from "../services/auth.service";
 import { ApiResponse } from "../types/generic.types";
 import { UserResponse } from "../types/users.types";
+import { clearAuthCookie, setAuthCookie } from "@/utils/auth/jwt";
 
 export class AuthController {
   private authService: AuthService;
@@ -25,7 +25,7 @@ export class AuthController {
         );
       }
 
-      const result = await this.authService.login(token);
+      const result = await this.authService.login2(token);
       const responseData: ApiResponse<UserResponse> = {
         success: true,
         data: result.userResponse,
@@ -66,9 +66,9 @@ export class AuthController {
         );
       }
       const body = await request.json();
-      const { roleId } = body;
+      const { roleIdNew } = body;
 
-      if (!roleId) {
+      if (!roleIdNew) {
         return NextResponse.json(
           {
             success: false,
@@ -80,7 +80,7 @@ export class AuthController {
           { status: 400 }
         );
       }
-      const updatedUser = await this.authService.changeUserRole(userId, roleId);
+      const updatedUser = await this.authService.changeUserRole2(userId, roleIdNew);
       const responseData: ApiResponse<UserResponse> = {
         success: true,
         data: updatedUser.userResponse,

@@ -1,3 +1,4 @@
+import { RoleResponse } from "@/core/types/users.types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -28,22 +29,23 @@ export type UserRole = "user" | "ally" | "admin";
 interface AuthStore {
   hasVisitedRoot: boolean;
   isUserApplicant: boolean;
-  userRole: UserRole | null;
+  userRole: RoleResponse | null;
   howRoles: number;
   roleNames: UserRole[];
   roleIds: string[];
+  roles: RoleResponse[];
 
   setHasVisitedRoot: (visited: boolean) => void;
 
   /** Changes the user role (triggers re-renders and navigation) */
   setIsUserApplicant: (isUserApplicant: boolean) => void;
-  setUserRole: (role: UserRole | null) => void;
+  setUserRole: (role: RoleResponse | null) => void;
   setHowRoles: (howRoles: number | 0) => void;
   setRoleNames: (roleNames: UserRole[] | []) => void;
   setRoleIds: (roleIds: string[] | []) => void;
+  setRoles: (roles: RoleResponse[] | []) => void;
 
   /** Helper function to check if current user has admin privileges */
-  isAdmin: () => boolean;
   reset: () => void;
 }
 
@@ -84,6 +86,7 @@ export const useAuthStore = create<AuthStore>()(
       howRoles: 0,
       roleNames: [],
       roleIds: [],
+      roles: [],
 
       /** Track root page visits for login redirect logic */
       setHasVisitedRoot: visited => set({ hasVisitedRoot: visited }),
@@ -93,17 +96,18 @@ export const useAuthStore = create<AuthStore>()(
        * Used by RoleSwitcher component for development/demo
        */
       setIsUserApplicant: isApplicant => set({ isUserApplicant: isApplicant }),
-      setUserRole: role => set({ userRole: role }),
       setHowRoles: howRoles => set({ howRoles }),
       setRoleNames: roleNames => set({ roleNames }),
       setRoleIds: roleIds => set({ roleIds }),
+      setRoles: roles => set({ roles }),
+      setUserRole: role => set({ userRole: role }),
 
       /**
        * Check if current user has admin privileges
        * @returns {boolean} true if user role is 'admin'
        */
-      isAdmin: () => get().userRole === "admin",
-      reset: () => set({ userRole: null, howRoles: 0, roleNames: [], roleIds: [], isUserApplicant: false }),
+      //  isAdmin: () => get().userRole === "admin",
+      reset: () => set({ userRole: null, howRoles: 0, roleNames: [], roleIds: [], roles: [], isUserApplicant: false }),
     }),
     {
       name: "kibo-auth-storage",
@@ -114,6 +118,7 @@ export const useAuthStore = create<AuthStore>()(
         roleNames: state.roleNames,
         howRoles: state.howRoles,
         roleIds: state.roleIds,
+        roles: state.roles,
       }),
     }
   )

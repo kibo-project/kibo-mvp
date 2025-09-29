@@ -1,8 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
+import { RoleSelector } from "@/components/RoleSelector";
 import { Button, Card, CardBody, Input } from "@/components/kibo";
 import { FormData } from "@/core/types/generic.types";
+import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useEditProfile } from "@/hooks/users/useEditProfile";
 import { useProfile } from "@/hooks/users/useProfile";
 import { formatDateToSpanish } from "@/utils/front.functions";
@@ -92,7 +94,7 @@ const Profile: NextPage = () => {
               {"👤"}
             </div>
             <h1 className="text-2xl font-bold text-base-content mb-1">{data.data?.name || "Anonymous User"}</h1>
-            <div className="flex justify-center">
+            <div className="flex justify-between">
               <Button
                 variant="primary"
                 size="sm"
