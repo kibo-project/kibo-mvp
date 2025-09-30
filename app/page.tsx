@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { RoleSelector } from "@/components/RoleSelector";
-import { UserRole } from "@/core/types/orders.types";
 import { RoleResponse } from "@/core/types/users.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 //import { useOrders } from "@/hooks/orders/useOrders";
@@ -30,19 +29,15 @@ const Home: NextPage = () => {
   const { authenticated, ready } = usePrivy();
   //const { data, refetch } = useOrders({ enabled: authenticated });
 
-  const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, howRoles, roleNames, roleIds, roles } =
-    useAuthStore();
+  const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, roles } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const currentView = userRole;
   const router = useRouter();
-  const { data, error: realtimeError, connected } = useOrdersRealtime({ enabled: authenticated });
+  const { data, error: realtimeError, connected } = useOrdersRealtime({ enabled: authenticated && !!userRole });
 
   // const { data: fallbackData, refetch } = useOrders({
   //   enabled: authenticated && (!!realtimeError || !connected),
   // });
-
-  // const data = realtimeData;
-  // const isLoading = realtimeLoading;
 
   // const { data: balance } = useBalance({
   //   address,
@@ -53,30 +48,14 @@ const Home: NextPage = () => {
   //   return balance ? parseFloat(balance.value.toString()).toFixed(2) : "0.00";
   // }, [balance]);
 
-  // CAMBIO: ahora devolvemos RoleResponse[] en vez de strings
   const availableRoles: RoleResponse[] = useMemo(() => {
     if (roles.length <= 1) return [];
     return roles.filter(role => role.name !== userRole?.name);
-    // asumiendo que cada RoleResponse tiene .id y .name
-  }, [roles]);
+  }, [roles, userRole?.name]);
 
-  /*
-  const handleRoleChange = useCallback(
-    (newRole: UserRole) => {
-      const roleIndex = roleNames.indexOf(newRole);
-      const roleId = roleIds[roleIndex];
-
-      if (roleId) {
-        roleChangeMutation.mutate(roleId);
-      }
-    },
-    [roleNames, roleIds, roleChangeMutation]
-  );
-*/
-  // CAMBIO: ajustar handleRoleChange para usar RoleResponse en vez de string
   const handleRoleChange = useCallback(
     (newRole: RoleResponse) => {
-      const roleId = newRole.roleId; // usamos id directamente
+      const roleId = newRole.roleId;
       if (roleId) {
         roleChangeMutation.mutate(roleId);
       }
@@ -116,26 +95,15 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data) {
-      const newRole = roleChangeMutation.data.data.roles![0];
+      const newUserRole = roleChangeMutation.data.data.roles![0];
       queryClient.removeQueries({ queryKey: ["orders"] });
-
-      setUserRole(newRole);
-      if (newRole.name === "admin") {
+      setUserRole(newUserRole);
+      if (newUserRole.name === "admin") {
         router.replace("/admin");
       }
     }
-  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole, userRole]);
+  }, [roleChangeMutation.isSuccess, roleChangeMutation.data, setUserRole, userRole, queryClient, router]);
 
-  // if (!ready) {
-  //   return (
-  //     <div className="flex justify-center items-center h-dvh bg-primary">
-  //       <div className="text-center text-primary-content">
-  //         <div className="kibo-spinner mx-auto mb-4"></div>
-  //         <p className="text-lg font-medium">Loading Kibo...</p>
-  //       </div>
-  //     </div>
-  //   );
-  // }
   useEffect(() => {
     if (ready && authenticated && userRole?.name == "admin") {
       router.replace("/admin");
@@ -166,7 +134,7 @@ const Home: NextPage = () => {
           <div className="relative">
             {roles.length > 1 && (
               <RoleSelector
-                currentRole={roles[0]}
+                currentRole={userRole!}
                 availableRoles={availableRoles}
                 onRoleChange={handleRoleChange}
                 className=""
@@ -174,7 +142,7 @@ const Home: NextPage = () => {
             )}
           </div>
           {/* ALLY: button */}
-          {userRole?.name === "user" && howRoles === 1 && (
+          {userRole?.name === "user" && roles.length === 1 && (
             <Button
               variant="secondary"
               size="md"
@@ -192,34 +160,10 @@ const Home: NextPage = () => {
       </div>
     );
   };
-  //
-  // const UserContent = () => (
-  //   <div className="md:mx-auto md:min-w-md max-w-lg px-4">
-  //     <PromoCarousel className="-mt-24" />
-  //
-  //     <RecentActivity
-  //       title="Transactions"
-  //       items={data?.data?.orders || []}
-  //       viewAllHref="/movements"
-  //       viewOneHref="/movements/"
-  //       emptyMessage="No recent transactions"
-  //     />
-  //   </div>
-  // );
+
   const UserContent = () => (
     <div className="md:mx-auto md:min-w-md max-w-lg px-4">
       <PromoCarousel className="-mt-24" />
-
-      {/*/!* REAL TIME: Mostrar indicador de conexión si está desconectado *!/*/}
-      {/*{authenticated && realtimeError && (*/}
-      {/*  <div className="mb-4 p-3 bg-yellow-100 border border-yellow-400 text-yellow-700 rounded">*/}
-      {/*    <p className="text-sm">*/}
-      {/*      Connection issues detected. Using cached data.*/}
-      {/*      {!connected && " Reconnecting..."}*/}
-      {/*    </p>*/}
-      {/*  </div>*/}
-      {/*)}*/}
-
       <RecentActivity
         title="Transactions"
         items={data?.orders || []}
@@ -230,30 +174,8 @@ const Home: NextPage = () => {
     </div>
   );
 
-  // const AllyContent = () => (
-  //   <div className="md:mx-auto md:min-w-md max-w-lg px-4">
-  //     <RecentActivity
-  //       title="Recent Activity"
-  //       items={data?.data?.orders || []}
-  //       viewOneHref="/transactions/"
-  //       viewAllHref="/transactions"
-  //       emptyMessage="No recent activity"
-  //     />
-  //   </div>
-  // );
-
   const AllyContent = () => (
     <div className="md:mx-auto md:min-w-md max-w-lg px-4">
-      {/* REAL TIME: Indicador de estado de conexión */}
-      {/*{authenticated && (*/}
-      {/*  <div className="mb-2 flex items-center justify-between">*/}
-      {/*    <div className="flex items-center space-x-2">*/}
-      {/*      <div className={`w-2 h-2 rounded-full ${connected ? "bg-green-500" : "bg-red-500"}`} />*/}
-      {/*      <span className="text-xs text-gray-600">{connected ? "Live updates" : "Offline mode"}</span>*/}
-      {/*    </div>*/}
-      {/*  </div>*/}
-      {/*)}*/}
-
       <RecentActivity
         title="Recent Activity"
         items={data?.orders || []}

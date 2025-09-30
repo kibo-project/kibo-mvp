@@ -148,8 +148,8 @@ export const NavigationApp = () => {
   ];
 
   const currentMenuLinks = useMemo(() => {
-    if (userRole === "admin") return adminMenuLinks;
-    if (userRole === "ally") return allyMenuLinks;
+    if (userRole?.name === "admin") return adminMenuLinks;
+    if (userRole?.name === "ally") return allyMenuLinks;
     return userMenuLinks;
   }, [userRole]);
 

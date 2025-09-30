@@ -6,7 +6,6 @@ import { RoleSelector } from "@/components/RoleSelector";
 import { RecentActivity } from "@/components/dashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AllyApplication } from "@/core/types/ally.applications.types";
-import { UserRole } from "@/core/types/orders.types";
 import { RoleResponse } from "@/core/types/users.types";
 import { useApplications } from "@/hooks/applications/useApplications";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
@@ -15,21 +14,18 @@ import { formatDateToSpanish, getStatusColorApplication, getStatusIconApplicatio
 import { NextPage } from "next";
 
 const AdminHome: NextPage = () => {
-  const { setUserRole, userRole, howRoles, roleNames, roleIds, roles } = useAuthStore();
+  const { setUserRole, userRole, roles } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const { data, refetch } = useApplications();
 
-  // CAMBIO: ahora devolvemos RoleResponse[] en vez de strings
   const availableRoles: RoleResponse[] = useMemo(() => {
     if (roles.length <= 1) return [];
     return roles.filter(role => role.name !== userRole?.name);
-    // asumiendo que cada RoleResponse tiene .id y .name
   }, [roles, userRole]);
 
-  // CAMBIO: ajustar handleRoleChange para usar RoleResponse en vez de string
   const handleRoleChange = useCallback(
     (newRole: RoleResponse) => {
-      const roleId = newRole.roleId; // usamos id directamente
+      const roleId = newRole.roleId;
       if (roleId) {
         roleChangeMutation.mutate(roleId);
       }
@@ -86,7 +82,7 @@ const AdminHome: NextPage = () => {
       <div className="flex items-center justify-between gap-2">
         {/*Role selector container */}
         <div className="relative">
-          {howRoles > 1 && (
+          {roles.length > 1 && (
             <RoleSelector
               currentRole={userRole!}
               availableRoles={availableRoles}

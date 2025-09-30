@@ -47,8 +47,7 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
 
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && !userRole && backendLogin.data?.data) {
-      const activeRoleName = backendLogin.data.data.activeRoleName;
-      setUserRole(activeRoleName || null);
+      setUserRole(backendLogin.data.data.roles![0] || null);
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess, userRole, router]);

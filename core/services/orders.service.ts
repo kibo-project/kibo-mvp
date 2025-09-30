@@ -11,7 +11,6 @@ import {
   OrderResponse,
   OrderStatus,
   OrdersListResponse,
-  UserRole,
 } from "../types/orders.types";
 import { OrderMapper } from "@/core/mappers/order.mapper";
 
@@ -59,14 +58,13 @@ export class OrdersService {
     userId: string,
     roleActiveNow: string
   ): Promise<OrdersListResponse> {
-    const activeRoleId = await this.usersRepository.getActiveRoleIdByUserId(userId);
-    if (!activeRoleId) {
-      throw new Error("User does not have an active role");
+    const userRole = await this.usersRepository.getUserRolesByUserId(userId);
+    if (!userRole) {
+      throw new Error("User not found");
     }
-    const roleNameActive = (await this.usersRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
-    if (roleNameActive !== roleActiveNow) {
+    if (userRole.roles![0].name !== roleActiveNow) {
       throw new Error(
-        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
+        `You must log in as ${userRole.roles![0].name} to access this resource. Currently logged in as ${roleActiveNow}`
       );
     }
 
@@ -79,9 +77,9 @@ export class OrdersService {
       offset,
     };
 
-    if (roleNameActive === "user") {
+    if (userRole.roles![0].name === "user") {
       getOrdersDto.userId = userId;
-    } else if (roleNameActive === "ally") {
+    } else if (userRole.roles![0].name === "ally") {
       getOrdersDto.allyId = userId;
     }
     await this.ordersRepository.updateAvailableToCancelled(userId);
@@ -100,24 +98,22 @@ export class OrdersService {
   }
 
   async subscribeToOrderChanges(userId: string, roleActiveNow: string, callback: (data: any) => void): Promise<any> {
-    const activeRoleId = await this.usersRepository.getActiveRoleIdByUserId(userId);
-    if (!activeRoleId) {
+    const userRole = await this.usersRepository.getUserRolesByUserId(userId);
+    if (!userRole) {
       throw new Error("User does not have an active role");
     }
 
-    const roleNameActive = (await this.usersRepository.getRoleNameByRoleId(activeRoleId)) as UserRole;
-
-    if (roleNameActive !== roleActiveNow) {
+    if (userRole.roles![0].name !== roleActiveNow) {
       throw new Error(
-        `You must log in as ${roleNameActive} to access this resource. Currently logged in as ${roleActiveNow}`
+        `You must log in as ${userRole.roles![0].name} to access this resource. Currently logged in as ${roleActiveNow}`
       );
     }
 
     let filterCondition: string;
 
-    if (roleNameActive === "user") {
+    if (userRole.roles![0].name === "user") {
       filterCondition = `user_id=eq.${userId}`;
-    } else if (roleNameActive === "ally") {
+    } else if (userRole.roles![0].name === "ally") {
       filterCondition = `ally_id=eq.${userId}`;
     } else {
       throw new Error("Invalid role");

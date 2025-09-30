@@ -25,7 +25,7 @@ export class AuthController {
         );
       }
 
-      const result = await this.authService.login2(token);
+      const result = await this.authService.login(token);
       const responseData: ApiResponse<UserResponse> = {
         success: true,
         data: result.userResponse,
@@ -59,16 +59,16 @@ export class AuthController {
             success: false,
             error: {
               code: "UNAUTHORIZED",
-              message: "User authentication required LLEGA ACA",
+              message: "User authentication required",
             },
           },
           { status: 401 }
         );
       }
       const body = await request.json();
-      const { roleIdNew } = body;
+      const { roleId } = body;
 
-      if (!roleIdNew) {
+      if (!roleId) {
         return NextResponse.json(
           {
             success: false,
@@ -80,7 +80,7 @@ export class AuthController {
           { status: 400 }
         );
       }
-      const updatedUser = await this.authService.changeUserRole2(userId, roleIdNew);
+      const updatedUser = await this.authService.changeUserRole(userId, roleId);
       const responseData: ApiResponse<UserResponse> = {
         success: true,
         data: updatedUser.userResponse,

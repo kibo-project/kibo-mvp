@@ -21,17 +21,17 @@ export const RoleGuard = ({ children, requiredRole }: RoleGuardProps) => {
       return;
     }
 
-    if (authenticated && userRole === "admin" && userRole !== requiredRole) {
+    if (authenticated && userRole?.name === "admin" && userRole.name !== requiredRole) {
       router.push("/admin");
       return;
     } else {
-      if (authenticated && userRole && userRole !== requiredRole) {
+      if (authenticated && userRole && userRole.name !== requiredRole) {
         router.push("/");
       }
     }
   }, [userRole, requiredRole, router, ready, authenticated]);
 
-  if (!userRole || userRole !== requiredRole) {
+  if (!userRole || userRole.name !== requiredRole) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 

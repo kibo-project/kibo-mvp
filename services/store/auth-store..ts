@@ -30,9 +30,6 @@ interface AuthStore {
   hasVisitedRoot: boolean;
   isUserApplicant: boolean;
   userRole: RoleResponse | null;
-  howRoles: number;
-  roleNames: UserRole[];
-  roleIds: string[];
   roles: RoleResponse[];
 
   setHasVisitedRoot: (visited: boolean) => void;
@@ -40,9 +37,6 @@ interface AuthStore {
   /** Changes the user role (triggers re-renders and navigation) */
   setIsUserApplicant: (isUserApplicant: boolean) => void;
   setUserRole: (role: RoleResponse | null) => void;
-  setHowRoles: (howRoles: number | 0) => void;
-  setRoleNames: (roleNames: UserRole[] | []) => void;
-  setRoleIds: (roleIds: string[] | []) => void;
   setRoles: (roles: RoleResponse[] | []) => void;
 
   /** Helper function to check if current user has admin privileges */
@@ -83,9 +77,6 @@ export const useAuthStore = create<AuthStore>()(
       /** Default role is 'user' - admin access must be explicitly granted */
       isUserApplicant: false,
       userRole: null,
-      howRoles: 0,
-      roleNames: [],
-      roleIds: [],
       roles: [],
 
       /** Track root page visits for login redirect logic */
@@ -96,9 +87,6 @@ export const useAuthStore = create<AuthStore>()(
        * Used by RoleSwitcher component for development/demo
        */
       setIsUserApplicant: isApplicant => set({ isUserApplicant: isApplicant }),
-      setHowRoles: howRoles => set({ howRoles }),
-      setRoleNames: roleNames => set({ roleNames }),
-      setRoleIds: roleIds => set({ roleIds }),
       setRoles: roles => set({ roles }),
       setUserRole: role => set({ userRole: role }),
 
@@ -106,8 +94,7 @@ export const useAuthStore = create<AuthStore>()(
        * Check if current user has admin privileges
        * @returns {boolean} true if user role is 'admin'
        */
-      //  isAdmin: () => get().userRole === "admin",
-      reset: () => set({ userRole: null, howRoles: 0, roleNames: [], roleIds: [], roles: [], isUserApplicant: false }),
+      reset: () => set({ userRole: null, roles: [], isUserApplicant: false }),
     }),
     {
       name: "kibo-auth-storage",
@@ -115,9 +102,7 @@ export const useAuthStore = create<AuthStore>()(
       partialize: state => ({
         isUserApplicant: state.isUserApplicant,
         userRole: state.userRole,
-        roleNames: state.roleNames,
-        howRoles: state.howRoles,
-        roleIds: state.roleIds,
+        //    howRoles: state.howRoles,
         roles: state.roles,
       }),
     }

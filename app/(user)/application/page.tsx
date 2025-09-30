@@ -17,9 +17,9 @@ import { useAuthStore } from "~~/services/store/auth-store.";
 const ApplicationPage: NextPage = () => {
   const router = useRouter();
   const { mutate: apply, isPending: isApplying } = useApplyAlly();
-  const { data, isLoading } = useApplication();
   const { isUserApplicant, setIsUserApplicant } = useAuthStore();
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const { data, isLoading } = useApplication({ enabled: isUserApplicant });
 
   const handleCancel = () => {
     router.push("/");

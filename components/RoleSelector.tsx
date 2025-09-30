@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { UserRole } from "@/core/types/orders.types";
 import { RoleResponse } from "@/core/types/users.types";
 import { Button } from "~~/components/kibo";
 

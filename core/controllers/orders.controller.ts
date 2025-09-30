@@ -92,6 +92,8 @@ export class OrdersController {
       const userId = request.headers.get("x-user-id");
       const roleActiveNow = request.headers.get("x-user-role");
 
+      console.log(userId);
+
       if (!userId || !roleActiveNow) {
         return Response.json(
           {

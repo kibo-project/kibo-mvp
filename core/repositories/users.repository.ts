@@ -283,14 +283,16 @@ export class UsersRepository {
   async getUserRolesByWallet(wallet: string): Promise<UserResponse> {
     const { data, error } = await this.supabase
       .from("users")
-      .select(`*,  users_roles (roles (*))`)
+      .select(`*,  users_roles ( is_active, roles (*))`)
       .eq("wallet", wallet)
-      .order("is_active", { ascending: true, referencedTable: "users_roles" })
+      .order("is_active", { ascending: false, referencedTable: "users_roles" })
       .maybeSingle();
 
     if (error || !data) {
       throw new Error(`User not found: ${error}`);
     }
+    console.log("como LLEGAB EN BD solo DATA", data);
+
     return UsersMapper.dbToUserResponse2(data);
   }
   async getUserRolesByUserId(userId: string): Promise<UserResponse> {
@@ -298,7 +300,7 @@ export class UsersRepository {
       .from("users")
       .select(`*,  users_roles (roles (*))`)
       .eq("id", userId)
-      .order("is_active", { ascending: true, referencedTable: "users_roles" })
+      .order("is_active", { ascending: false, referencedTable: "users_roles" })
       .maybeSingle();
 
     if (error || !data) {
