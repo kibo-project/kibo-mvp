@@ -1,19 +1,26 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { RoleSelector } from "@/components/RoleSelector";
 import { Button, Card, CardBody, Input } from "@/components/kibo";
 import { FormData } from "@/core/types/generic.types";
+import { RoleResponse } from "@/core/types/users.types";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
 import { useEditProfile } from "@/hooks/users/useEditProfile";
 import { useProfile } from "@/hooks/users/useProfile";
-import { formatDateToSpanish } from "@/utils/front.functions";
+import { useAuthStore } from "@/services/store/auth-store.";
+import { formatAddress, formatDateToSpanish } from "@/utils/front.functions";
 import { NextPage } from "next";
 import { useForm } from "react-hook-form";
+import toast from "react-hot-toast";
+import { CheckIcon, ClipboardDocumentIcon } from "@heroicons/react/24/outline";
 
 const Profile: NextPage = () => {
   const { data, isLoading, refetch } = useProfile();
+  const [copied, setCopied] = useState(false);
   const editProfileMutation = useEditProfile();
+  const roleChangeMutation = useRoleChange();
+  const { setUserRole, setRoles, userRole, roles } = useAuthStore();
   const [isEditing, setIsEditing] = useState(false);
   const {
     register,
@@ -42,10 +49,9 @@ const Profile: NextPage = () => {
       onSuccess: () => {
         setIsEditing(false);
         refetch();
-        console.log("Profile updated successfully!");
       },
-      onError: error => {
-        console.error("Error updating profile:", error);
+      onError: () => {
+        toast.error("Error updating profile:");
       },
     });
   };
@@ -54,6 +60,62 @@ const Profile: NextPage = () => {
     reset();
     setIsEditing(false);
   };
+  const availableRoles: RoleResponse[] = useMemo(() => {
+    if (roles.length <= 1) return [];
+    return roles.filter(role => role.name !== userRole?.name);
+  }, [roles, userRole?.name]);
+
+  const handleRoleChange = useCallback(
+    (newRole: RoleResponse) => {
+      const roleId = newRole.roleId;
+      if (roleId) {
+        roleChangeMutation.mutate(roleId, {
+          onSuccess: data => {
+            if (data?.data?.roles) {
+              setRoles(data.data.roles);
+              const newUserRole = data.data.roles[0];
+              setUserRole(newUserRole);
+            }
+          },
+        });
+      }
+    },
+    [roleChangeMutation, setRoles, setUserRole]
+  );
+
+  const backgroundClass = useMemo(() => {
+    switch (userRole?.name) {
+      case "admin":
+        return "bg-admin";
+      case "ally":
+        return "bg-ally";
+      default:
+        return "bg-primary";
+    }
+  }, [userRole]);
+  const copyToClipboard = useCallback(async () => {
+    if (data?.data?.walletAddress) {
+      try {
+        await navigator.clipboard.writeText(data.data?.walletAddress);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      } catch (err) {
+        toast.error(`Failed to copy address: ${err}`);
+      }
+    }
+  }, [data?.data?.walletAddress]);
+
+  if (roleChangeMutation.isPending) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
+        <div className="flex flex-col items-center space-y-4 relative z-10">
+          <div className="animate-spin rounded-full h-16 w-16 border-4 border-emerald-600 border-t-transparent"></div>
+          <span className="text-lg font-medium text-neutral-900 dark:text-neutral-100">Changing role...</span>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -85,7 +147,9 @@ const Profile: NextPage = () => {
   }
 
   return (
-    <div className="flex bg-primary items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] p-4">
+    <div
+      className={`flex ${backgroundClass} items-center justify-center min-h-[calc(100vh-4rem)] md:min-h-[calc(100vh-5rem)] p-4`}
+    >
       <Card className="w-full max-w-2xl mb-20">
         <CardBody>
           {/* Header Section */}
@@ -94,7 +158,7 @@ const Profile: NextPage = () => {
               {"👤"}
             </div>
             <h1 className="text-2xl font-bold text-base-content mb-1">{data.data?.name || "Anonymous User"}</h1>
-            <div className="flex justify-between">
+            <div className="flex justify-center items-stretch gap-3">
               <Button
                 variant="primary"
                 size="sm"
@@ -103,6 +167,14 @@ const Profile: NextPage = () => {
               >
                 {"Edit Profile"}
               </Button>
+              {roles.length > 1 && (
+                <RoleSelector
+                  currentRole={userRole!}
+                  availableRoles={availableRoles}
+                  onRoleChange={handleRoleChange}
+                  className=""
+                />
+              )}
             </div>
           </div>
 
@@ -177,12 +249,23 @@ const Profile: NextPage = () => {
 
               <div>
                 <label className="block text-sm font-medium text-base-content/70 mb-1">Wallet Address</label>
-                <p className="text-base-content font-mono text-xs bg-base-100 p-2 rounded">
-                  {data.data?.walletAddress
-                    ? `${data.data?.walletAddress.slice(0, 6)}...${data.data?.walletAddress.slice(-4)}`
-                    : "Not connected"}
-                </p>
+                <div className="flex items-center gap-1 p-2 rounded">
+                  <p className="text-base-content font-mono text-sm">
+                    {data.data?.walletAddress ? formatAddress(data.data?.walletAddress) : "Not connected"}
+                  </p>
+
+                  <button
+                    onClick={copyToClipboard}
+                    className={`p-1 rounded transition-all duration-200 ${
+                      copied ? "text-green-400" : "text-gray-400 hover:text-white"
+                    }`}
+                    title={copied ? "Copied!" : "Copy address"}
+                  >
+                    {copied ? <CheckIcon className="size-6" /> : <ClipboardDocumentIcon className="size-6" />}
+                  </button>
+                </div>
               </div>
+
               <div>
                 <label className="block text-sm font-medium text-base-content/70 mb-1">Member Since</label>
                 <p className="text-base-content">{formatDateToSpanish(data.data?.createdAt || "")}</p>

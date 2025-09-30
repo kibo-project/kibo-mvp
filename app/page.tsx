@@ -28,8 +28,7 @@ const Home: NextPage = () => {
   const queryClient = useQueryClient();
   const { authenticated, ready } = usePrivy();
   //const { data, refetch } = useOrders({ enabled: authenticated });
-
-  const { setHasVisitedRoot, setUserRole, isUserApplicant, userRole, roles } = useAuthStore();
+  const { setUserRole, isUserApplicant, userRole, roles } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const currentView = userRole;
   const router = useRouter();
@@ -109,10 +108,6 @@ const Home: NextPage = () => {
       router.replace("/admin");
     }
   }, [ready, authenticated, router, userRole]);
-
-  useEffect(() => {
-    setHasVisitedRoot(true);
-  }, [setHasVisitedRoot]);
 
   if (roleChangeMutation.isPending) {
     return (

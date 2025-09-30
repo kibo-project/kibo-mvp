@@ -9,6 +9,8 @@ import { AllyApplication } from "@/core/types/ally.applications.types";
 import { RoleResponse } from "@/core/types/users.types";
 import { useApplications } from "@/hooks/applications/useApplications";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
+import { useOrders } from "@/hooks/orders/useOrders";
+import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { useAuthStore } from "@/services/store/auth-store.";
 import { formatDateToSpanish, getStatusColorApplication, getStatusIconApplication } from "@/utils/front.functions";
 import { NextPage } from "next";
@@ -17,6 +19,8 @@ const AdminHome: NextPage = () => {
   const { setUserRole, userRole, roles } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const { data, refetch } = useApplications();
+  const { data: usersData } = useGetUsers();
+  const { data: ordersData } = useOrders();
 
   const availableRoles: RoleResponse[] = useMemo(() => {
     if (roles.length <= 1) return [];
@@ -94,10 +98,10 @@ const AdminHome: NextPage = () => {
       </div>
       <div className="md:mx-auto md:min-w-md max-w-lg px-4 mt-12">
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <StatCard title="Applications" value={7} />
-          <StatCard title="Applications" value={11} />
-          <StatCard title="Users" value="+99" />
-          <StatCard title="Orders" value="+99" />
+          <StatCard title="Applications" value={data?.data?.pagination.total || 0} href="/admin/applications" />
+          <StatCard title="Applications" value={data?.data?.pagination.total || 0} href="/admin/applications" />
+          <StatCard title="Users" value={usersData?.data?.pagination.total || 0} href="/admin/users" />
+          <StatCard title="Orders" value={ordersData?.data?.pagination.total || 0} href="/admin/orders" />
         </div>
       </div>
     </div>

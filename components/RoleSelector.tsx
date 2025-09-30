@@ -44,7 +44,7 @@ export const RoleSelector: React.FC<RoleSelectorProps> = ({
         variant="secondary"
         size="sm"
         className={`
-    flex items-center justify-between gap-2 px-3 py-1 mt-4 min-w-[80px]
+    flex items-center justify-between gap-2 px-3 py-1 min-w-[80px]
     border border-gray-300 rounded-md bg-white dark:bg-gray-800 focus:outline-none focus:ring-0
     ${hasMultipleRoles && !disabled ? "cursor-pointer" : "cursor-default"}
   `}

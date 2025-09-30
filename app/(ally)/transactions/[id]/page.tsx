@@ -212,7 +212,7 @@ const AdminPaymentProof: NextPage<AdminPaymentProofProps> = ({ params }) => {
 
   return (
     <RoleGuard requiredRole="ally">
-      <div className="md:mx-auto md:min-w-md px-4">
+      <div className="md:mx-auto md:min-w-md px-4 pb-20">
         {/* Header */}
         <div className="kibo-page-header mb-6">
           <div className="flex items-center gap-3">
