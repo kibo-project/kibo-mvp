@@ -118,11 +118,13 @@ export class AllyApplicationsController {
       const { searchParams } = new URL(request.url);
       const applicationsFilters: ApplicationsFiltersRequest = {
         status: searchParams.get("status") as ApplicationStatus | undefined,
+        search: searchParams.get("search") ?? undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 1,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0,
       };
       const applicationsFiltersDto: ApplicationsFiltersDto = {
         status: applicationsFilters.status,
+        search: applicationsFilters.search,
         limit: applicationsFilters.limit!,
         offset: applicationsFilters.offset!,
       };

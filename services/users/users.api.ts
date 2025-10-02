@@ -35,6 +35,7 @@ class UsersApiService {
     const params = new URLSearchParams();
 
     if (filters.role) params.append("role", filters.role);
+    if (filters.search) params.append("search", filters.search);
     if (filters.limit) params.append("limit", filters.limit.toString());
     if (filters.offset) params.append("offset", filters.offset.toString());
 

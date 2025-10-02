@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ConfimationModal";
 import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
+import { OrderListSkeleton } from "@/components/skeletons";
 import { AvailableOrdersFilters, OrderResponse } from "@/core/types/orders.types";
 import { useAvailableOrders } from "@/hooks/orders/useAvailableOrders";
 import { useTakeOrder } from "@/hooks/orders/useTakeOrder";
@@ -28,13 +29,15 @@ import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const AllyAvailableOrders: NextPage = () => {
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<OrderResponse | null>(null);
   const [showTakeOrderModal, setShowTakeOrderModal] = useState(false);
   const [pagination, setPagination] = useState<AvailableOrdersFilters>();
-  const { data, isLoading, error } = useAvailableOrders({ ...pagination });
+  const { data, isLoading, error, refetch } = useAvailableOrders({ ...pagination, search: searchFilter || undefined });
   const takeOrder = useTakeOrder();
+  const orders = data?.data?.orders ?? [];
 
   const handleViewOrderDetails = useCallback((order: OrderResponse) => {
     setSelectedOrder(order);
@@ -72,61 +75,34 @@ const AllyAvailableOrders: NextPage = () => {
     setSelectedOrder(null);
   }, []);
 
-  const filteredOrders =
-    data?.data?.orders?.filter(order => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        order.id.toLowerCase().includes(searchLower) ||
-        `${order.cryptoAmount} ${order.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
-        `${order.fiatAmount} ${order.fiatCurrency}`.toLowerCase().includes(searchLower) ||
-        order.userId?.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(order.createdAt, { fixedTimeZone: true }).toLowerCase().includes(searchLower)
-      );
-    }) ?? [];
-
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.trim() === "") {
+      setSearchFilter("");
+    }
   }, []);
+  const handleSearch = useCallback(() => {
+    setSearchFilter(searchInput);
+    setPagination(prev => ({ ...prev, offset: 0 }));
+  }, [searchInput]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
 
   const handlePageChange = useCallback((newOffset: number) => {
     setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
 
-  if (isLoading) {
-    return (
-      <RoleGuard requiredRole="ally">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="kibo-page-header mb-6">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center">
-                <ArrowLeftIcon className="w-6 h-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors" />
-              </Link>
-              <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Available Orders</h1>
-            </div>
-          </div>
-          <div className="text-center py-8">Loading...</div>
-        </div>
-      </RoleGuard>
-    );
-  }
-
-  if (error) {
-    return (
-      <RoleGuard requiredRole="ally">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="kibo-page-header mb-6">
-            <div className="flex items-center gap-3">
-              <Link href="/" className="flex items-center">
-                <ArrowLeftIcon className="w-6 h-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors" />
-              </Link>
-              <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Available Orders</h1>
-            </div>
-          </div>
-          <div className="text-center py-8 text-red-500">Error loading orders</div>
-        </div>
-      </RoleGuard>
-    );
-  }
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   return (
     <RoleGuard requiredRole="ally">
@@ -140,20 +116,40 @@ const AllyAvailableOrders: NextPage = () => {
           </div>
         </div>
 
-        <div className="mb-6">
-          <Input
-            type="text"
-            placeholder="Search orders, amounts, users..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
-            fullWidth
-          />
+        {/* Search Bar */}
+        <div className="mb-6 flex items-center gap-2 w-full">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchInput}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+              fullWidth
+              className="py-2 text-lg"
+            />
+          </div>
+
+          <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={handleSearch}>
+            Search
+          </Button>
         </div>
 
         <div className="kibo-section-spacing mb-32">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => (
+          {isLoading ? (
+            <OrderListSkeleton count={2} />
+          ) : error ? (
+            <Card>
+              <CardBody>
+                <div className="flex flex-col justify-center items-center py-8">
+                  <p className="text-red-500 mb-4"> {error.message}</p>
+                  <Button onClick={handleRefresh}>Retry</Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : orders.length > 0 ? (
+            orders.map(order => (
               <Card key={order.id} shadow="sm">
                 <CardBody>
                   <div className="flex justify-between items-start">
@@ -198,7 +194,7 @@ const AllyAvailableOrders: NextPage = () => {
                   <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                     No available orders found
                   </h3>
-                  {searchTerm && (
+                  {searchFilter && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Try adjusting your search terms</p>
                   )}
                 </div>

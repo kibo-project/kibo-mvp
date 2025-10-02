@@ -6,6 +6,7 @@ import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { StatusFilter } from "@/components/StatusFilter";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { OrderListSkeleton } from "@/components/skeletons";
 import { OrderStatus, OrdersFilters } from "@/core/types/orders.types";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { formatDateToSpanish } from "@/utils/front.functions";
@@ -13,28 +14,36 @@ import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 const Orders: NextPage = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>("");
   const [pagination, setPagination] = useState<OrdersFilters>();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
   const { data, isLoading, error, refetch } = useOrders({
-    filters: { ...pagination, status: statusFilter || undefined },
+    filters: { ...pagination, status: statusFilter || undefined, search: searchFilter || undefined },
   });
-
-  const filteredOrders =
-    data?.data?.orders?.filter(order => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        order.id.toLowerCase().includes(searchLower) ||
-        `${order.cryptoAmount} ${order.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
-        `${order.fiatAmount} ${order.fiatCurrency}`.toLowerCase().includes(searchLower) ||
-        order.userId?.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(order.createdAt).toLowerCase().includes(searchLower)
-      );
-    }) ?? [];
+  const orders = data?.data?.orders ?? [];
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.trim() === "") {
+      setSearchFilter("");
+    }
   }, []);
+
+  const handleSearch = useCallback(() => {
+    setSearchFilter(searchInput);
+    setPagination(prev => ({ ...prev, offset: 0 }));
+  }, [searchInput]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -43,31 +52,6 @@ const Orders: NextPage = () => {
   const handlePageChange = useCallback((newOffset: number) => {
     setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
-
-  if (isLoading) {
-    return (
-      <RoleGuard requiredRole="admin">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex justify-center items-center py-8">
-            <p>Loading Orders...</p>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
-
-  if (error) {
-    return (
-      <RoleGuard requiredRole="user">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex flex-col justify-center items-center py-8">
-            <p className="text-red-500 mb-4">Error: {error.message}</p>
-            <Button onClick={handleRefresh}>Retry</Button>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
 
   return (
     <RoleGuard requiredRole="admin">
@@ -78,20 +62,28 @@ const Orders: NextPage = () => {
             <Link href="/admin" className="flex items-center">
               <ArrowLeftIcon className="w-6 h-6 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100 transition-colors" />
             </Link>
-            <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Orders list</h1>
+            <h1 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">Orders List</h1>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6">
-          <Input
-            type="text"
-            placeholder="Search transactions, users, amounts..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
-            fullWidth
-          />
+        <div className="mb-6 flex items-center gap-2 w-full">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchInput}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+              fullWidth
+              className="py-2 text-lg"
+            />
+          </div>
+
+          <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={handleSearch}>
+            Search
+          </Button>
         </div>
 
         <StatusFilter
@@ -104,8 +96,19 @@ const Orders: NextPage = () => {
 
         {/* Transactions List */}
         <div className="kibo-section-spacing mb-32">
-          {filteredOrders.length > 0 ? (
-            filteredOrders.map(order => (
+          {isLoading ? (
+            <OrderListSkeleton count={2} />
+          ) : error ? (
+            <Card>
+              <CardBody>
+                <div className="flex flex-col justify-center items-center py-8">
+                  <p className="text-red-500 mb-4"> {error.message}</p>
+                  <Button onClick={handleRefresh}>Retry</Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : orders.length > 0 ? (
+            orders.map(order => (
               <Card key={order.id} shadow="sm">
                 <CardBody>
                   <div className="flex justify-between items-start">
@@ -161,7 +164,7 @@ const Orders: NextPage = () => {
                     <MagnifyingGlassIcon className="w-8 h-8 text-neutral-400" />
                   </div>
                   <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">No Orders found</h3>
-                  {searchTerm && (
+                  {searchFilter && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Try adjusting your search terms</p>
                   )}
                 </div>

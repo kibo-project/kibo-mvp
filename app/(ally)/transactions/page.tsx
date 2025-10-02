@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { StatusFilter } from "@/components/StatusFilter";
+import { OrderListSkeleton } from "@/components/skeletons";
 import { useOrders } from "@/hooks/orders/useOrders";
 import { OrderStatus, OrdersFilters } from "@/services/orders";
 import { NextPage } from "next";
@@ -14,13 +15,15 @@ import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/k
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const AdminTransactions: NextPage = () => {
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>("");
   const router = useRouter();
-  const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState<OrdersFilters>();
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "">("");
   const { data, isLoading, error, refetch } = useOrders({
-    filters: { ...pagination, status: statusFilter || undefined },
+    filters: { ...pagination, status: statusFilter || undefined, search: searchFilter || undefined },
   });
+  const orders = data?.data?.orders ?? [];
 
   const handleTransactionAction = useCallback(
     (id: string) => {
@@ -29,21 +32,27 @@ const AdminTransactions: NextPage = () => {
     [router]
   );
 
-  const filteredTransactions =
-    data?.data?.orders?.filter(transaction => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        transaction.id.toLowerCase().includes(searchLower) ||
-        `${transaction.cryptoAmount} ${transaction.cryptoCurrency}`.toLowerCase().includes(searchLower) ||
-        `${transaction.fiatAmount} ${transaction.fiatCurrency}`.toLowerCase().includes(searchLower) ||
-        transaction.userId?.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(transaction.createdAt).toLowerCase().includes(searchLower)
-      );
-    }) ?? [];
-
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.trim() === "") {
+      setSearchFilter("");
+    }
   }, []);
+
+  const handleSearch = useCallback(() => {
+    setSearchFilter(searchInput);
+    setPagination(prev => ({ ...prev, offset: 0 }));
+  }, [searchInput]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
 
   const handleRefresh = useCallback(() => {
     refetch();
@@ -52,30 +61,6 @@ const AdminTransactions: NextPage = () => {
   const handlePageChange = useCallback((newOffset: number) => {
     setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
-
-  if (isLoading) {
-    return (
-      <RoleGuard requiredRole="ally">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex justify-center items-center py-8">
-            <p>Loading Transactions...</p>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
-  if (error) {
-    return (
-      <RoleGuard requiredRole="ally">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex flex-col justify-center items-center py-8">
-            <p className="text-red-500 mb-4">Error: {error.message}</p>
-            <Button onClick={handleRefresh}>Retry</Button>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
 
   return (
     <RoleGuard requiredRole="ally">
@@ -91,15 +76,23 @@ const AdminTransactions: NextPage = () => {
         </div>
 
         {/* Search Bar */}
-        <div className="mb-6">
-          <Input
-            type="text"
-            placeholder="Search transactions, users, amounts..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
-            fullWidth
-          />
+        <div className="mb-6 flex items-center gap-2 w-full">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchInput}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+              fullWidth
+              className="py-2 text-lg"
+            />
+          </div>
+
+          <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={handleSearch}>
+            Search
+          </Button>
         </div>
         <StatusFilter
           currentStatus={statusFilter}
@@ -111,14 +104,25 @@ const AdminTransactions: NextPage = () => {
 
         {/* Transactions List */}
         <div className="kibo-section-spacing mb-32">
-          {filteredTransactions.length > 0 ? (
-            filteredTransactions.map(transaction => (
+          {isLoading ? (
+            <OrderListSkeleton count={2} />
+          ) : error ? (
+            <Card>
+              <CardBody>
+                <div className="flex flex-col justify-center items-center py-8">
+                  <p className="text-red-500 mb-4"> {error.message}</p>
+                  <Button onClick={handleRefresh}>Retry</Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : orders.length > 0 ? (
+            orders.map(transaction => (
               <Card key={transaction.id} shadow="sm">
                 <CardBody>
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
                       <CardTitle className="text-base mb-1 flex items-center gap-2">
-                        <span className="text-neutral-900 dark:text-neutral-100">{transaction.id}</span>
+                        <span className="text-neutral-900 dark:text-neutral-100">Transaction</span>
                         <Badge
                           variant={
                             transaction.status === OrderStatus.TAKEN || transaction.status === OrderStatus.AVAILABLE
@@ -140,7 +144,6 @@ const AdminTransactions: NextPage = () => {
                           <span className="mx-2">•</span>
                           <span>{`${transaction.fiatAmount} ${transaction.fiatCurrency}`}</span>
                         </p>
-                        <p className="text-xs text-neutral-500">{transaction.id}</p>
                         <p className="text-xs text-neutral-500 dark:text-neutral-500">
                           {formatDateToSpanish(transaction.createdAt)}
                         </p>
@@ -168,7 +171,7 @@ const AdminTransactions: NextPage = () => {
                   <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                     No transactions found
                   </h3>
-                  {searchTerm && (
+                  {searchFilter && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Try adjusting your search terms</p>
                   )}
                 </div>
