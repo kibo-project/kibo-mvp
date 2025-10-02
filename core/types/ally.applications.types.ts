@@ -34,6 +34,7 @@ export interface AllyApplication {
 
 export interface ApplicationsFiltersRequest {
   status?: ApplicationStatus;
+  search?: string;
   limit?: number;
   offset?: number;
 }
@@ -49,6 +50,7 @@ export interface ApplicationsListResponse {
 }
 export interface ApplicationsFiltersDto {
   status?: ApplicationStatus;
+  search?: string;
   limit: number;
   offset: number;
 }

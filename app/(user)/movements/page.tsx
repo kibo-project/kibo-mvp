@@ -16,6 +16,7 @@ import { Badge, Button, Card, CardBody, CardTitle, Input } from "~~/components/k
 import { formatDateToSpanish } from "~~/utils/front.functions";
 
 const Movements: NextPage = () => {
+  const router = useRouter();
   const [searchInput, setSearchInput] = useState<string>("");
   const [searchFilter, setSearchFilter] = useState<string>("");
   const [pagination, setPagination] = useState<OrdersFilters>();
@@ -24,7 +25,6 @@ const Movements: NextPage = () => {
     filters: { ...pagination, status: statusFilter || undefined, search: searchFilter || undefined },
   });
   const orders = data?.data?.orders ?? [];
-  const router = useRouter();
 
   const handleMovementAction = useCallback(
     (id: string) => {

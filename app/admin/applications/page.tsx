@@ -7,6 +7,7 @@ import { ConfirmationModal } from "@/components/ConfimationModal";
 import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Button, Card, CardBody, Input } from "@/components/kibo";
+import { OrderListSkeleton } from "@/components/skeletons";
 import { AllyApplication, ApplicationStatus, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
 import { useApplicationApprove } from "@/hooks/applications/useApplicationApprove";
 import { useApplicationReject } from "@/hooks/applications/useApplicationReject";
@@ -17,11 +18,13 @@ import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 
 const Applications: NextPage = () => {
   const [pagination, setPagination] = useState<ApplicationsFiltersRequest>();
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>("");
   const { data, isLoading, error, refetch } = useApplications({ ...pagination });
   const { mutate: approveApplication, isPending: isApproving } = useApplicationApprove();
   const { mutate: rejectApplication, isPending: isRejecting } = useApplicationReject();
+  const applications = data?.data?.applications ?? [];
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const [modal, setModal] = useState({
     isOpen: false,
     type: "",
@@ -31,18 +34,12 @@ const Applications: NextPage = () => {
   });
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.trim() === "") {
+      setSearchFilter("");
+    }
   }, []);
-
-  const filteredApplications =
-    data?.data?.applications?.filter((application: AllyApplication) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        `${application.fullName}`.toLowerCase().includes(searchLower) ||
-        `${application.phone}`.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(application.createdAt).toLowerCase().includes(searchLower)
-      );
-    }) ?? [];
 
   const handleApprove = (id: string) => {
     setModal({
@@ -88,6 +85,21 @@ const Applications: NextPage = () => {
   const closeModal = () => {
     setModal({ isOpen: false, type: "", applicationId: "", message: "", requiresReason: false });
   };
+
+  const handleSearch = useCallback(() => {
+    setSearchFilter(searchInput);
+    setPagination(prev => ({ ...prev, offset: 0 }));
+  }, [searchInput]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
+
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
@@ -95,30 +107,6 @@ const Applications: NextPage = () => {
   const handlePageChange = useCallback((newOffset: number) => {
     setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
-
-  if (isLoading) {
-    return (
-      <RoleGuard requiredRole="admin">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex justify-center items-center py-8">
-            <p>Loading Applications...</p>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
-  if (error) {
-    return (
-      <RoleGuard requiredRole="user">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex flex-col justify-center items-center py-8">
-            <p className="text-red-500 mb-4">Error: {error.message}</p>
-            <Button onClick={handleRefresh}>Retry</Button>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
 
   return (
     <RoleGuard requiredRole="admin">
@@ -133,15 +121,23 @@ const Applications: NextPage = () => {
           </div>
         </div>
         {/* Search Bar */}
-        <div className="mb-6">
-          <Input
-            type="text"
-            placeholder="Search applications..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
-            fullWidth
-          />
+        <div className="mb-6 flex items-center gap-2 w-full">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchInput}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+              fullWidth
+              className="py-2 text-lg"
+            />
+          </div>
+
+          <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={handleSearch}>
+            Search
+          </Button>
         </div>
         <div className="mb-6">
           <select
@@ -160,8 +156,19 @@ const Applications: NextPage = () => {
         </div>
         {/* Applications List */}
         <div className="kibo-section-spacing mb-32">
-          {filteredApplications.length > 0 ? (
-            filteredApplications.map(application => (
+          {isLoading ? (
+            <OrderListSkeleton count={2} />
+          ) : error ? (
+            <Card>
+              <CardBody>
+                <div className="flex flex-col justify-center items-center py-8">
+                  <p className="text-red-500 mb-4"> {error.message}</p>
+                  <Button onClick={handleRefresh}>Retry</Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : applications.length > 0 ? (
+            applications.map(application => (
               <ApplicationCard
                 key={application.id}
                 application={application}
@@ -198,7 +205,7 @@ const Applications: NextPage = () => {
                   <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">
                     No applications found
                   </h3>
-                  {searchTerm ? (
+                  {searchFilter ? (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Try adjusting your search terms</p>
                   ) : (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">No applications available</p>
