@@ -2,7 +2,6 @@ import { CreateOrderDto, GetOrdersDto } from "../dto/orders.dto";
 import { OrderMapper } from "../mappers/order.mapper";
 import { AvailableOrdersFilters, ImageDataFile, Order, OrderStatus } from "../types/orders.types";
 import { createClient } from "@supabase/supabase-js";
-import { update } from "idb-keyval";
 
 export class OrdersRepository {
   private supabase;
@@ -72,6 +71,20 @@ export class OrdersRepository {
 
     if (filters.status) {
       query = query.eq("status", filters.status);
+    }
+
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+
+      const numericSearch = parseFloat(filters.search);
+
+      if (!isNaN(numericSearch)) {
+        query = query.or(`fiat_amount.eq.${numericSearch},` + `crypto_amount.eq.${numericSearch}`);
+      } else {
+        query = query.or(
+          `status.ilike.${searchTerm},` + `fiat_currency.ilike.${searchTerm},` + `crypto_currency.ilike.${searchTerm}`
+        );
+      }
     }
 
     if (filters.offset !== undefined && filters.limit !== undefined) {
@@ -193,7 +206,7 @@ export class OrdersRepository {
           event: "*",
           schema: "public",
           table: "orders",
-          filter: `id=eq.${orderId}`, // Filtrar por ID específico
+          filter: `id=eq.${orderId}`,
         },
         (payload: any) => {
           console.log("Cambio recibido para orden", orderId, ":", payload.eventType);

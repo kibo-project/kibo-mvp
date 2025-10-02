@@ -44,6 +44,7 @@ class OrdersApiService {
     const params = new URLSearchParams();
 
     if (filters.status) params.append("status", filters.status);
+    if (filters.search) params.append("search", filters.search);
     if (filters.limit) params.append("limit", filters.limit.toString());
     if (filters.offset) params.append("offset", filters.offset.toString());
 

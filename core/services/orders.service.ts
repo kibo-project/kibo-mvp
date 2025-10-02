@@ -10,6 +10,7 @@ import {
   Order,
   OrderResponse,
   OrderStatus,
+  OrdersFilters,
   OrdersListResponse,
 } from "../types/orders.types";
 import { OrderMapper } from "@/core/mappers/order.mapper";
@@ -53,11 +54,7 @@ export class OrdersService {
     return await this.ordersRepository.create(createOrderDto);
   }
 
-  async getOrdersByUser(
-    getOrdersResponse: GetOrdersResponse,
-    userId: string,
-    roleActiveNow: string
-  ): Promise<OrdersListResponse> {
+  async getOrdersByUser(filters: OrdersFilters, userId: string, roleActiveNow: string): Promise<OrdersListResponse> {
     const userRole = await this.usersRepository.getUserRolesByUserId(userId);
     if (!userRole) {
       throw new Error("User not found");
@@ -68,11 +65,12 @@ export class OrdersService {
       );
     }
 
-    const limit = getOrdersResponse.limit ?? 2;
-    const offset = getOrdersResponse.offset ?? 0;
+    const limit = filters.limit ?? 2;
+    const offset = filters.offset ?? 0;
 
     const getOrdersDto: GetOrdersDto = {
-      status: getOrdersResponse.status,
+      status: filters.status,
+      search: filters.search,
       limit,
       offset,
     };

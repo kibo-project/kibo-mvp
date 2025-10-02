@@ -9,6 +9,7 @@ import {
   GetOrdersResponse,
   OrderResponse,
   OrderStatus,
+  OrdersFilters,
   OrdersListResponse,
 } from "../types/orders.types";
 
@@ -92,8 +93,6 @@ export class OrdersController {
       const userId = request.headers.get("x-user-id");
       const roleActiveNow = request.headers.get("x-user-role");
 
-      console.log(userId);
-
       if (!userId || !roleActiveNow) {
         return Response.json(
           {
@@ -110,8 +109,9 @@ export class OrdersController {
       const { searchParams } = new URL(request.url);
       const statusParam = searchParams.get("status");
 
-      const filters: GetOrdersResponse = {
+      const filters: OrdersFilters = {
         status: this.isValidOrderStatus(statusParam) ? statusParam : undefined,
+        search: searchParams.get("search") ?? undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined,
       };

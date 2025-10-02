@@ -12,8 +12,6 @@ export type CryptoToken = "USDT" | "USDC";
 export type Network = "mantle" | "ethereum" | "polygon";
 export type UserRole = "user" | "ally" | "admin";
 
-// Interfaces principales
-
 export interface ImageDataFile {
   name: string;
   extension: string;
@@ -158,6 +156,7 @@ export interface AvailableOrdersResponse {
 }
 export interface GetOrdersResponse {
   status?: OrderStatus;
+  search?: string;
   limit?: number;
   offset?: number;
 }
@@ -192,6 +191,7 @@ export interface UploadProofResponse {
 // Filter types para hooks
 export interface OrdersFilters {
   status?: OrderStatus;
+  search?: string;
   limit?: number;
   offset?: number;
 }
