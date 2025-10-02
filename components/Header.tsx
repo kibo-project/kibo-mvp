@@ -61,7 +61,7 @@ export const HeaderMenuLinks = () => {
   const pathname = usePathname();
   const { userRole } = useAuthStore();
 
-  const currentMenuLinks = userRole === "ally" ? allyMenuLinks : userMenuLinks;
+  const currentMenuLinks = userRole?.name === "ally" ? allyMenuLinks : userMenuLinks;
 
   return (
     <>
@@ -91,7 +91,7 @@ export const Header = () => {
   const { userRole } = useAuthStore(); // COLOR: Obtener el rol del usuario
   // COLOR: Determinar la clase de fondo según el rol
   const headerBackgroundClass = useMemo(() => {
-    switch (userRole) {
+    switch (userRole?.name) {
       case "admin":
         return "bg-admin";
       case "ally":

@@ -2,17 +2,15 @@
 
 import { useCallback, useEffect } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLogin, usePrivy } from "@privy-io/react-auth";
 import { NextPage } from "next";
 import toast from "react-hot-toast";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
 const Login: NextPage = () => {
-  const { userRole, setUserRole, setHowRoles, setRoleNames, setRoleIds, setIsUserApplicant } = useAuthStore();
+  const { roles, setUserRole, setIsUserApplicant, setRoles } = useAuthStore();
   const router = useRouter();
   const { ready, authenticated } = usePrivy();
   const backendLogin = useAuth();
@@ -20,7 +18,7 @@ const Login: NextPage = () => {
     onComplete: ({ user }) => {
       const hasWallet = user.linkedAccounts?.some(account => account.type === "wallet");
       if (hasWallet) {
-        if (!backendLogin.isPending && !backendLogin.isSuccess && !userRole) {
+        if (!backendLogin.isPending && !backendLogin.isSuccess && roles.length === 0) {
           backendLogin.mutate();
         }
       } else {
@@ -36,23 +34,24 @@ const Login: NextPage = () => {
   }, [login]);
 
   useEffect(() => {
-    if (ready && authenticated && userRole) {
-      router.replace("/");
-    }
-  }, [ready, authenticated, userRole, router]);
-
-  useEffect(() => {
-    if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && !userRole) {
-      setUserRole(backendLogin.data.data!.activeRoleName!);
-      setHowRoles(backendLogin.data.data.howRoles!);
-      setRoleNames(backendLogin.data.data.roleNames!);
-      setRoleIds(backendLogin.data.data.roleIds!);
+    if (authenticated && backendLogin.isSuccess && backendLogin.data?.data && roles.length === 0) {
+      setRoles(backendLogin.data.data.roles!);
+      setUserRole(backendLogin.data.data.roles![0]);
       if (backendLogin.data.data.isAnApplicant) {
         setIsUserApplicant(backendLogin.data.data.isAnApplicant);
       }
       router.replace("/");
     }
-  }, [authenticated, backendLogin.isSuccess, backendLogin.data?.data, router]);
+  }, [
+    authenticated,
+    backendLogin.isSuccess,
+    backendLogin.data?.data,
+    router,
+    roles,
+    setIsUserApplicant,
+    setRoles,
+    setUserRole,
+  ]);
 
   if (!ready || backendLogin.isPending) {
     return (
@@ -61,14 +60,16 @@ const Login: NextPage = () => {
       </div>
     );
   }
-
-  if (authenticated && userRole) {
-    return (
-      <div className="flex justify-center items-center min-h-dvh bg-primary">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
-      </div>
-    );
-  }
+  // if (!ready) {
+  //   return (
+  //     <div className="flex justify-center items-center h-dvh bg-primary">
+  //       <div className="text-center text-primary-content">
+  //         <div className="kibo-spinner mx-auto mb-4"></div>
+  //         <p className="text-lg font-medium">Loading Kibo...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="flex justify-center items-center min-h-dvh bg-primary px-4">

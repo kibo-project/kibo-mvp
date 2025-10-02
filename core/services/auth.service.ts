@@ -1,9 +1,7 @@
-import { generateToken } from "../../utils/auth/jwt";
 import { UsersMapper } from "../mappers/users.mapper";
 import { AuthRepository } from "../repositories/auth.repository";
 import { UsersRepository } from "../repositories/users.repository";
-import { UserRole } from "../types/orders.types";
-import { User } from "../types/users.types";
+import { generateToken } from "@/utils/auth/jwt";
 
 export class AuthService {
   private authRepository: AuthRepository;
@@ -16,55 +14,41 @@ export class AuthService {
 
   async login(token: string) {
     const privyUser = await this.authRepository.verifyPrivyToken(token);
-    let role: UserRole;
-    let roleNames: UserRole[] = [];
-    let roleIds: string[] = [];
-    let howRoles: number = 1;
-    let user = await this.usersRepository.findUserByPrivyId(privyUser.privyId!);
-    if (user) {
-      user = await this.usersRepository.updateUser(user.id!);
-      role = await this.usersRepository.getRoleNameByRoleId(user.activeRoleId!);
-      roleIds = await this.usersRepository.getRoleIdsByUserId(user.id!);
-      if (roleIds.length > 1) {
-        roleNames = await Promise.all(roleIds.map(roleId => this.usersRepository.getRoleNameByRoleId(roleId)));
-        howRoles = roleIds.length;
-      } else {
-        roleNames = [role];
-      }
+    const existsUser = await this.usersRepository.findUserIdByWallet(privyUser.walletAddress);
+    if (existsUser) {
+      await this.usersRepository.updateUser(existsUser);
     } else {
-      role = "user";
-      const roleId = await this.usersRepository.findRoleIdByName(role);
-      user = await this.usersRepository.createUser(
-        {
-          ...privyUser,
-          activeRoleId: roleId,
-        },
-        role
-      );
+      await this.usersRepository.createUser({ ...privyUser });
     }
-    const jwtToken = await generateToken(user.id!, user.privyId!, role);
+    const user = await this.usersRepository.getUserRolesByWallet(privyUser.walletAddress!);
+    const jwtToken = await generateToken(user.id, user.roles![0].name);
 
     return {
-      userResponse: UsersMapper.userToUserResponse(user, role, roleNames, roleIds, howRoles),
+      userResponse: user,
       token: jwtToken,
     };
   }
+
   async changeUserRole(userId: string, roleId: string) {
-    const roleName = await this.usersRepository.getRoleNameByRoleId(roleId);
-    const isValid = await this.usersRepository.verifyUser(userId, roleName);
+    const isValid = await this.usersRepository.verifyUser2(userId, roleId);
     if (!isValid) {
-      throw new Error("This user do not can access to this role");
+      throw new Error(`User ${userId} doesn't have role ${roleId}, checking if user exists`);
     }
-    const userChanged = await this.usersRepository.updateUser(userId, roleId);
-    const jwtToken = await generateToken(userId, userChanged.privyId!, roleName);
+    await this.usersRepository.updateUserRole(userId, roleId);
+    const roleName = await this.usersRepository.getRoleNameByRoleId(roleId);
+    const jwtToken = await generateToken(userId, roleName);
+    const userChanged = await this.usersRepository.getUserRolesByUserId(userId);
     return {
-      userResponse: UsersMapper.userToUserResponse(userChanged, roleName),
+      userResponse: userChanged,
       token: jwtToken,
     };
   }
 
-  async getProfile(userId: string): Promise<User | null> {
+  async getProfile(userId: string) {
     const user = await this.usersRepository.findUserById(userId);
-    return user;
+    if (!user) {
+      return null;
+    }
+    return UsersMapper.userToUserResponse(user);
   }
 }

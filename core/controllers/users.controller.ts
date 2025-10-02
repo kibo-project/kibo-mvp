@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { UsersService } from "@/core/services/users.service";
 import { ApiResponse } from "@/core/types/generic.types";
 import { UserRole } from "@/core/types/orders.types";
-import { UsersFiltersDto, UsersFiltersRequest, UsersListResponse } from "@/core/types/users.types";
+import {
+  UserProfileRequest,
+  UserResponse,
+  UsersFiltersDto,
+  UsersFiltersRequest,
+  UsersListResponse,
+} from "@/core/types/users.types";
 
 export class UsersController {
   private usersService: UsersService;
@@ -48,6 +54,41 @@ export class UsersController {
     } catch (error) {
       return this.handleError(error);
     }
+  }
+
+  async editProfile(request: NextRequest) {
+    const userId = request.headers.get("x-user-id");
+    if (!userId) {
+      return Response.json(
+        {
+          success: false,
+          error: {
+            code: "UNAUTHORIZED",
+            message: "Authentication required",
+          },
+        },
+        { status: 401 }
+      );
+    }
+    const body: UserProfileRequest = await request.json();
+    if (!body.name && !body.email && !body.phone) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: {
+            code: "BAD_REQUEST",
+            message: "fullname or phone or address are required",
+          },
+        },
+        { status: 400 }
+      );
+    }
+    const userResponse: UserResponse = await this.usersService.editProfile(userId, body);
+    const response: ApiResponse<UserResponse> = {
+      success: true,
+      data: userResponse,
+    };
+    return Response.json(response);
   }
   private handleError(error: any): NextResponse {
     console.error("User Controller Error:", error);

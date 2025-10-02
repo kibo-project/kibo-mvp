@@ -12,10 +12,9 @@ export interface CustomJWTPayload extends JWTPayload {
   privyId: string;
 }
 
-export const generateToken = async (userId: string, privyId: string, role: string): Promise<string> => {
+export const generateToken = async (userId: string, role: string): Promise<string> => {
   const payload = {
     userId,
-    privyId,
     role,
   };
 

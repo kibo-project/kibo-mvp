@@ -13,7 +13,7 @@ export interface UserResponse {
   activeRoleName?: UserRole;
   roleNames?: UserRole[];
   roleIds?: string[];
-  roles?: Role[];
+  roles?: RoleResponse[];
   howRoles?: number;
   isAnApplicant?: boolean;
   accountNumber?: string;
@@ -30,7 +30,7 @@ export interface User {
   privyId?: string;
   name?: string;
   role?: UserRole;
-  walletAddress?: string;
+  walletAddress: string;
   email?: string;
   country?: string;
   bankName?: string;
@@ -55,10 +55,22 @@ export interface Role {
   name: UserRole;
 }
 
+export interface RoleResponse {
+  roleId: string;
+  name: UserRole;
+  isActive: boolean;
+}
+
 export interface UsersFiltersRequest {
   role?: UserRole;
   limit?: number;
   offset?: number;
+}
+
+export interface UserProfileRequest {
+  name?: string;
+  email?: string;
+  phone?: string;
 }
 
 export interface UsersFiltersDto {

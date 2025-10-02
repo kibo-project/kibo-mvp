@@ -1,6 +1,5 @@
-import { ENDPOINTS } from "../../config/api";
-import { ApiResponse } from "../../core/types/generic.types";
-import { TakeOrderResponse } from "@/core/types/orders.types";
+import { ENDPOINTS } from "@/config/api";
+import { ApiResponse } from "@/core/types/generic.types";
 import { UserResponse } from "@/core/types/users.types";
 
 class AuthApiService {
