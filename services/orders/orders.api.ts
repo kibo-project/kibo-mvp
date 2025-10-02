@@ -131,11 +131,7 @@ class OrdersApiService {
 
   async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<ApiResponse<AvailableOrdersResponse>> {
     const params = new URLSearchParams();
-
-    if (filters.country) params.append("country", filters.country);
-    if (filters.minAmount) params.append("minAmount", filters.minAmount.toString());
-    if (filters.maxAmount) params.append("maxAmount", filters.maxAmount.toString());
-    if (filters.sortBy) params.append("sortBy", filters.sortBy);
+    if (filters.search) params.append("filter", filters.search);
     if (filters.limit) params.append("limit", filters.limit.toString());
     if (filters.offset) params.append("offset", filters.offset.toString());
 

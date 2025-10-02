@@ -117,9 +117,7 @@ export class OrdersService {
       throw new Error("Invalid role");
     }
 
-    const subscription = await this.ordersRepository.subscribeToChanges(filterCondition, callback);
-
-    return subscription;
+    return await this.ordersRepository.subscribeToChanges(filterCondition, callback);
   }
 
   async getOrderById(orderId: string, userId: string): Promise<OrderResponse> {
@@ -131,7 +129,6 @@ export class OrdersService {
   }
 
   async subscribeToOrderChangesById(userId: string, orderId: string, callback: (data: any) => void): Promise<any> {
-    // Primero verificar que el usuario tenga acceso a esta orden
     const order = await this.ordersRepository.findById(orderId);
     if (!order) {
       throw new Error("Order not found");
@@ -141,10 +138,7 @@ export class OrdersService {
       throw new Error("Access denied to this order");
     }
 
-    // Suscribirse a cambios específicos de esta orden
-    const subscription = await this.ordersRepository.subscribeToOrderChangesById(orderId, callback);
-
-    return subscription;
+    return await this.ordersRepository.subscribeToOrderChangesById(orderId, callback);
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId: string): Promise<AvailableOrdersResponse> {
@@ -157,10 +151,8 @@ export class OrdersService {
     const offset = filters.offset ?? 0;
 
     const availableFilters: AvailableOrdersFilters = {
-      country: filters.country,
-      minAmount: filters.minAmount,
-      maxAmount: filters.maxAmount,
-      sortBy: filters.sortBy,
+      allyId: userId,
+      search: filters.search,
       limit,
       offset,
     };

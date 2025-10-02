@@ -239,16 +239,21 @@ export class OrdersRepository {
       .eq("status", OrderStatus.AVAILABLE)
       .gt("expires_at", new Date().toISOString());
 
-    if (filters.minAmount) {
-      query = query.gte("fiat_amount", filters.minAmount);
+    if (filters.allyId) {
+      query = query.neq("ally_id", filters.allyId);
     }
 
-    if (filters.maxAmount) {
-      query = query.lte("fiat_amount", filters.maxAmount);
-    }
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
 
-    const sortColumn = filters.sortBy === "amount" ? "fiat_amount" : filters.sortBy || "created_at";
-    query = query.order(sortColumn, { ascending: false });
+      const numericSearch = parseFloat(filters.search);
+
+      if (!isNaN(numericSearch)) {
+        query = query.or(`fiat_amount.eq.${numericSearch},` + `crypto_amount.eq.${numericSearch}`);
+      } else {
+        query = query.or(`fiat_currency.ilike.${searchTerm},` + `crypto_currency.ilike.${searchTerm}`);
+      }
+    }
 
     if (filters.offset !== undefined && filters.limit !== undefined) {
       query = query.range(filters.offset, filters.offset + filters.limit - 1);

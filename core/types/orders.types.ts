@@ -197,10 +197,8 @@ export interface OrdersFilters {
 }
 
 export interface AvailableOrdersFilters {
-  country?: string;
-  minAmount?: number;
-  maxAmount?: number;
-  sortBy?: "createdAt" | "expiresAt" | "amount";
+  allyId?: string;
+  search?: string;
   limit?: number;
   offset?: number;
 }
