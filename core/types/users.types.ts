@@ -63,6 +63,7 @@ export interface RoleResponse {
 
 export interface UsersFiltersRequest {
   role?: UserRole;
+  search?: string;
   limit?: number;
   offset?: number;
 }
@@ -75,6 +76,7 @@ export interface UserProfileRequest {
 
 export interface UsersFiltersDto {
   role?: UserRole;
+  search?: string;
   limit: number;
   offset: number;
 }

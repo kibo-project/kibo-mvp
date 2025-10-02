@@ -8,11 +8,10 @@ import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Button, Card, CardBody, Input } from "@/components/kibo";
 import { OrderListSkeleton } from "@/components/skeletons";
-import { AllyApplication, ApplicationStatus, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
+import { ApplicationStatus, ApplicationsFiltersRequest } from "@/core/types/ally.applications.types";
 import { useApplicationApprove } from "@/hooks/applications/useApplicationApprove";
 import { useApplicationReject } from "@/hooks/applications/useApplicationReject";
 import { useApplications } from "@/hooks/applications/useApplications";
-import { formatDateToSpanish } from "@/utils/front.functions";
 import { NextPage } from "next";
 import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 

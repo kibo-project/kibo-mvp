@@ -21,36 +21,43 @@ export class UsersRepository {
 
     return data && !error ? data.id : null;
   }
-
   async getUsers(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
-    if (filters.role) {
-      return this.getUsersByRole(filters);
-    } else {
-      return this.getAllUsersWithRoles(filters);
-    }
-  }
-
-  async getAllUsersWithRoles(filters: UsersFiltersDto) {
-    const { data, error, count } = await this.supabase
-      .from("users")
-      .select(
-        `
+    let query = this.supabase.from("users").select(
+      `
     *,
-    users_roles (
-      roles (*)
+    users_roles ${filters.role ? "!inner" : ""} (
+      roles ${filters.role ? "!inner" : ""} (*)
     )
   `,
-        { count: "exact" }
-      )
-      .range(filters.offset, filters.offset + filters.limit - 1)
-      .order("created_at", { ascending: false });
+      { count: "exact" }
+    );
+
+    if (filters.role) {
+      query = query.eq("users_roles.roles.name", filters.role);
+    }
+
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+      query = query.or(
+        `name.ilike.${searchTerm},` +
+          `email.ilike.${searchTerm},` +
+          `wallet.ilike.${searchTerm},` +
+          `phone.ilike.${searchTerm}`
+      );
+    }
+
+    query = query.range(filters.offset, filters.offset + filters.limit - 1).order("created_at", { ascending: false });
+
+    const { data, error, count } = await query;
 
     if (error) {
-      throw new Error(`Failed to fetch users by role: ${error.message}`);
+      throw new Error(`Failed to fetch users: ${error.message}`);
     }
+
     const users: UserResponse[] = data?.map(userData => UsersMapper.dbToUserResponse(userData)) || [];
+
     return {
-      users: users,
+      users,
       total: count || 0,
     };
   }
@@ -128,7 +135,7 @@ export class UsersRepository {
       .eq("id", userId);
 
     if (error) {
-      throw new Error(`Error updataing user: ${error.message}`);
+      throw new Error(`Error updating user: ${error.message}`);
     }
   }
 
@@ -253,33 +260,6 @@ export class UsersRepository {
     return true;
   }
 
-  private async getUsersByRole(filters: UsersFiltersDto): Promise<{ users: UserResponse[]; total: number }> {
-    const { data, error, count } = await this.supabase
-      .from("users")
-      .select(
-        `
-      *,
-      users_roles!inner(
-        roles!inner ( id,
-        name)
-      )
-    `,
-        { count: "exact" }
-      )
-      .eq("users_roles.roles.name", filters.role)
-      .range(filters.offset, filters.offset + filters.limit - 1)
-      .order("created_at", { ascending: false });
-    if (error) {
-      throw new Error(`Failed to fetch users by role: ${error.message}`);
-    }
-    const usersWithRoles: UserResponse[] = data?.map(userData => UsersMapper.dbToUserResponse(userData)) || [];
-
-    return {
-      users: usersWithRoles,
-      total: count || 0,
-    };
-  }
-
   async getUserRolesByWallet(wallet: string): Promise<UserResponse> {
     const { data, error } = await this.supabase
       .from("users")
@@ -291,7 +271,6 @@ export class UsersRepository {
     if (error || !data) {
       throw new Error(`User not found: ${error}`);
     }
-    console.log("como LLEGAB EN BD solo DATA", data);
 
     return UsersMapper.dbToUserResponse2(data);
   }
