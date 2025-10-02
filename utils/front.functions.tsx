@@ -16,6 +16,10 @@ export const formatDateToSpanish = (date: Date | string | number, options?: { fi
     .replace(",", "");
 };
 
+export const formatAddress = (address: string) => {
+  return `${address.slice(0, 6)}••••${address.slice(-4)}`;
+};
+
 export const getStatusColor = (status: OrderStatus): string => {
   switch (status) {
     case OrderStatus.COMPLETED:

@@ -71,7 +71,7 @@ export class AllyApplicationsService {
 
     if (application) {
       const roleId = await this.usersRepository.findRoleIdByName("ally");
-      await this.usersRepository.createUserRole(application.userId, roleId);
+      await this.usersRepository.createUserRole(application.userId, roleId, false);
       await this.usersRepository.updateUserToApplicant(userId, false);
     }
     return application;

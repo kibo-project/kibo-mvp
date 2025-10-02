@@ -6,38 +6,41 @@ import { RoleSelector } from "@/components/RoleSelector";
 import { RecentActivity } from "@/components/dashboard";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { AllyApplication } from "@/core/types/ally.applications.types";
-import { UserRole } from "@/core/types/orders.types";
+import { RoleResponse } from "@/core/types/users.types";
 import { useApplications } from "@/hooks/applications/useApplications";
 import { useRoleChange } from "@/hooks/auth/useRoleChange";
+import { useOrders } from "@/hooks/orders/useOrders";
+import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { useAuthStore } from "@/services/store/auth-store.";
 import { formatDateToSpanish, getStatusColorApplication, getStatusIconApplication } from "@/utils/front.functions";
 import { NextPage } from "next";
 
 const AdminHome: NextPage = () => {
-  const { setUserRole, userRole, howRoles, roleNames, roleIds } = useAuthStore();
+  const { setUserRole, userRole, roles } = useAuthStore();
   const roleChangeMutation = useRoleChange();
   const { data, refetch } = useApplications();
+  const { data: usersData } = useGetUsers();
+  const { data: ordersData } = useOrders();
 
-  const availableRoles = useMemo(() => {
-    if (!roleNames || howRoles <= 1) return [];
-    return roleNames.filter(role => role !== userRole);
-  }, [roleNames, userRole, howRoles]);
+  const availableRoles: RoleResponse[] = useMemo(() => {
+    if (roles.length <= 1) return [];
+    return roles.filter(role => role.name !== userRole?.name);
+  }, [roles, userRole]);
 
   const handleRoleChange = useCallback(
-    (newRole: UserRole) => {
-      const roleIndex = roleNames.indexOf(newRole);
-      const roleId = roleIds[roleIndex];
-
+    (newRole: RoleResponse) => {
+      const roleId = newRole.roleId;
       if (roleId) {
         roleChangeMutation.mutate(roleId);
       }
     },
-    [roleNames, roleIds, roleChangeMutation]
+    [roleChangeMutation]
   );
+
   useEffect(() => {
-    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data?.activeRoleName) {
-      setUserRole(roleChangeMutation.data.data.activeRoleName);
-      if (roleChangeMutation.data?.data?.activeRoleName == "admin") {
+    if (roleChangeMutation.isSuccess && roleChangeMutation.data?.data) {
+      setUserRole(roleChangeMutation.data.data.roles![0]);
+      if (roleChangeMutation.data.data.roles![0].name == "admin") {
         refetch()
           .then(() => {})
           .catch(() => {});
@@ -83,7 +86,7 @@ const AdminHome: NextPage = () => {
       <div className="flex items-center justify-between gap-2">
         {/*Role selector container */}
         <div className="relative">
-          {howRoles > 1 && (
+          {roles.length > 1 && (
             <RoleSelector
               currentRole={userRole!}
               availableRoles={availableRoles}
@@ -95,10 +98,10 @@ const AdminHome: NextPage = () => {
       </div>
       <div className="md:mx-auto md:min-w-md max-w-lg px-4 mt-12">
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <StatCard title="Applications" value={7} />
-          <StatCard title="Applications" value={11} />
-          <StatCard title="Users" value="+99" />
-          <StatCard title="Orders" value="+99" />
+          <StatCard title="Applications" value={data?.data?.pagination.total || 0} href="/admin/applications" />
+          <StatCard title="Applications" value={data?.data?.pagination.total || 0} href="/admin/applications" />
+          <StatCard title="Users" value={usersData?.data?.pagination.total || 0} href="/admin/users" />
+          <StatCard title="Orders" value={ordersData?.data?.pagination.total || 0} href="/admin/orders" />
         </div>
       </div>
     </div>

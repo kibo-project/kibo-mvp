@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useLogoutCookie } from "@/hooks/auth/useLogoutCookie";
+import { formatAddress } from "@/utils/front.functions";
 import { useLogin, useLogout, usePrivy } from "@privy-io/react-auth";
 import toast from "react-hot-toast";
 import {
@@ -13,6 +14,7 @@ import {
   WalletIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { Button } from "~~/components/kibo";
 import { Badge } from "~~/components/kibo";
 import { useAuthStore } from "~~/services/store/auth-store.";
 
@@ -47,8 +49,7 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
 
   useEffect(() => {
     if (authenticated && backendLogin.isSuccess && !userRole && backendLogin.data?.data) {
-      const activeRoleName = backendLogin.data.data.activeRoleName;
-      setUserRole(activeRoleName || null);
+      setUserRole(backendLogin.data.data.roles![0] || null);
       router.replace("/");
     }
   }, [authenticated, backendLogin.isSuccess, userRole, router]);
@@ -81,10 +82,6 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
     }
   }, [user?.wallet?.address]);
 
-  const formatAddress = (address: string) => {
-    return `${address.slice(0, 6)}••••${address.slice(-4)}`;
-  };
-
   const handleModalClose = useCallback(() => {
     setShowModal(false);
   }, []);
@@ -96,6 +93,10 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
   if (!ready) {
     return null;
   }
+  const goToProfile = () => {
+    router.push("/profile");
+    setShowModal(false);
+  };
 
   if (!authenticated) {
     return (
@@ -172,13 +173,19 @@ export const LoginButton = ({ className = "" }: LoginButtonProps) => {
               <p className="text-gray-400 text-sm mb-6">0.00 ETH</p>
 
               {/* Disconnect Button */}
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center justify-center gap-3 bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-lg transition-colors duration-200"
-              >
-                <ArrowRightOnRectangleIcon className="size-5" />
-                <span>Disconnect</span>
-              </button>
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-3 bg-gray-700 hover:bg-gray-600 text-white py-3 px-4 rounded-lg transition-colors duration-200"
+                >
+                  <ArrowRightOnRectangleIcon className="size-5" />
+                  <span>Disconnect</span>
+                </button>
+
+                <Button onClick={goToProfile} className="w-full">
+                  My profile
+                </Button>
+              </div>
             </div>
           </div>
         </div>

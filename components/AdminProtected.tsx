@@ -40,18 +40,19 @@ interface AdminProtectedProps {
  * - This component prevents UI access but doesn't secure API calls
  */
 export const AdminProtected: React.FC<AdminProtectedProps> = ({ children, fallback = null }) => {
-  const { isAdmin } = useAuthStore();
+  const { userRole } = useAuthStore();
   const router = useRouter();
 
   // Redirect non-admin users to home page
   useEffect(() => {
-    if (!isAdmin()) {
+    if (!userRole) return;
+    {
       router.push("/");
     }
-  }, [isAdmin, router]);
+  }, [userRole, router]);
 
   // Show fallback content if user doesn't have admin privileges
-  if (!isAdmin()) {
+  if (userRole?.name !== "admin") {
     return <>{fallback}</>;
   }
 

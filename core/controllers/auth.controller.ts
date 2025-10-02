@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { clearAuthCookie, setAuthCookie } from "../../utils/auth/jwt";
 import { AuthService } from "../services/auth.service";
 import { ApiResponse } from "../types/generic.types";
 import { UserResponse } from "../types/users.types";
+import { clearAuthCookie, setAuthCookie } from "@/utils/auth/jwt";
 
 export class AuthController {
   private authService: AuthService;
@@ -59,7 +59,7 @@ export class AuthController {
             success: false,
             error: {
               code: "UNAUTHORIZED",
-              message: "User authentication required LLEGA ACA",
+              message: "User authentication required",
             },
           },
           { status: 401 }

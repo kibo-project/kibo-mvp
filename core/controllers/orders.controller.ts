@@ -92,6 +92,8 @@ export class OrdersController {
       const userId = request.headers.get("x-user-id");
       const roleActiveNow = request.headers.get("x-user-role");
 
+      console.log(userId);
+
       if (!userId || !roleActiveNow) {
         return Response.json(
           {
@@ -205,12 +207,23 @@ export class OrdersController {
     roleActiveNow: string
   ): Promise<any> {
     const subscription = await this.ordersService.subscribeToOrderChanges(userId, roleActiveNow, data => {
-      const message = `data: ${JSON.stringify({
-        type: "update",
-        payload: data,
-      })}\n\n`;
-      console.log("CONTROOLLER SI LLEGA UPDATE", message);
-      controller.enqueue(new TextEncoder().encode(message));
+      try {
+        // Verificar si el controller está cerrado antes de escribir
+        if (controller.desiredSize === null) {
+          console.log("Controller is closed, skipping message");
+          return;
+        }
+
+        const message = `data: ${JSON.stringify({
+          type: "update",
+          payload: data,
+        })}\n\n`;
+
+        console.log("CONTROOLLER SI LLEGA UPDATE", message);
+        controller.enqueue(new TextEncoder().encode(message));
+      } catch (error) {
+        console.error("Error sending SSE message:", error);
+      }
     });
 
     return subscription;
@@ -242,6 +255,92 @@ export class OrdersController {
     } catch (error) {
       return this.handleError(error);
     }
+  }
+
+  async getOrderByIdRealtime(request: NextRequest, params: Promise<{ id: string }>): Promise<Response> {
+    try {
+      const resolvedParams = await params;
+      const orderId = resolvedParams.id;
+      const userId = request.headers.get("x-user-id");
+      if (!userId) {
+        return Response.json(
+          {
+            success: false,
+            error: {
+              code: "UNAUTHORIZED",
+              message: "User authentication required",
+            },
+          },
+          { status: 401 }
+        );
+      }
+      let subscription: any = null;
+
+      const stream = new ReadableStream({
+        start: async controller => {
+          try {
+            await this.sendInitialOrder(controller, userId, orderId);
+
+            subscription = await this.setupRealtimeOrder(controller, userId, orderId);
+          } catch (error) {
+            controller.error(error);
+          }
+        },
+        cancel: () => {
+          if (subscription) {
+            subscription.unsubscribe();
+          }
+        },
+      });
+
+      return new Response(stream, {
+        headers: {
+          "Content-Type": "text/event-stream",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          "Access-Control-Allow-Origin": "*",
+          "Access-Control-Allow-Headers": "Cache-Control",
+        },
+      });
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
+  private async sendInitialOrder(controller: ReadableStreamDefaultController, userId: string, orderId: string) {
+    const order = await this.ordersService.getOrderById(orderId, userId);
+    const message = `data: ${JSON.stringify({
+      type: "initial_data",
+      payload: order,
+    })}\n\n`;
+
+    controller.enqueue(new TextEncoder().encode(message));
+  }
+  private async setupRealtimeOrder(
+    controller: ReadableStreamDefaultController,
+    userId: string,
+    orderId: string
+  ): Promise<any> {
+    const subscription = await this.ordersService.subscribeToOrderChangesById(userId, orderId, data => {
+      try {
+        if (controller.desiredSize === null) {
+          console.log("Controller is closed, skipping message for order", orderId);
+          return;
+        }
+
+        const message = `data: ${JSON.stringify({
+          type: "update",
+          payload: data,
+        })}\n\n`;
+
+        console.log("CONTROLLER SI LLEGA UPDATE", message);
+        controller.enqueue(new TextEncoder().encode(message));
+      } catch (error) {
+        console.error("Error sending SSE message for order", orderId, ":", error);
+      }
+    });
+
+    return subscription;
   }
 
   async getAvailableOrders(request: NextRequest): Promise<Response> {
