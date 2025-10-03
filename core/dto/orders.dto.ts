@@ -4,6 +4,7 @@ export interface GetOrdersDto {
   userId?: string;
   allyId?: string;
   status?: OrderStatus;
+  search?: string;
   limit: number;
   offset: number;
 }

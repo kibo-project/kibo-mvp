@@ -5,8 +5,9 @@ import Link from "next/link";
 import { Pagination } from "@/components/Pagination";
 import { RoleGuard } from "@/components/RoleGuard";
 import { Badge, Button, Card, CardBody, CardTitle, Input } from "@/components/kibo";
+import { OrderListSkeleton } from "@/components/skeletons";
 import { UserRole } from "@/core/types/orders.types";
-import { UserResponse, UsersFiltersRequest } from "@/core/types/users.types";
+import { UsersFiltersRequest } from "@/core/types/users.types";
 import { useGetUsers } from "@/hooks/users/useGetUsers";
 import { formatDateToSpanish } from "@/utils/front.functions";
 import { NextPage } from "next";
@@ -14,23 +15,36 @@ import { ArrowLeftIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline"
 
 const Users: NextPage = () => {
   const [pagination, setPagination] = useState<UsersFiltersRequest>();
+  const [searchInput, setSearchInput] = useState<string>("");
+  const [searchFilter, setSearchFilter] = useState<string>("");
   const { data, isLoading, error, refetch } = useGetUsers({
     ...pagination,
+    search: searchFilter || undefined,
   });
-  const [searchTerm, setSearchTerm] = useState<string>("");
+  const users = data?.data?.users ?? [];
+
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value);
+    const value = e.target.value;
+    setSearchInput(value);
+    if (value.trim() === "") {
+      setSearchFilter("");
+    }
   }, []);
 
-  const filteredUsers =
-    data?.data?.users?.filter((user: UserResponse) => {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        `${user.walletAddress}`.toLowerCase().includes(searchLower) ||
-        `${user.phone}`.toLowerCase().includes(searchLower) ||
-        formatDateToSpanish(user.createdAt).toLowerCase().includes(searchLower)
-      );
-    }) ?? [];
+  const handleSearch = useCallback(() => {
+    setSearchFilter(searchInput);
+    setPagination(prev => ({ ...prev, offset: 0 }));
+  }, [searchInput]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
+
   const handleRefresh = useCallback(() => {
     refetch();
   }, [refetch]);
@@ -38,30 +52,6 @@ const Users: NextPage = () => {
   const handlePageChange = useCallback((newOffset: number) => {
     setPagination(prev => ({ ...prev, offset: newOffset }));
   }, []);
-
-  if (isLoading) {
-    return (
-      <RoleGuard requiredRole="admin">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex justify-center items-center py-8">
-            <p>Loading Applications...</p>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
-  if (error) {
-    return (
-      <RoleGuard requiredRole="user">
-        <div className="md:mx-auto md:min-w-md px-4">
-          <div className="flex flex-col justify-center items-center py-8">
-            <p className="text-red-500 mb-4">Error: {error.message}</p>
-            <Button onClick={handleRefresh}>Retry</Button>
-          </div>
-        </div>
-      </RoleGuard>
-    );
-  }
 
   return (
     <RoleGuard requiredRole="admin">
@@ -76,16 +66,25 @@ const Users: NextPage = () => {
           </div>
         </div>
         {/* Search Bar */}
-        <div className="mb-6">
-          <Input
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={handleSearchChange}
-            leftIcon={<MagnifyingGlassIcon className="w-4 h-4" />}
-            fullWidth
-          />
+        <div className="mb-6 flex items-center gap-2 w-full">
+          <div className="flex-1">
+            <Input
+              type="text"
+              placeholder="Search transactions..."
+              value={searchInput}
+              onChange={handleSearchChange}
+              onKeyDown={handleKeyDown}
+              leftIcon={<MagnifyingGlassIcon className="w-5 h-5" />}
+              fullWidth
+              className="py-2 text-lg"
+            />
+          </div>
+
+          <Button variant="secondary" size="sm" className="whitespace-nowrap" onClick={handleSearch}>
+            Search
+          </Button>
         </div>
+
         <div className="mb-6">
           <select
             value={pagination?.role ?? ""}
@@ -103,8 +102,19 @@ const Users: NextPage = () => {
         </div>
         {/* Users List */}
         <div className="kibo-section-spacing mb-32">
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map(user => (
+          {isLoading ? (
+            <OrderListSkeleton count={2} />
+          ) : error ? (
+            <Card>
+              <CardBody>
+                <div className="flex flex-col justify-center items-center py-8">
+                  <p className="text-red-500 mb-4"> {error.message}</p>
+                  <Button onClick={handleRefresh}>Retry</Button>
+                </div>
+              </CardBody>
+            </Card>
+          ) : users.length > 0 ? (
+            users.map(user => (
               <Card key={user.id} shadow="sm">
                 <CardBody>
                   <div className="flex justify-between items-start">
@@ -149,7 +159,7 @@ const Users: NextPage = () => {
                     <MagnifyingGlassIcon className="w-8 h-8 text-neutral-400" />
                   </div>
                   <h3 className="text-lg font-medium text-neutral-900 dark:text-neutral-100 mb-2">No Users found</h3>
-                  {searchTerm && (
+                  {searchFilter && (
                     <p className="text-sm text-neutral-600 dark:text-neutral-400">Try adjusting your search terms</p>
                   )}
                 </div>

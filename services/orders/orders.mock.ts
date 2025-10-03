@@ -2,10 +2,8 @@ import {
   AvailableOrdersFilters,
   AvailableOrdersResponse,
   CancelOrderResponse,
-  CreateOrderRequest,
   Order,
   OrderDetailsResponse,
-  OrderResponse,
   OrderStatus,
   OrdersFilters,
   OrdersListResponse,
@@ -13,15 +11,7 @@ import {
   UploadProofRequest,
   UploadProofResponse,
 } from "../../core/types/orders.types";
-import {
-  calculateSecondsRemaining,
-  generateMockId,
-  generateTimeline,
-  mockDelay,
-  mockOrders,
-  mockQuotes,
-  mockUsers,
-} from "./mock-data";
+import { calculateSecondsRemaining, mockDelay, mockOrders, mockUsers } from "./mock-data";
 
 class OrdersMockService {
   private orders: Order[] = [...mockOrders];
@@ -127,13 +117,10 @@ class OrdersMockService {
   async getAvailableOrders(filters: AvailableOrdersFilters = {}): Promise<AvailableOrdersResponse> {
     await mockDelay();
 
-    const { country = "BO", minAmount, maxAmount, sortBy = "expiresAt", limit = 50 } = filters;
+    const { limit = 50 } = filters;
 
     let availableOrders = this.orders.filter(order => {
       if (order.status !== "AVAILABLE") return false;
-      if (order.userCountry && order.userCountry !== country) return false;
-      if (minAmount && order.fiatAmount < minAmount) return false;
-      if (maxAmount && order.fiatAmount > maxAmount) return false;
 
       // No mostrar órdenes expiradas
       if (new Date(order.expiresAt) < new Date()) return false;
@@ -146,19 +133,6 @@ class OrdersMockService {
       ...order,
       secondsRemaining: calculateSecondsRemaining(order.expiresAt),
     }));
-
-    // Ordenamiento
-    availableOrders.sort((a, b) => {
-      switch (sortBy) {
-        case "amount":
-          return b.fiatAmount - a.fiatAmount;
-        case "createdAt":
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        case "expiresAt":
-        default:
-          return new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime();
-      }
-    });
 
     const paginatedOrders = availableOrders.slice(0, limit);
 

@@ -26,12 +26,26 @@ export async function middleware(request: NextRequest) {
 
     return response;
   } catch (error) {
+    const err = error as Error;
+    if (err.message.includes("expired")) {
+      return Response.json(
+        {
+          success: false,
+          error: {
+            code: "TOKEN_EXPIRED",
+            message: "Token expired, please refresh",
+          },
+        },
+        { status: 401 }
+      );
+    }
+
     return Response.json(
       {
         success: false,
         error: {
           code: "UNAUTHORIZED",
-          message: "Invalid or expired token",
+          message: "Invalid token",
         },
       },
       { status: 401 }

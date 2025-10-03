@@ -37,11 +37,13 @@ export class UsersController {
       const { searchParams } = new URL(request.url);
       const usersFilters: UsersFiltersRequest = {
         role: searchParams.get("role") as UserRole | undefined,
+        search: searchParams.get("search") ?? undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 10,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : 0,
       };
       const usersFiltersDto: UsersFiltersDto = {
         role: usersFilters.role,
+        search: usersFilters.search,
         limit: usersFilters.limit!,
         offset: usersFilters.offset!,
       };

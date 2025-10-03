@@ -10,6 +10,7 @@ import {
   Order,
   OrderResponse,
   OrderStatus,
+  OrdersFilters,
   OrdersListResponse,
 } from "../types/orders.types";
 import { OrderMapper } from "@/core/mappers/order.mapper";
@@ -53,11 +54,7 @@ export class OrdersService {
     return await this.ordersRepository.create(createOrderDto);
   }
 
-  async getOrdersByUser(
-    getOrdersResponse: GetOrdersResponse,
-    userId: string,
-    roleActiveNow: string
-  ): Promise<OrdersListResponse> {
+  async getOrdersByUser(filters: OrdersFilters, userId: string, roleActiveNow: string): Promise<OrdersListResponse> {
     const userRole = await this.usersRepository.getUserRolesByUserId(userId);
     if (!userRole) {
       throw new Error("User not found");
@@ -68,11 +65,12 @@ export class OrdersService {
       );
     }
 
-    const limit = getOrdersResponse.limit ?? 2;
-    const offset = getOrdersResponse.offset ?? 0;
+    const limit = filters.limit ?? 2;
+    const offset = filters.offset ?? 0;
 
     const getOrdersDto: GetOrdersDto = {
-      status: getOrdersResponse.status,
+      status: filters.status,
+      search: filters.search,
       limit,
       offset,
     };
@@ -119,9 +117,7 @@ export class OrdersService {
       throw new Error("Invalid role");
     }
 
-    const subscription = await this.ordersRepository.subscribeToChanges(filterCondition, callback);
-
-    return subscription;
+    return await this.ordersRepository.subscribeToChanges(filterCondition, callback);
   }
 
   async getOrderById(orderId: string, userId: string): Promise<OrderResponse> {
@@ -133,7 +129,6 @@ export class OrdersService {
   }
 
   async subscribeToOrderChangesById(userId: string, orderId: string, callback: (data: any) => void): Promise<any> {
-    // Primero verificar que el usuario tenga acceso a esta orden
     const order = await this.ordersRepository.findById(orderId);
     if (!order) {
       throw new Error("Order not found");
@@ -143,10 +138,7 @@ export class OrdersService {
       throw new Error("Access denied to this order");
     }
 
-    // Suscribirse a cambios específicos de esta orden
-    const subscription = await this.ordersRepository.subscribeToOrderChangesById(orderId, callback);
-
-    return subscription;
+    return await this.ordersRepository.subscribeToOrderChangesById(orderId, callback);
   }
 
   async getAvailableOrders(filters: AvailableOrdersFilters, userId: string): Promise<AvailableOrdersResponse> {
@@ -159,10 +151,8 @@ export class OrdersService {
     const offset = filters.offset ?? 0;
 
     const availableFilters: AvailableOrdersFilters = {
-      country: filters.country,
-      minAmount: filters.minAmount,
-      maxAmount: filters.maxAmount,
-      sortBy: filters.sortBy,
+      allyId: userId,
+      search: filters.search,
       limit,
       offset,
     };

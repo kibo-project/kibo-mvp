@@ -67,6 +67,18 @@ export class AllyApplicationsRepository {
     if (filters.status) {
       query = query.eq("status", filters.status);
     }
+
+    if (filters.search) {
+      const searchTerm = `%${filters.search}%`;
+
+      const numericSearch = parseFloat(filters.search);
+
+      if (!isNaN(numericSearch)) {
+        query = query.or(`phone.eq.${numericSearch},`);
+      } else {
+        query = query.or(`full_name.ilike.${searchTerm},` + `address.ilike.${searchTerm}`);
+      }
+    }
     query = query.range(filters.offset, filters.offset + filters.limit - 1);
     query = query.order("created_at", { ascending: false });
     const { data, error, count } = await query;

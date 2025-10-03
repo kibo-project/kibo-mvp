@@ -9,6 +9,7 @@ import {
   GetOrdersResponse,
   OrderResponse,
   OrderStatus,
+  OrdersFilters,
   OrdersListResponse,
 } from "../types/orders.types";
 
@@ -92,8 +93,6 @@ export class OrdersController {
       const userId = request.headers.get("x-user-id");
       const roleActiveNow = request.headers.get("x-user-role");
 
-      console.log(userId);
-
       if (!userId || !roleActiveNow) {
         return Response.json(
           {
@@ -110,8 +109,9 @@ export class OrdersController {
       const { searchParams } = new URL(request.url);
       const statusParam = searchParams.get("status");
 
-      const filters: GetOrdersResponse = {
+      const filters: OrdersFilters = {
         status: this.isValidOrderStatus(statusParam) ? statusParam : undefined,
+        search: searchParams.get("search") ?? undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined,
       };
@@ -208,7 +208,6 @@ export class OrdersController {
   ): Promise<any> {
     const subscription = await this.ordersService.subscribeToOrderChanges(userId, roleActiveNow, data => {
       try {
-        // Verificar si el controller está cerrado antes de escribir
         if (controller.desiredSize === null) {
           console.log("Controller is closed, skipping message");
           return;
@@ -324,7 +323,6 @@ export class OrdersController {
     const subscription = await this.ordersService.subscribeToOrderChangesById(userId, orderId, data => {
       try {
         if (controller.desiredSize === null) {
-          console.log("Controller is closed, skipping message for order", orderId);
           return;
         }
 
@@ -333,7 +331,6 @@ export class OrdersController {
           payload: data,
         })}\n\n`;
 
-        console.log("CONTROLLER SI LLEGA UPDATE", message);
         controller.enqueue(new TextEncoder().encode(message));
       } catch (error) {
         console.error("Error sending SSE message for order", orderId, ":", error);
@@ -359,13 +356,8 @@ export class OrdersController {
         );
       }
       const { searchParams } = new URL(request.url);
-      const sortByParam = searchParams.get("sortBy");
-
       const filters: AvailableOrdersFilters = {
-        country: searchParams.get("country") || undefined,
-        minAmount: searchParams.get("minAmount") ? parseFloat(searchParams.get("minAmount")!) : undefined,
-        maxAmount: searchParams.get("maxAmount") ? parseFloat(searchParams.get("maxAmount")!) : undefined,
-        sortBy: this.isValidSortBy(sortByParam) ? sortByParam : undefined,
+        search: searchParams.get("search") ?? undefined,
         limit: searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : undefined,
         offset: searchParams.get("offset") ? parseInt(searchParams.get("offset")!) : undefined,
       };
