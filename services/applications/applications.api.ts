@@ -1,4 +1,4 @@
-import { ENDPOINTS } from "../../config/api";
+import { ENDPOINTS } from "@/config/api";
 import {
   AllyApplication,
   ApplicationsFiltersRequest,
@@ -6,34 +6,9 @@ import {
 } from "@/core/types/ally.applications.types";
 import { ApiResponse } from "@/core/types/generic.types";
 import { OrderDetailsResponse } from "@/core/types/orders.types";
+import { BaseApiService } from "@/services/base.api.service";
 
-class ApplicationsApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-
-    const defaultHeaders: Record<string, string> = {};
-    if (!(options.body instanceof FormData)) {
-      defaultHeaders["Content-Type"] = "application/json";
-    }
-
-    const response = await fetch(url, {
-      credentials: "include",
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("API Error response:", errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-    }
-
-    return response.json();
-  }
+class ApplicationsApiService extends BaseApiService {
   async getApplication(): Promise<ApiResponse<AllyApplication>> {
     return this.request<OrderDetailsResponse>(ENDPOINTS.USER_APPLICATION);
   }

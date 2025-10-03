@@ -10,36 +10,9 @@ import {
   OrdersListResponse,
   UploadProofRequest,
 } from "@/core/types/orders.types";
+import { BaseApiService } from "@/services/base.api.service";
 
-class OrdersApiService {
-  private baseUrl = process.env.NEXT_PUBLIC_API_URL || "/api";
-
-  private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-    const url = `${this.baseUrl}${endpoint}`;
-
-    const defaultHeaders: Record<string, string> = {};
-    if (!(options.body instanceof FormData)) {
-      defaultHeaders["Content-Type"] = "application/json";
-    }
-
-    const response = await fetch(url, {
-      credentials: "include",
-      headers: {
-        ...defaultHeaders,
-        ...options.headers,
-      },
-      ...options,
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log("API Error response:", errorText);
-      throw new Error(`HTTP error! status: ${response.status} - ${errorText}`);
-    }
-
-    return response.json();
-  }
-
+class OrdersApiService extends BaseApiService {
   async getOrders(filters: OrdersFilters = {}): Promise<ApiResponse<OrdersListResponse>> {
     const params = new URLSearchParams();
 

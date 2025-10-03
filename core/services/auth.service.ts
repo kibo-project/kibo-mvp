@@ -51,4 +51,18 @@ export class AuthService {
     }
     return UsersMapper.userToUserResponse(user);
   }
+
+  async refresh(privyToken: string) {
+    const privyUser = await this.authRepository.verifyPrivyToken(privyToken);
+    const user = await this.usersRepository.getUserRolesByWallet(privyUser.walletAddress!);
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+    const jwtToken = await generateToken(user.id, user.roles![0].name);
+    return {
+      userResponse: user,
+      newToken: jwtToken,
+    };
+  }
 }

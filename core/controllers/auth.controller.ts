@@ -135,6 +135,33 @@ export class AuthController {
     }
   }
 
+  async refresh(request: NextRequest): Promise<NextResponse> {
+    try {
+      const privyToken = request.cookies.get("privy-token")?.value;
+
+      if (!privyToken || privyToken.trim() === "") {
+        return NextResponse.json(
+          {
+            success: false,
+            error: { code: "UNAUTHORIZED", message: "No privy token found" },
+          },
+          { status: 401 }
+        );
+      }
+      const result = await this.authService.refresh(privyToken);
+
+      const responseData: ApiResponse<UserResponse> = {
+        success: true,
+        data: result.userResponse,
+      };
+
+      const response = NextResponse.json(responseData);
+      return setAuthCookie(response, result.newToken);
+    } catch (error) {
+      return this.handleError(error);
+    }
+  }
+
   private handleError(error: any): NextResponse {
     console.error("Auth Controller Error:", error);
 
